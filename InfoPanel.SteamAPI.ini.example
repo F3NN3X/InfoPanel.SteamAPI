@@ -1,0 +1,58 @@
+; InfoPanel Steam API Plugin Configuration
+; =====================================
+; This file is automatically created when the plugin starts for the first time.
+; You can edit these settings and restart InfoPanel to apply changes.
+
+[Debug Settings]
+; Enable debug logging for troubleshooting
+EnableDebugLogging=false
+
+; Debug log level: Info, Warning, Error
+DebugLogLevel=Info
+
+[Monitoring Settings]
+; Internal monitoring interval in milliseconds (minimum 1000ms)
+MonitoringIntervalMs=1000
+
+; Automatically reconnect if connection is lost
+EnableAutoReconnect=true
+
+; Connection timeout in milliseconds
+ConnectionTimeoutMs=5000
+
+[Display Settings]
+; Show status messages in the plugin
+ShowStatusMessages=true
+
+; Show detailed metrics in sensors
+ShowDetailedMetrics=true
+
+; Use metric system for measurements
+UseMetricSystem=true
+
+[Steam Settings]
+; Steam Web API Key - Get from: https://steamcommunity.com/dev/apikey
+; Required for the plugin to function
+ApiKey=<your-steam-api-key-here>
+
+; Steam ID to monitor - Find yours at: https://steamid.io/
+; Required for the plugin to function
+SteamId=<your-steam-id-here>
+
+; How often to update Steam data in seconds (minimum 10 seconds to respect rate limits)
+UpdateIntervalSeconds=30
+
+; Enable monitoring of Steam profile information (name, level, status)
+EnableProfileMonitoring=true
+
+; Enable monitoring of game library statistics (total games, playtime)
+EnableLibraryMonitoring=true
+
+; Enable monitoring of currently playing game
+EnableCurrentGameMonitoring=true
+
+; Enable monitoring of Steam achievements (not implemented in Phase 1)
+EnableAchievementMonitoring=false
+
+; Maximum number of recent games to track
+MaxRecentGames=5
