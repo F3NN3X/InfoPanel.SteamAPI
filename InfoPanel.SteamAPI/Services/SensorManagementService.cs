@@ -116,7 +116,7 @@ namespace InfoPanel.SteamAPI.Services
             if (data.IsInGame() && !string.IsNullOrEmpty(data.CurrentGameName))
             {
                 currentGameSensor.Value = data.CurrentGameName;
-                currentGamePlaytimeSensor.Value = Math.Round(data.TotalPlaytimeHours, 1);
+                currentGamePlaytimeSensor.Value = (float)Math.Round(data.TotalPlaytimeHours, 1);
             }
             else
             {
@@ -135,13 +135,13 @@ namespace InfoPanel.SteamAPI.Services
             SteamData data)
         {
             // Update total games owned
-            totalGamesSensor.Value = data.TotalGamesOwned;
+            totalGamesSensor.Value = (float)data.TotalGamesOwned;
             
             // Update total playtime
-            totalPlaytimeSensor.Value = Math.Round(data.TotalLibraryPlaytimeHours, 1);
+            totalPlaytimeSensor.Value = (float)Math.Round(data.TotalLibraryPlaytimeHours, 1);
             
             // Update recent playtime
-            recentPlaytimeSensor.Value = Math.Round(data.RecentPlaytimeHours, 1);
+            recentPlaytimeSensor.Value = (float)Math.Round(data.RecentPlaytimeHours, 1);
         }
         
         /// <summary>

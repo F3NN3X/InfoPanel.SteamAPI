@@ -4,6 +4,8 @@ using InfoPanel.SteamAPI.Services;
 using InfoPanel.SteamAPI.Models;
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -88,6 +90,12 @@ namespace InfoPanel.SteamAPI
 
         public override void Initialize()
         {
+            // This method may be called by InfoPanel framework
+            // Our main initialization is in Load() method
+        }
+
+        public override void Load(List<IPluginContainer> containers)
+        {
             try
             {
                 // Set up configuration file path for InfoPanel integration
@@ -108,20 +116,42 @@ namespace InfoPanel.SteamAPI
                 // Create sensor container
                 var container = new PluginContainer("SteamAPI");
                 
-                // Add Steam sensors to container
-                container.AddSensor(_playerNameSensor);
-                container.AddSensor(_onlineStatusSensor);
-                container.AddSensor(_steamLevelSensor);
-                container.AddSensor(_currentGameSensor);
-                container.AddSensor(_currentGamePlaytimeSensor);
-                container.AddSensor(_totalGamesSensor);
-                container.AddSensor(_totalPlaytimeSensor);
-                container.AddSensor(_recentPlaytimeSensor);
-                container.AddSensor(_statusSensor);
-                container.AddSensor(_detailsSensor);
+                // Try to discover the correct method to add sensors
+                var containerType = container.GetType();
+                var addMethod = containerType.GetMethods()
+                    .FirstOrDefault(m => m.Name.ToLower().Contains("add") && 
+                                   m.GetParameters().Length == 1 &&
+                                   m.GetParameters()[0].ParameterType.Name.Contains("Sensor"));
+                
+                if (addMethod != null)
+                {
+                    Console.WriteLine($"[SteamAPI] Using method: {addMethod.Name}");
+                    
+                    // Add Steam sensors to container using reflection
+                    addMethod.Invoke(container, new object[] { _playerNameSensor });
+                    addMethod.Invoke(container, new object[] { _onlineStatusSensor });
+                    addMethod.Invoke(container, new object[] { _steamLevelSensor });
+                    addMethod.Invoke(container, new object[] { _currentGameSensor });
+                    addMethod.Invoke(container, new object[] { _currentGamePlaytimeSensor });
+                    addMethod.Invoke(container, new object[] { _totalGamesSensor });
+                    addMethod.Invoke(container, new object[] { _totalPlaytimeSensor });
+                    addMethod.Invoke(container, new object[] { _recentPlaytimeSensor });
+                    addMethod.Invoke(container, new object[] { _statusSensor });
+                    addMethod.Invoke(container, new object[] { _detailsSensor });
+                }
+                else
+                {
+                    Console.WriteLine("[SteamAPI] Warning: Could not find sensor add method");
+                    // Log available methods for debugging
+                    Console.WriteLine("[SteamAPI] Available methods:");
+                    foreach (var method in containerType.GetMethods().Where(m => m.IsPublic))
+                    {
+                        Console.WriteLine($"[SteamAPI]   {method.Name}({string.Join(", ", method.GetParameters().Select(p => p.ParameterType.Name))})");
+                    }
+                }
                 
                 // Register container with InfoPanel
-                AddContainer(container);
+                containers.Add(container);
                 
                 // Start monitoring
                 _cancellationTokenSource = new CancellationTokenSource();
@@ -133,6 +163,45 @@ namespace InfoPanel.SteamAPI
             {
                 Console.WriteLine($"[SteamAPI] Error during plugin initialization: {ex.Message}");
                 throw;
+            }
+        }
+
+        public override TimeSpan UpdateInterval => TimeSpan.FromSeconds(_configService?.UpdateIntervalSeconds ?? 30);
+
+        public override void Update()
+        {
+            // For synchronous updates if needed
+            // Most of our work is done asynchronously in StartMonitoringAsync
+        }
+
+        public override async Task UpdateAsync(CancellationToken cancellationToken)
+        {
+            // For async updates - the monitoring service handles timing automatically
+            await Task.CompletedTask;
+        }
+
+        public override void Close()
+        {
+            try
+            {
+                // Cancel monitoring
+                _cancellationTokenSource?.Cancel();
+                
+                // Unsubscribe from events
+                if (_monitoringService != null)
+                {
+                    _monitoringService.DataUpdated -= OnDataUpdated;
+                }
+                
+                // Dispose services
+                _monitoringService?.Dispose();
+                _cancellationTokenSource?.Dispose();
+                
+                Console.WriteLine("[SteamAPI] Plugin closed successfully");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[SteamAPI] Error during close: {ex.Message}");
             }
         }
         
@@ -199,39 +268,6 @@ namespace InfoPanel.SteamAPI
             {
                 Console.WriteLine($"[SteamAPI] Error updating sensors: {ex.Message}");
                 _statusSensor.Value = "Error updating data";
-            }
-        }
-        
-        #endregion
-
-        #region Cleanup & Disposal
-        
-        public override void Dispose()
-        {
-            try
-            {
-                // Cancel monitoring
-                _cancellationTokenSource?.Cancel();
-                
-                // Unsubscribe from events
-                if (_monitoringService != null)
-                {
-                    _monitoringService.DataUpdated -= OnDataUpdated;
-                }
-                
-                // Dispose services
-                _monitoringService?.Dispose();
-                _cancellationTokenSource?.Dispose();
-                
-                Console.WriteLine("[SteamAPI] Plugin disposed successfully");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"[SteamAPI] Error during disposal: {ex.Message}");
-            }
-            finally
-            {
-                base.Dispose();
             }
         }
         
