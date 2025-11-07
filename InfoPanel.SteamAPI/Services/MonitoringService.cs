@@ -38,7 +38,7 @@ namespace InfoPanel.SteamAPI.Services
         #region Fields
         
         private readonly ConfigurationService _configService;
-        private readonly Timer _monitoringTimer;
+        private readonly System.Threading.Timer _monitoringTimer;
         private SteamApiService? _steamApiService;
         private volatile bool _isMonitoring;
         private readonly object _lockObject = new();
