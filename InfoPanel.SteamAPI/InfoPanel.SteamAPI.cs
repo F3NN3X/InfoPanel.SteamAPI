@@ -114,41 +114,21 @@ namespace InfoPanel.SteamAPI
                 _monitoringService.DataUpdated += OnDataUpdated;
                 
                 // Create sensor container
-                var container = new PluginContainer("SteamAPI");
+                var container = new PluginContainer("SteamAPI", "Steam API Data");
                 
-                // Try to discover the correct method to add sensors
-                var containerType = container.GetType();
-                var addMethod = containerType.GetMethods()
-                    .FirstOrDefault(m => m.Name.ToLower().Contains("add") && 
-                                   m.GetParameters().Length == 1 &&
-                                   m.GetParameters()[0].ParameterType.Name.Contains("Sensor"));
+                // Add Steam sensors to container using the Entries collection
+                container.Entries.Add(_playerNameSensor);
+                container.Entries.Add(_onlineStatusSensor);
+                container.Entries.Add(_steamLevelSensor);
+                container.Entries.Add(_currentGameSensor);
+                container.Entries.Add(_currentGamePlaytimeSensor);
+                container.Entries.Add(_totalGamesSensor);
+                container.Entries.Add(_totalPlaytimeSensor);
+                container.Entries.Add(_recentPlaytimeSensor);
+                container.Entries.Add(_statusSensor);
+                container.Entries.Add(_detailsSensor);
                 
-                if (addMethod != null)
-                {
-                    Console.WriteLine($"[SteamAPI] Using method: {addMethod.Name}");
-                    
-                    // Add Steam sensors to container using reflection
-                    addMethod.Invoke(container, new object[] { _playerNameSensor });
-                    addMethod.Invoke(container, new object[] { _onlineStatusSensor });
-                    addMethod.Invoke(container, new object[] { _steamLevelSensor });
-                    addMethod.Invoke(container, new object[] { _currentGameSensor });
-                    addMethod.Invoke(container, new object[] { _currentGamePlaytimeSensor });
-                    addMethod.Invoke(container, new object[] { _totalGamesSensor });
-                    addMethod.Invoke(container, new object[] { _totalPlaytimeSensor });
-                    addMethod.Invoke(container, new object[] { _recentPlaytimeSensor });
-                    addMethod.Invoke(container, new object[] { _statusSensor });
-                    addMethod.Invoke(container, new object[] { _detailsSensor });
-                }
-                else
-                {
-                    Console.WriteLine("[SteamAPI] Warning: Could not find sensor add method");
-                    // Log available methods for debugging
-                    Console.WriteLine("[SteamAPI] Available methods:");
-                    foreach (var method in containerType.GetMethods().Where(m => m.IsPublic))
-                    {
-                        Console.WriteLine($"[SteamAPI]   {method.Name}({string.Join(", ", method.GetParameters().Select(p => p.ParameterType.Name))})");
-                    }
-                }
+                Console.WriteLine($"[SteamAPI] Added {container.Entries.Count} sensors to container '{container.Name}'");
                 
                 // Register container with InfoPanel
                 containers.Add(container);
