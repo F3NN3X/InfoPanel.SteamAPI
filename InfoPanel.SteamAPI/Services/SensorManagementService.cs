@@ -294,6 +294,193 @@ namespace InfoPanel.SteamAPI.Services
             }
         }
         
+        /// <summary>
+        /// Updates Phase 2 Enhanced Gaming sensors with new data in a thread-safe manner
+        /// </summary>
+        public void UpdateEnhancedGamingSensors(
+            // Recent Gaming Activity sensors
+            PluginSensor recentGamesCountSensor,
+            PluginText mostPlayedRecentSensor,
+            PluginSensor recentSessionsSensor,
+            // Session Time Tracking sensors
+            PluginSensor currentSessionTimeSensor,
+            PluginText sessionStartTimeSensor,
+            PluginSensor averageSessionTimeSensor,
+            // Friends Online Monitoring sensors
+            PluginSensor friendsOnlineSensor,
+            PluginSensor friendsInGameSensor,
+            PluginText friendsCurrentGameSensor,
+            // Achievement Tracking sensors
+            PluginSensor currentGameAchievementsSensor,
+            PluginSensor currentGameAchievementsUnlockedSensor,
+            PluginSensor currentGameAchievementsTotalSensor,
+            PluginText latestAchievementSensor,
+            SteamData data)
+        {
+            if (data == null) return;
+            
+            lock (_sensorLock)
+            {
+                try
+                {
+                    if (data.HasError)
+                    {
+                        SetEnhancedGamingSensorsErrorState(
+                            recentGamesCountSensor, mostPlayedRecentSensor, recentSessionsSensor,
+                            currentSessionTimeSensor, sessionStartTimeSensor, averageSessionTimeSensor,
+                            friendsOnlineSensor, friendsInGameSensor, friendsCurrentGameSensor,
+                            currentGameAchievementsSensor, currentGameAchievementsUnlockedSensor,
+                            currentGameAchievementsTotalSensor, latestAchievementSensor,
+                            data.ErrorMessage ?? "Unknown error");
+                        return;
+                    }
+                    
+                    // Update recent gaming activity
+                    UpdateRecentGamingActivitySensors(recentGamesCountSensor, mostPlayedRecentSensor, recentSessionsSensor, data);
+                    
+                    // Update session time tracking
+                    UpdateSessionTimeSensors(currentSessionTimeSensor, sessionStartTimeSensor, averageSessionTimeSensor, data);
+                    
+                    // Update friends monitoring
+                    UpdateFriendsMonitoringSensors(friendsOnlineSensor, friendsInGameSensor, friendsCurrentGameSensor, data);
+                    
+                    // Update achievement tracking
+                    UpdateAchievementTrackingSensors(currentGameAchievementsSensor, currentGameAchievementsUnlockedSensor,
+                        currentGameAchievementsTotalSensor, latestAchievementSensor, data);
+                    
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[SensorManagementService] Error updating Enhanced Gaming sensors: {ex.Message}");
+                    
+                    // Set error state for all Phase 2 sensors
+                    SetEnhancedGamingSensorsErrorState(
+                        recentGamesCountSensor, mostPlayedRecentSensor, recentSessionsSensor,
+                        currentSessionTimeSensor, sessionStartTimeSensor, averageSessionTimeSensor,
+                        friendsOnlineSensor, friendsInGameSensor, friendsCurrentGameSensor,
+                        currentGameAchievementsSensor, currentGameAchievementsUnlockedSensor,
+                        currentGameAchievementsTotalSensor, latestAchievementSensor,
+                        ex.Message);
+                }
+            }
+        }
+        
+        /// <summary>
+        /// Updates recent gaming activity sensors
+        /// </summary>
+        private void UpdateRecentGamingActivitySensors(
+            PluginSensor recentGamesCountSensor,
+            PluginText mostPlayedRecentSensor,
+            PluginSensor recentSessionsSensor,
+            SteamData data)
+        {
+            recentGamesCountSensor.Value = (float)data.RecentGamesCount;
+            mostPlayedRecentSensor.Value = data.MostPlayedRecentGame ?? "None";
+            recentSessionsSensor.Value = (float)data.RecentGameSessions;
+        }
+        
+        /// <summary>
+        /// Updates session time tracking sensors
+        /// </summary>
+        private void UpdateSessionTimeSensors(
+            PluginSensor currentSessionTimeSensor,
+            PluginText sessionStartTimeSensor,
+            PluginSensor averageSessionTimeSensor,
+            SteamData data)
+        {
+            currentSessionTimeSensor.Value = (float)data.CurrentSessionTimeMinutes;
+            sessionStartTimeSensor.Value = data.SessionStartTime?.ToString("HH:mm") ?? "Not in game";
+            averageSessionTimeSensor.Value = (float)Math.Round(data.AverageSessionTimeMinutes, 1);
+        }
+        
+        /// <summary>
+        /// Updates friends monitoring sensors
+        /// </summary>
+        private void UpdateFriendsMonitoringSensors(
+            PluginSensor friendsOnlineSensor,
+            PluginSensor friendsInGameSensor,
+            PluginText friendsCurrentGameSensor,
+            SteamData data)
+        {
+            friendsOnlineSensor.Value = (float)data.FriendsOnline;
+            friendsInGameSensor.Value = (float)data.FriendsInGame;
+            friendsCurrentGameSensor.Value = data.FriendsPopularGame ?? "None";
+        }
+        
+        /// <summary>
+        /// Updates achievement tracking sensors
+        /// </summary>
+        private void UpdateAchievementTrackingSensors(
+            PluginSensor currentGameAchievementsSensor,
+            PluginSensor currentGameAchievementsUnlockedSensor,
+            PluginSensor currentGameAchievementsTotalSensor,
+            PluginText latestAchievementSensor,
+            SteamData data)
+        {
+            currentGameAchievementsSensor.Value = (float)Math.Round(data.CurrentGameAchievementPercentage, 1);
+            currentGameAchievementsUnlockedSensor.Value = (float)data.CurrentGameAchievementsUnlocked;
+            currentGameAchievementsTotalSensor.Value = (float)data.CurrentGameAchievementsTotal;
+            
+            if (data.LatestAchievementDate.HasValue && data.LatestAchievementDate.Value > DateTime.Now.AddDays(-7))
+            {
+                latestAchievementSensor.Value = data.LatestAchievementName ?? "None";
+            }
+            else
+            {
+                latestAchievementSensor.Value = "None recent";
+            }
+        }
+        
+        /// <summary>
+        /// Sets error state for all Phase 2 Enhanced Gaming sensors
+        /// </summary>
+        private void SetEnhancedGamingSensorsErrorState(
+            PluginSensor recentGamesCountSensor,
+            PluginText mostPlayedRecentSensor,
+            PluginSensor recentSessionsSensor,
+            PluginSensor currentSessionTimeSensor,
+            PluginText sessionStartTimeSensor,
+            PluginSensor averageSessionTimeSensor,
+            PluginSensor friendsOnlineSensor,
+            PluginSensor friendsInGameSensor,
+            PluginText friendsCurrentGameSensor,
+            PluginSensor currentGameAchievementsSensor,
+            PluginSensor currentGameAchievementsUnlockedSensor,
+            PluginSensor currentGameAchievementsTotalSensor,
+            PluginText latestAchievementSensor,
+            string errorMessage)
+        {
+            try
+            {
+                // Set error state for recent gaming activity
+                recentGamesCountSensor.Value = 0;
+                mostPlayedRecentSensor.Value = $"Error: {errorMessage}";
+                recentSessionsSensor.Value = 0;
+                
+                // Set error state for session time tracking
+                currentSessionTimeSensor.Value = 0;
+                sessionStartTimeSensor.Value = "Error";
+                averageSessionTimeSensor.Value = 0;
+                
+                // Set error state for friends monitoring
+                friendsOnlineSensor.Value = 0;
+                friendsInGameSensor.Value = 0;
+                friendsCurrentGameSensor.Value = "Error";
+                
+                // Set error state for achievement tracking
+                currentGameAchievementsSensor.Value = 0;
+                currentGameAchievementsUnlockedSensor.Value = 0;
+                currentGameAchievementsTotalSensor.Value = 0;
+                latestAchievementSensor.Value = "Error";
+                
+                Console.WriteLine($"[SensorManagementService] Enhanced Gaming sensors set to error state: {errorMessage}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[SensorManagementService] Error setting Enhanced Gaming sensors error state: {ex.Message}");
+            }
+        }
+        
         #endregion
     }
 }

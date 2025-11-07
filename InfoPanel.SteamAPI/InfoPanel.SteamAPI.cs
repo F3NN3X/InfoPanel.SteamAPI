@@ -57,6 +57,28 @@ namespace InfoPanel.SteamAPI
         private readonly PluginText _statusSensor = new("status", "Plugin Status", "Initializing...");
         private readonly PluginText _detailsSensor = new("details", "Details", "Loading Steam data...");
         
+        // Phase 2: Enhanced Gaming Metrics
+        // Recent Gaming Activity (2-week stats)
+        private readonly PluginSensor _recentGamesCountSensor = new("recent-games-count", "Games Played (2w)", 0, "games");
+        private readonly PluginText _mostPlayedRecentSensor = new("most-played-recent", "Top Recent Game", "None");
+        private readonly PluginSensor _recentSessionsSensor = new("recent-sessions", "Gaming Sessions (2w)", 0, "sessions");
+        
+        // Session Time Tracking
+        private readonly PluginSensor _currentSessionTimeSensor = new("current-session-time", "Current Session", 0, "min");
+        private readonly PluginText _sessionStartTimeSensor = new("session-start-time", "Session Started", "Not in game");
+        private readonly PluginSensor _averageSessionTimeSensor = new("avg-session-time", "Avg Session Length", 0, "min");
+        
+        // Friends Online Monitoring  
+        private readonly PluginSensor _friendsOnlineSensor = new("friends-online", "Friends Online", 0, "friends");
+        private readonly PluginSensor _friendsInGameSensor = new("friends-in-game", "Friends Gaming", 0, "friends");
+        private readonly PluginText _friendsCurrentGameSensor = new("friends-current-game", "Popular Game", "None");
+        
+        // Achievement Tracking (for current game)
+        private readonly PluginSensor _currentGameAchievementsSensor = new("current-achievements", "Achievements", 0, "%");
+        private readonly PluginSensor _currentGameAchievementsUnlockedSensor = new("achievements-unlocked", "Unlocked", 0, "");
+        private readonly PluginSensor _currentGameAchievementsTotalSensor = new("achievements-total", "Total", 0, "");
+        private readonly PluginText _latestAchievementSensor = new("latest-achievement", "Latest Achievement", "None");
+        
         #endregion
 
         #region Services
@@ -130,14 +152,43 @@ namespace InfoPanel.SteamAPI
                 
                 Console.WriteLine($"[SteamAPI] Added {container.Entries.Count} sensors to container '{container.Name}'");
                 
-                // Register container with InfoPanel
+                // Register basic container with InfoPanel
                 containers.Add(container);
+                
+                // Create Phase 2: Enhanced Gaming Data container
+                var enhancedContainer = new PluginContainer("SteamAPI-Enhanced", "Enhanced Gaming Data");
+                
+                // Add Phase 2 sensors: Recent Gaming Activity
+                enhancedContainer.Entries.Add(_recentGamesCountSensor);
+                enhancedContainer.Entries.Add(_mostPlayedRecentSensor);
+                enhancedContainer.Entries.Add(_recentSessionsSensor);
+                
+                // Add Phase 2 sensors: Session Time Tracking
+                enhancedContainer.Entries.Add(_currentSessionTimeSensor);
+                enhancedContainer.Entries.Add(_sessionStartTimeSensor);
+                enhancedContainer.Entries.Add(_averageSessionTimeSensor);
+                
+                // Add Phase 2 sensors: Friends Online Monitoring
+                enhancedContainer.Entries.Add(_friendsOnlineSensor);
+                enhancedContainer.Entries.Add(_friendsInGameSensor);
+                enhancedContainer.Entries.Add(_friendsCurrentGameSensor);
+                
+                // Add Phase 2 sensors: Achievement Tracking
+                enhancedContainer.Entries.Add(_currentGameAchievementsSensor);
+                enhancedContainer.Entries.Add(_currentGameAchievementsUnlockedSensor);
+                enhancedContainer.Entries.Add(_currentGameAchievementsTotalSensor);
+                enhancedContainer.Entries.Add(_latestAchievementSensor);
+                
+                Console.WriteLine($"[SteamAPI] Added {enhancedContainer.Entries.Count} sensors to container '{enhancedContainer.Name}'");
+                
+                // Register enhanced container with InfoPanel
+                containers.Add(enhancedContainer);
                 
                 // Start monitoring
                 _cancellationTokenSource = new CancellationTokenSource();
                 _ = StartMonitoringAsync(_cancellationTokenSource.Token);
                 
-                Console.WriteLine("[SteamAPI] Steam Data plugin loaded successfully");
+                Console.WriteLine("[SteamAPI] Steam Data plugin loaded successfully - Basic + Enhanced Gaming containers created");
             }
             catch (Exception ex)
             {
@@ -239,6 +290,28 @@ namespace InfoPanel.SteamAPI
                         _recentPlaytimeSensor,
                         _statusSensor,
                         _detailsSensor,
+                        e.Data
+                    );
+                    
+                    // Update Phase 2: Enhanced Gaming sensors
+                    _sensorService.UpdateEnhancedGamingSensors(
+                        // Recent Gaming Activity
+                        _recentGamesCountSensor,
+                        _mostPlayedRecentSensor,
+                        _recentSessionsSensor,
+                        // Session Time Tracking
+                        _currentSessionTimeSensor,
+                        _sessionStartTimeSensor,
+                        _averageSessionTimeSensor,
+                        // Friends Online Monitoring
+                        _friendsOnlineSensor,
+                        _friendsInGameSensor,
+                        _friendsCurrentGameSensor,
+                        // Achievement Tracking
+                        _currentGameAchievementsSensor,
+                        _currentGameAchievementsUnlockedSensor,
+                        _currentGameAchievementsTotalSensor,
+                        _latestAchievementSensor,
                         e.Data
                     );
                 }

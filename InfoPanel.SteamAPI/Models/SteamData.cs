@@ -153,6 +153,79 @@ namespace InfoPanel.SteamAPI.Models
         
         #endregion
 
+        #region Phase 2: Enhanced Gaming Metrics
+        
+        // Recent Gaming Activity (2-week stats)
+        /// <summary>
+        /// Most played game in recent period
+        /// </summary>
+        public string? MostPlayedRecentGame { get; set; }
+        
+        /// <summary>
+        /// Number of gaming sessions in last 2 weeks
+        /// </summary>
+        public int RecentGameSessions { get; set; }
+        
+        // Session Time Tracking
+        /// <summary>
+        /// Current session time in minutes
+        /// </summary>
+        public int CurrentSessionTimeMinutes { get; set; }
+        
+        /// <summary>
+        /// When the current gaming session started
+        /// </summary>
+        public DateTime? SessionStartTime { get; set; }
+        
+        /// <summary>
+        /// Average session length in minutes
+        /// </summary>
+        public double AverageSessionTimeMinutes { get; set; }
+        
+        // Friends Online Monitoring
+        /// <summary>
+        /// Number of friends currently online
+        /// </summary>
+        public int FriendsOnline { get; set; }
+        
+        /// <summary>
+        /// Number of friends currently in a game
+        /// </summary>
+        public int FriendsInGame { get; set; }
+        
+        /// <summary>
+        /// Most popular game among online friends
+        /// </summary>
+        public string? FriendsPopularGame { get; set; }
+        
+        // Achievement Tracking (for current game)
+        /// <summary>
+        /// Achievement completion percentage for current game
+        /// </summary>
+        public double CurrentGameAchievementPercentage { get; set; }
+        
+        /// <summary>
+        /// Number of achievements unlocked in current game
+        /// </summary>
+        public int CurrentGameAchievementsUnlocked { get; set; }
+        
+        /// <summary>
+        /// Total achievements available in current game
+        /// </summary>
+        public int CurrentGameAchievementsTotal { get; set; }
+        
+        /// <summary>
+        /// Name of the most recently unlocked achievement
+        /// </summary>
+        public string? LatestAchievementName { get; set; }
+        
+        /// <summary>
+        /// Date when the latest achievement was unlocked
+        /// </summary>
+        public DateTime? LatestAchievementDate { get; set; }
+        
+        #endregion
+
         #region Constructors
         
         /// <summary>
