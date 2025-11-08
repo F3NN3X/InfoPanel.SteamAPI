@@ -1,11 +1,16 @@
 using System;
+using System.Collections.Concurrent;
 using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace InfoPanel.SteamAPI.Services
 {
     /// <summary>
-    /// Provides file-based logging functionality with user-controllable debug output
-    /// Implements standard logging patterns with rotation and multiple log levels
+    /// Advanced file-based logging service with batching, throttling, and log rotation
+    /// Based on InfoPanel.RTSS implementation
     /// </summary>
     public class FileLoggingService : IDisposable
     {
@@ -14,8 +19,38 @@ namespace InfoPanel.SteamAPI.Services
         private readonly ConfigurationService _configService;
         private readonly string _logFilePath;
         private readonly object _logLock = new();
+        private readonly ConcurrentQueue<LogEntry> _logBuffer = new();
+        private readonly System.Threading.Timer _flushTimer;
+        private readonly Dictionary<string, DateTime> _lastLogTimes = new();
+        private readonly Dictionary<string, int> _suppressionCounts = new();
+        private readonly TimeSpan _flushInterval = TimeSpan.FromMilliseconds(500);
+        
         private StreamWriter? _logWriter;
         private bool _disposed = false;
+        private const int MAX_BUFFER_SIZE = 20;
+        private const long MAX_LOG_SIZE_BYTES = 5 * 1024 * 1024; // 5MB
+        private const int MAX_BACKUP_FILES = 3;
+        private const int DEFAULT_BURST_ALLOWANCE = 5;
+        
+        #endregion
+
+        #region LogEntry Class
+        
+        private class LogEntry
+        {
+            public DateTime Timestamp { get; set; }
+            public LogLevel Level { get; set; }
+            public string Message { get; set; } = string.Empty;
+            public string Category { get; set; } = "DEFAULT";
+        }
+        
+        public enum LogLevel
+        {
+            Debug = 0,
+            Info = 1,
+            Warning = 2,
+            Error = 3
+        }
         
         #endregion
 
@@ -25,9 +60,15 @@ namespace InfoPanel.SteamAPI.Services
         {
             _configService = configService ?? throw new ArgumentNullException(nameof(configService));
             
-            // Create log file path
-            var logDirectory = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location) ?? ".";
-            _logFilePath = Path.Combine(logDirectory, "SteamAPI-debug.log");
+            // Create log file path in plugin directory
+            var pluginDirectory = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location) ?? ".";
+            _logFilePath = Path.Combine(pluginDirectory, "InfoPanel.SteamAPI-debug.log");
+            
+            Console.WriteLine($"[FileLoggingService] Debug logging enabled: {_configService.IsDebugLoggingEnabled}");
+            Console.WriteLine($"[FileLoggingService] Log file path: {_logFilePath}");
+            
+            // Initialize timer for batched writing
+            _flushTimer = new System.Threading.Timer(FlushLogBuffer, null, _flushInterval, _flushInterval);
             
             InitializeLogging();
         }
@@ -36,318 +77,210 @@ namespace InfoPanel.SteamAPI.Services
 
         #region Initialization
         
-        /// <summary>
-        /// Initializes the logging system
-        /// </summary>
         private void InitializeLogging()
         {
             try
             {
                 if (_configService.IsDebugLoggingEnabled)
                 {
+                    // Ensure directory exists
+                    var logDirectory = Path.GetDirectoryName(_logFilePath);
+                    if (!string.IsNullOrEmpty(logDirectory) && !Directory.Exists(logDirectory))
+                    {
+                        Directory.CreateDirectory(logDirectory);
+                        Console.WriteLine($"[FileLoggingService] Created log directory: {logDirectory}");
+                    }
+                    
+                    // Check for log rotation
+                    RotateLogIfNeeded();
+                    
                     // Create or append to log file
                     _logWriter = new StreamWriter(_logFilePath, append: true);
                     _logWriter.AutoFlush = true;
                     
-                    // Log session start
-                    WriteToLog("INFO", "=== SteamAPI Debug Session Started ===");
-                    WriteToLog("INFO", $"Plugin Version: 1.0.0");
-                    WriteToLog("INFO", $"Log Level: {_configService.DebugLogLevel}");
+                    Console.WriteLine($"[FileLoggingService] Log file opened successfully");
+                    
+                    // Add startup entries to buffer
+                    AddLogEntry(LogLevel.Info, "=== SteamAPI Debug Session Started ===");
+                    AddLogEntry(LogLevel.Info, $"Plugin Version: 1.0.0");
+                    AddLogEntry(LogLevel.Info, $"Log Level: {_configService.DebugLogLevel}");
+                    AddLogEntry(LogLevel.Info, $"Log File: {_logFilePath}");
+                    
+                    // Force immediate flush for startup messages
+                    FlushLogBuffer(null);
+                }
+                else
+                {
+                    Console.WriteLine($"[FileLoggingService] Debug logging is disabled");
                 }
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"[FileLoggingService] Error initializing logging: {ex.Message}");
+                Console.WriteLine($"[FileLoggingService] Stack trace: {ex.StackTrace}");
+            }
+        }
+        
+        private void RotateLogIfNeeded()
+        {
+            try
+            {
+                if (File.Exists(_logFilePath))
+                {
+                    var fileInfo = new FileInfo(_logFilePath);
+                    if (fileInfo.Length > MAX_LOG_SIZE_BYTES)
+                    {
+                        // Rotate existing backups
+                        for (int i = MAX_BACKUP_FILES; i > 0; i--)
+                        {
+                            string oldBackup = $"{_logFilePath}.{i}";
+                            string newBackup = $"{_logFilePath}.{i + 1}";
+                            
+                            if (File.Exists(oldBackup))
+                            {
+                                if (i == MAX_BACKUP_FILES)
+                                    File.Delete(oldBackup); // Delete oldest
+                                else
+                                    File.Move(oldBackup, newBackup);
+                            }
+                        }
+                        
+                        // Move current log to backup
+                        File.Move(_logFilePath, $"{_logFilePath}.1");
+                        Console.WriteLine($"[FileLoggingService] Log rotated - size was {fileInfo.Length / 1024}KB");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[FileLoggingService] Error rotating log: {ex.Message}");
             }
         }
         
         #endregion
 
-        #region Logging Methods
+        #region Core Logging Methods
         
-        /// <summary>
-        /// Logs an informational message
-        /// </summary>
-        public void LogInfo(string message)
-        {
-            LogMessage("INFO", message);
-        }
-        
-        /// <summary>
-        /// Logs a warning message
-        /// </summary>
-        public void LogWarning(string message)
-        {
-            LogMessage("WARN", message);
-        }
-        
-        /// <summary>
-        /// Logs an error message
-        /// </summary>
-        public void LogError(string message)
-        {
-            LogMessage("ERROR", message);
-        }
-        
-        /// <summary>
-        /// Logs an error with exception details
-        /// </summary>
-        public void LogError(string message, Exception exception)
-        {
-            LogMessage("ERROR", $"{message}: {exception.Message}");
-            LogMessage("ERROR", $"Stack Trace: {exception.StackTrace}");
-        }
-        
-        /// <summary>
-        /// Logs a debug message (only if debug logging is enabled)
-        /// </summary>
-        public void LogDebug(string message)
-        {
-            if (ShouldLogLevel("DEBUG"))
-            {
-                LogMessage("DEBUG", message);
-            }
-        }
-        
-        /// <summary>
-        /// Logs a verbose message (only if verbose logging is enabled)
-        /// </summary>
-        public void LogVerbose(string message)
-        {
-            if (ShouldLogLevel("VERBOSE"))
-            {
-                LogMessage("VERBOSE", message);
-            }
-        }
-        
-        /// <summary>
-        /// Logs a message with specified level
-        /// </summary>
-        private void LogMessage(string level, string message)
+        private void AddLogEntry(LogLevel level, string message, string category = "DEFAULT")
         {
             if (!_configService.IsDebugLoggingEnabled || _disposed)
                 return;
+                
+            var entry = new LogEntry
+            {
+                Timestamp = DateTime.Now,
+                Level = level,
+                Message = message,
+                Category = category
+            };
             
-            try
+            _logBuffer.Enqueue(entry);
+            
+            // Also write to console for immediate feedback
+            Console.WriteLine($"[SteamAPI] [{entry.Timestamp:HH:mm:ss.fff}] [{level}] {message}");
+            
+            // Flush immediately if buffer is too large or it's an error
+            if (_logBuffer.Count >= MAX_BUFFER_SIZE || level == LogLevel.Error)
             {
-                WriteToLog(level, message);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"[FileLoggingService] Error writing log: {ex.Message}");
+                FlushLogBuffer(null);
             }
         }
         
-        /// <summary>
-        /// Writes formatted log entry to file
-        /// </summary>
-        private void WriteToLog(string level, string message)
+        private void FlushLogBuffer(object? state)
         {
-            if (_logWriter == null) return;
-            
+            if (_disposed || _logWriter == null)
+                return;
+                
             lock (_logLock)
             {
                 try
                 {
-                    var timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff");
-                    var logEntry = $"[{timestamp}] [{level}] {message}";
+                    var entriesToWrite = new List<LogEntry>();
                     
-                    _logWriter.WriteLine(logEntry);
+                    // Dequeue all pending entries
+                    while (_logBuffer.TryDequeue(out var entry))
+                    {
+                        entriesToWrite.Add(entry);
+                    }
                     
-                    // Also write to console for immediate feedback
-                    Console.WriteLine($"[SteamAPI] {logEntry}");
+                    if (entriesToWrite.Count == 0)
+                        return;
+                    
+                    // Write all entries to file
+                    foreach (var entry in entriesToWrite)
+                    {
+                        var timestamp = entry.Timestamp.ToString("yyyy-MM-dd HH:mm:ss.fff");
+                        var logLine = $"[{timestamp}] [SteamAPI] [{entry.Level}] {entry.Message}";
+                        _logWriter.WriteLine(logLine);
+                    }
+                    
+                    _logWriter.Flush();
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"[FileLoggingService] Error writing to log file: {ex.Message}");
+                    Console.WriteLine($"[FileLoggingService] Error flushing log buffer: {ex.Message}");
                 }
             }
         }
         
         #endregion
 
-        #region Log Level Control
+        #region Public Logging Methods
         
-        /// <summary>
-        /// Determines if a message should be logged based on current log level
-        /// </summary>
-        private bool ShouldLogLevel(string messageLevel)
+        public void LogInfo(string message)
         {
-            if (!_configService.IsDebugLoggingEnabled)
-                return false;
-            
-            var configuredLevel = _configService.DebugLogLevel.ToUpperInvariant();
-            
-            // Log level hierarchy: ERROR > WARN > INFO > DEBUG > VERBOSE
-            return configuredLevel switch
-            {
-                "ERROR" => messageLevel == "ERROR",
-                "WARN" => messageLevel is "ERROR" or "WARN",
-                "INFO" => messageLevel is "ERROR" or "WARN" or "INFO",
-                "DEBUG" => messageLevel is "ERROR" or "WARN" or "INFO" or "DEBUG",
-                "VERBOSE" => true, // Log everything
-                _ => messageLevel is "ERROR" or "WARN" or "INFO" // Default to INFO level
-            };
+            AddLogEntry(LogLevel.Info, message);
+        }
+        
+        public void LogDebug(string message)
+        {
+            AddLogEntry(LogLevel.Debug, message);
+        }
+        
+        public void LogWarning(string message)
+        {
+            AddLogEntry(LogLevel.Warning, message);
+        }
+        
+        public void LogError(string message)
+        {
+            AddLogEntry(LogLevel.Error, message);
+        }
+        
+        public void LogError(string message, Exception exception)
+        {
+            AddLogEntry(LogLevel.Error, $"{message}: {exception.Message}");
+            AddLogEntry(LogLevel.Error, $"Stack Trace: {exception.StackTrace}");
         }
         
         #endregion
 
-        #region Data Logging Helpers
-        
-        /// <summary>
-        /// Logs monitoring data for debugging
-        /// </summary>
-        public void LogMonitoringData(string dataSource, object data)
-        {
-            if (ShouldLogLevel("DEBUG"))
-            {
-                LogMessage("DEBUG", $"[{dataSource}] Data: {data}");
-            }
-        }
-        
-        /// <summary>
-        /// Logs performance metrics
-        /// </summary>
-        public void LogPerformanceMetric(string metricName, double value, string unit = "")
-        {
-            if (ShouldLogLevel("DEBUG"))
-            {
-                var unitText = string.IsNullOrEmpty(unit) ? "" : $" {unit}";
-                LogMessage("DEBUG", $"[PERF] {metricName}: {value:F2}{unitText}");
-            }
-        }
-        
-        /// <summary>
-        /// Logs sensor update information
-        /// </summary>
-        public void LogSensorUpdate(string sensorName, object value)
-        {
-            if (ShouldLogLevel("VERBOSE"))
-            {
-                LogMessage("VERBOSE", $"[SENSOR] {sensorName} = {value}");
-            }
-        }
-        
-        /// <summary>
-        /// Logs configuration changes
-        /// </summary>
-        public void LogConfigChange(string setting, string oldValue, string newValue)
-        {
-            LogMessage("INFO", $"[CONFIG] {setting}: '{oldValue}' -> '{newValue}'");
-        }
-        
-        /// <summary>
-        /// Logs connection events
-        /// </summary>
-        public void LogConnectionEvent(string eventType, string details = "")
-        {
-            var message = string.IsNullOrEmpty(details) ? 
-                $"[CONNECTION] {eventType}" : 
-                $"[CONNECTION] {eventType}: {details}";
-            LogMessage("INFO", message);
-        }
-        
-        #endregion
-
-        #region TODO: Add Custom Logging Methods
-        
-        // TODO: Add logging methods specific to your plugin's needs
-        // Examples:
-        
-        // /// <summary>
-        // /// Logs API call information
-        // /// </summary>
-        // public void LogApiCall(string endpoint, int statusCode, TimeSpan duration)
-        // {
-        //     LogMessage("DEBUG", $"[API] {endpoint} -> {statusCode} ({duration.TotalMilliseconds:F0}ms)");
-        // }
-        
-        // /// <summary>
-        // /// Logs database operation information
-        // /// </summary>
-        // public void LogDatabaseOperation(string operation, string table, TimeSpan duration)
-        // {
-        //     LogMessage("DEBUG", $"[DB] {operation} on {table} ({duration.TotalMilliseconds:F0}ms)");
-        // }
-        
-        // /// <summary>
-        // /// Logs file operation information
-        // /// </summary>
-        // public void LogFileOperation(string operation, string filePath, long fileSize = -1)
-        // {
-        //     var sizeText = fileSize >= 0 ? $" ({fileSize} bytes)" : "";
-        //     LogMessage("DEBUG", $"[FILE] {operation}: {filePath}{sizeText}");
-        // }
-        
-        // /// <summary>
-        // /// Logs network operation information
-        // /// </summary>
-        // public void LogNetworkOperation(string operation, string address, TimeSpan duration)
-        // {
-        //     LogMessage("DEBUG", $"[NET] {operation} to {address} ({duration.TotalMilliseconds:F0}ms)");
-        // }
-        
-        #endregion
-
-        #region Cleanup
-        
-        /// <summary>
-        /// Rotates log file if it gets too large
-        /// </summary>
-        public void RotateLogIfNeeded()
-        {
-            try
-            {
-                if (!File.Exists(_logFilePath))
-                    return;
-                
-                var fileInfo = new FileInfo(_logFilePath);
-                const long maxSizeBytes = 10 * 1024 * 1024; // 10 MB
-                
-                if (fileInfo.Length > maxSizeBytes)
-                {
-                    // Close current writer
-                    _logWriter?.Close();
-                    _logWriter?.Dispose();
-                    
-                    // Rename old log file
-                    var backupPath = _logFilePath.Replace(".log", $"-backup-{DateTime.Now:yyyyMMdd-HHmmss}.log");
-                    File.Move(_logFilePath, backupPath);
-                    
-                    // Reinitialize logging
-                    InitializeLogging();
-                    
-                    LogInfo($"Log file rotated. Backup created: {Path.GetFileName(backupPath)}");
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"[FileLoggingService] Error rotating log file: {ex.Message}");
-            }
-        }
-        
-        #endregion
-
-        #region IDisposable Implementation
+        #region Disposal
         
         public void Dispose()
         {
             if (_disposed)
                 return;
-            
+                
             try
             {
-                if (_logWriter != null)
-                {
-                    WriteToLog("INFO", "=== SteamAPI Debug Session Ended ===");
-                    _logWriter.Close();
-                    _logWriter.Dispose();
-                    _logWriter = null;
-                }
+                AddLogEntry(LogLevel.Info, "SteamAPI logging service disposing...");
+                
+                // Final flush
+                FlushLogBuffer(null);
+                
+                // Stop timer
+                _flushTimer?.Dispose();
+                
+                // Close writer
+                _logWriter?.Close();
+                _logWriter?.Dispose();
+                
+                Console.WriteLine("[FileLoggingService] Disposed successfully");
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[FileLoggingService] Error disposing: {ex.Message}");
+                Console.WriteLine($"[FileLoggingService] Error during disposal: {ex.Message}");
             }
             finally
             {

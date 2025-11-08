@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace InfoPanel.SteamAPI.Models
 {
@@ -166,6 +167,11 @@ namespace InfoPanel.SteamAPI.Models
         /// </summary>
         public int RecentGameSessions { get; set; }
         
+        /// <summary>
+        /// List of recently played games with details
+        /// </summary>
+        public List<InfoPanel.SteamAPI.Services.RecentlyPlayedGame>? RecentGames { get; set; }
+        
         // Session Time Tracking
         /// <summary>
         /// Current session time in minutes
@@ -223,6 +229,202 @@ namespace InfoPanel.SteamAPI.Models
         /// Date when the latest achievement was unlocked
         /// </summary>
         public DateTime? LatestAchievementDate { get; set; }
+        
+        #endregion
+
+        #region Phase 3: Advanced Features
+        
+        // Detailed Game-Specific Statistics
+        /// <summary>
+        /// List of monitored games with detailed statistics
+        /// </summary>
+        public List<MonitoredGameStats>? MonitoredGamesStats { get; set; }
+        
+        /// <summary>
+        /// Primary monitored game's detailed statistics (current game)
+        /// </summary>
+        public string? PrimaryGameStats { get; set; }
+        
+        /// <summary>
+        /// Secondary monitored game's detailed statistics
+        /// </summary>
+        public string? SecondaryGameStats { get; set; }
+        
+        /// <summary>
+        /// Tertiary monitored game's detailed statistics
+        /// </summary>
+        public string? TertiaryGameStats { get; set; }
+        
+        // Multiple Game Monitoring
+        /// <summary>
+        /// Number of games currently being monitored
+        /// </summary>
+        public int MonitoredGamesCount { get; set; }
+        
+        /// <summary>
+        /// Total playtime across all monitored games
+        /// </summary>
+        public double MonitoredGamesTotalHours { get; set; }
+        
+        /// <summary>
+        /// Average rating of monitored games
+        /// </summary>
+        public double MonitoredGamesAverageRating { get; set; }
+        
+        // Achievement Completion Tracking
+        /// <summary>
+        /// Overall achievement completion percentage across all games
+        /// </summary>
+        public double OverallAchievementCompletion { get; set; }
+        
+        /// <summary>
+        /// Number of games with 100% achievement completion
+        /// </summary>
+        public int PerfectGamesCount { get; set; }
+        
+        /// <summary>
+        /// Total achievements unlocked across all games
+        /// </summary>
+        public int TotalAchievementsUnlocked { get; set; }
+        
+        /// <summary>
+        /// Total achievements available across all owned games
+        /// </summary>
+        public int TotalAchievementsAvailable { get; set; }
+        
+        /// <summary>
+        /// Achievement completion rank (estimated percentile)
+        /// </summary>
+        public double AchievementCompletionRank { get; set; }
+        
+        // News and Update Monitoring
+        /// <summary>
+        /// Latest Steam news headline for monitored games
+        /// </summary>
+        public string? LatestGameNews { get; set; }
+        
+        /// <summary>
+        /// Date of the latest news item
+        /// </summary>
+        public DateTime? LatestNewsDate { get; set; }
+        
+        /// <summary>
+        /// Number of unread news items for monitored games
+        /// </summary>
+        public int UnreadNewsCount { get; set; }
+        
+        /// <summary>
+        /// List of recent news items for monitored games
+        /// </summary>
+        public List<SteamNewsItem>? RecentNews { get; set; }
+        
+        /// <summary>
+        /// Game with the most recent news update
+        /// </summary>
+        public string? MostActiveNewsGame { get; set; }
+        
+        #endregion
+
+        #region Phase 4: Social & Community Features
+        
+        // Friends Activity Monitoring
+        /// <summary>
+        /// List of Steam friends with their current activity
+        /// </summary>
+        public List<SteamFriend>? FriendsList { get; set; }
+        
+        /// <summary>
+        /// Total number of Steam friends
+        /// </summary>
+        public int TotalFriendsCount { get; set; }
+        
+        /// <summary>
+        /// Number of friends who have been active in the last 24 hours
+        /// </summary>
+        public int RecentlyActiveFriends { get; set; }
+        
+        /// <summary>
+        /// Average hours played by friends this week
+        /// </summary>
+        public double FriendsAverageWeeklyHours { get; set; }
+        
+        /// <summary>
+        /// Most active friend this week
+        /// </summary>
+        public string? MostActiveFriend { get; set; }
+        
+        // Popular Games in Friend Network
+        /// <summary>
+        /// List of games popular among friends with play statistics
+        /// </summary>
+        public List<FriendNetworkGame>? PopularFriendGames { get; set; }
+        
+        /// <summary>
+        /// Most trending game in friend network (biggest increase in players)
+        /// </summary>
+        public string? TrendingFriendGame { get; set; }
+        
+        /// <summary>
+        /// Percentage of friends who own the same games as you
+        /// </summary>
+        public double FriendsGameOverlapPercentage { get; set; }
+        
+        /// <summary>
+        /// Game with highest ownership among your friends
+        /// </summary>
+        public string? MostOwnedFriendGame { get; set; }
+        
+        // Community Badge Tracking
+        /// <summary>
+        /// List of Steam badges and their progress
+        /// </summary>
+        public List<SteamBadge>? SteamBadges { get; set; }
+        
+        /// <summary>
+        /// Total number of badges earned
+        /// </summary>
+        public int TotalBadgesEarned { get; set; }
+        
+        /// <summary>
+        /// Current badge XP total
+        /// </summary>
+        public int TotalBadgeXP { get; set; }
+        
+        /// <summary>
+        /// Next badge close to completion
+        /// </summary>
+        public string? NextBadgeProgress { get; set; }
+        
+        /// <summary>
+        /// Rarest badge owned (by community percentage)
+        /// </summary>
+        public string? RarestBadge { get; set; }
+        
+        // Global Statistics Comparison
+        /// <summary>
+        /// Your percentile ranking in total playtime compared to Steam users
+        /// </summary>
+        public double GlobalPlaytimePercentile { get; set; }
+        
+        /// <summary>
+        /// Your percentile ranking in number of games owned
+        /// </summary>
+        public double GlobalGamesOwnedPercentile { get; set; }
+        
+        /// <summary>
+        /// Your percentile ranking in Steam level
+        /// </summary>
+        public double GlobalSteamLevelPercentile { get; set; }
+        
+        /// <summary>
+        /// Your percentile ranking in achievement completion
+        /// </summary>
+        public double GlobalAchievementPercentile { get; set; }
+        
+        /// <summary>
+        /// Estimated Steam user category (Casual, Regular, Hardcore, Elite)
+        /// </summary>
+        public string? GlobalUserCategory { get; set; }
         
         #endregion
 
@@ -450,5 +652,275 @@ namespace InfoPanel.SteamAPI.Models
         }
         
         #endregion
+    }
+
+    /// <summary>
+    /// Represents detailed statistics for a monitored game
+    /// </summary>
+    public class MonitoredGameStats
+    {
+        /// <summary>
+        /// Steam App ID of the game
+        /// </summary>
+        public uint AppId { get; set; }
+        
+        /// <summary>
+        /// Name of the game
+        /// </summary>
+        public string? GameName { get; set; }
+        
+        /// <summary>
+        /// Total playtime in hours
+        /// </summary>
+        public double TotalHours { get; set; }
+        
+        /// <summary>
+        /// Playtime in the last 2 weeks in hours
+        /// </summary>
+        public double RecentHours { get; set; }
+        
+        /// <summary>
+        /// Achievement completion percentage
+        /// </summary>
+        public double AchievementCompletion { get; set; }
+        
+        /// <summary>
+        /// Number of achievements unlocked
+        /// </summary>
+        public int AchievementsUnlocked { get; set; }
+        
+        /// <summary>
+        /// Total number of achievements available
+        /// </summary>
+        public int AchievementsTotal { get; set; }
+        
+        /// <summary>
+        /// Game-specific statistics (JSON string or formatted text)
+        /// </summary>
+        public string? GameSpecificStats { get; set; }
+        
+        /// <summary>
+        /// Last time this game was played
+        /// </summary>
+        public DateTime? LastPlayed { get; set; }
+        
+        /// <summary>
+        /// User rating/review score if available
+        /// </summary>
+        public double? UserRating { get; set; }
+        
+        /// <summary>
+        /// Whether this game is currently being played
+        /// </summary>
+        public bool IsCurrentlyPlaying { get; set; }
+    }
+
+    /// <summary>
+    /// Represents a Steam news item for a game
+    /// </summary>
+    public class SteamNewsItem
+    {
+        /// <summary>
+        /// Steam App ID of the game this news is for
+        /// </summary>
+        public uint AppId { get; set; }
+        
+        /// <summary>
+        /// Name of the game
+        /// </summary>
+        public string? GameName { get; set; }
+        
+        /// <summary>
+        /// News item title/headline
+        /// </summary>
+        public string? Title { get; set; }
+        
+        /// <summary>
+        /// Brief content excerpt
+        /// </summary>
+        public string? Content { get; set; }
+        
+        /// <summary>
+        /// Date when the news was published
+        /// </summary>
+        public DateTime PublishDate { get; set; }
+        
+        /// <summary>
+        /// URL to the full news article
+        /// </summary>
+        public string? Url { get; set; }
+        
+        /// <summary>
+        /// Author of the news item
+        /// </summary>
+        public string? Author { get; set; }
+        
+        /// <summary>
+        /// Whether this news item has been read by the user
+        /// </summary>
+        public bool IsRead { get; set; }
+        
+        /// <summary>
+        /// Type of news (update, announcement, event, etc.)
+        /// </summary>
+        public string? NewsType { get; set; }
+    }
+
+    /// <summary>
+    /// Represents a Steam friend's information and activity
+    /// </summary>
+    public class SteamFriend
+    {
+        /// <summary>
+        /// Steam ID of the friend
+        /// </summary>
+        public string? SteamId { get; set; }
+        
+        /// <summary>
+        /// Display name of the friend
+        /// </summary>
+        public string? PersonaName { get; set; }
+        
+        /// <summary>
+        /// Friend's current online status (online, offline, away, etc.)
+        /// </summary>
+        public string? PersonaState { get; set; }
+        
+        /// <summary>
+        /// Current game being played by the friend
+        /// </summary>
+        public string? CurrentGame { get; set; }
+        
+        /// <summary>
+        /// App ID of the game currently being played
+        /// </summary>
+        public int? CurrentGameAppId { get; set; }
+        
+        /// <summary>
+        /// Last time the friend was online
+        /// </summary>
+        public DateTime? LastOnline { get; set; }
+        
+        /// <summary>
+        /// Avatar URL for the friend
+        /// </summary>
+        public string? AvatarUrl { get; set; }
+        
+        /// <summary>
+        /// Profile URL of the friend
+        /// </summary>
+        public string? ProfileUrl { get; set; }
+        
+        /// <summary>
+        /// Friendship duration in days
+        /// </summary>
+        public int? FriendSince { get; set; }
+    }
+
+    /// <summary>
+    /// Represents a popular game within the user's friend network
+    /// </summary>
+    public class FriendNetworkGame
+    {
+        /// <summary>
+        /// App ID of the game
+        /// </summary>
+        public int AppId { get; set; }
+        
+        /// <summary>
+        /// Name of the game
+        /// </summary>
+        public string? GameName { get; set; }
+        
+        /// <summary>
+        /// Number of friends currently playing this game
+        /// </summary>
+        public int PlayingFriendsCount { get; set; }
+        
+        /// <summary>
+        /// Number of friends who own this game
+        /// </summary>
+        public int OwningFriendsCount { get; set; }
+        
+        /// <summary>
+        /// List of friend names currently playing
+        /// </summary>
+        public List<string>? PlayingFriends { get; set; }
+        
+        /// <summary>
+        /// Average playtime among friends (in minutes)
+        /// </summary>
+        public double? AveragePlaytime { get; set; }
+        
+        /// <summary>
+        /// Popularity ranking within friend network
+        /// </summary>
+        public int? PopularityRank { get; set; }
+        
+        /// <summary>
+        /// Recent activity level (trending up/down/stable)
+        /// </summary>
+        public string? TrendDirection { get; set; }
+    }
+
+    /// <summary>
+    /// Represents a Steam community badge earned by the user
+    /// </summary>
+    public class SteamBadge
+    {
+        /// <summary>
+        /// Unique identifier for the badge
+        /// </summary>
+        public int BadgeId { get; set; }
+        
+        /// <summary>
+        /// Name of the badge
+        /// </summary>
+        public string? Name { get; set; }
+        
+        /// <summary>
+        /// Description of the badge
+        /// </summary>
+        public string? Description { get; set; }
+        
+        /// <summary>
+        /// Current level of the badge
+        /// </summary>
+        public int Level { get; set; }
+        
+        /// <summary>
+        /// Maximum possible level for this badge
+        /// </summary>
+        public int? MaxLevel { get; set; }
+        
+        /// <summary>
+        /// XP earned from this badge
+        /// </summary>
+        public int XP { get; set; }
+        
+        /// <summary>
+        /// Date when the badge was earned
+        /// </summary>
+        public DateTime? CompletionTime { get; set; }
+        
+        /// <summary>
+        /// App ID associated with the badge (if game-specific)
+        /// </summary>
+        public int? AppId { get; set; }
+        
+        /// <summary>
+        /// Rarity of the badge (common, uncommon, rare, etc.)
+        /// </summary>
+        public string? Rarity { get; set; }
+        
+        /// <summary>
+        /// URL to the badge icon
+        /// </summary>
+        public string? IconUrl { get; set; }
+        
+        /// <summary>
+        /// Whether this is a foil badge
+        /// </summary>
+        public bool IsFoil { get; set; }
     }
 }

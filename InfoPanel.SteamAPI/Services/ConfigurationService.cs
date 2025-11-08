@@ -276,7 +276,8 @@ namespace InfoPanel.SteamAPI.Services
         public bool GetBoolSetting(string section, string key, bool defaultValue = false)
         {
             var value = GetSetting(section, key);
-            return bool.TryParse(value, out var result) ? result : defaultValue;
+            var result = bool.TryParse(value, out var parsedResult) ? parsedResult : defaultValue;
+            return result;
         }
         
         /// <summary>
