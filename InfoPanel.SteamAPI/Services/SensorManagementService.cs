@@ -342,7 +342,6 @@ namespace InfoPanel.SteamAPI.Services
             // Friends Online Monitoring sensors
             PluginSensor friendsOnlineSensor,
             PluginSensor friendsInGameSensor,
-            PluginText friendsCurrentGameSensor,
             // Achievement Tracking sensors
             PluginSensor currentGameAchievementsSensor,
             PluginSensor currentGameAchievementsUnlockedSensor,
@@ -361,7 +360,7 @@ namespace InfoPanel.SteamAPI.Services
                         SetEnhancedGamingSensorsErrorState(
                             recentGamesCountSensor, mostPlayedRecentSensor, recentSessionsSensor,
                             currentSessionTimeSensor, sessionStartTimeSensor, averageSessionTimeSensor,
-                            friendsOnlineSensor, friendsInGameSensor, friendsCurrentGameSensor,
+                            friendsOnlineSensor, friendsInGameSensor,
                             currentGameAchievementsSensor, currentGameAchievementsUnlockedSensor,
                             currentGameAchievementsTotalSensor, latestAchievementSensor,
                             data.ErrorMessage ?? "Unknown error");
@@ -375,7 +374,7 @@ namespace InfoPanel.SteamAPI.Services
                     UpdateSessionTimeSensors(currentSessionTimeSensor, sessionStartTimeSensor, averageSessionTimeSensor, data);
                     
                     // Update friends monitoring
-                    UpdateFriendsMonitoringSensors(friendsOnlineSensor, friendsInGameSensor, friendsCurrentGameSensor, data);
+                    UpdateFriendsMonitoringSensors(friendsOnlineSensor, friendsInGameSensor, data);
                     
                     // Update achievement tracking
                     UpdateAchievementTrackingSensors(currentGameAchievementsSensor, currentGameAchievementsUnlockedSensor,
@@ -390,7 +389,7 @@ namespace InfoPanel.SteamAPI.Services
                     SetEnhancedGamingSensorsErrorState(
                         recentGamesCountSensor, mostPlayedRecentSensor, recentSessionsSensor,
                         currentSessionTimeSensor, sessionStartTimeSensor, averageSessionTimeSensor,
-                        friendsOnlineSensor, friendsInGameSensor, friendsCurrentGameSensor,
+                        friendsOnlineSensor, friendsInGameSensor,
                         currentGameAchievementsSensor, currentGameAchievementsUnlockedSensor,
                         currentGameAchievementsTotalSensor, latestAchievementSensor,
                         ex.Message);
@@ -445,7 +444,6 @@ namespace InfoPanel.SteamAPI.Services
         private void UpdateFriendsMonitoringSensors(
             PluginSensor friendsOnlineSensor,
             PluginSensor friendsInGameSensor,
-            PluginText friendsCurrentGameSensor,
             SteamData data)
         {
             friendsOnlineSensor.Value = (float)data.FriendsOnline;
@@ -453,10 +451,6 @@ namespace InfoPanel.SteamAPI.Services
             
             friendsInGameSensor.Value = (float)data.FriendsInGame;
             _logger?.LogDebug($"Friends In Game Sensor: {data.FriendsInGame}");
-            
-            var friendsPopularGame = data.FriendsPopularGame ?? "None";
-            friendsCurrentGameSensor.Value = friendsPopularGame;
-            _logger?.LogDebug($"Friends Current Game Sensor: '{friendsPopularGame}'");
         }
         
         /// <summary>
@@ -504,7 +498,6 @@ namespace InfoPanel.SteamAPI.Services
             PluginSensor averageSessionTimeSensor,
             PluginSensor friendsOnlineSensor,
             PluginSensor friendsInGameSensor,
-            PluginText friendsCurrentGameSensor,
             PluginSensor currentGameAchievementsSensor,
             PluginSensor currentGameAchievementsUnlockedSensor,
             PluginSensor currentGameAchievementsTotalSensor,
@@ -526,7 +519,6 @@ namespace InfoPanel.SteamAPI.Services
                 // Set error state for friends monitoring
                 friendsOnlineSensor.Value = 0;
                 friendsInGameSensor.Value = 0;
-                friendsCurrentGameSensor.Value = "Error";
                 
                 // Set error state for achievement tracking
                 currentGameAchievementsSensor.Value = 0;
@@ -555,7 +547,6 @@ namespace InfoPanel.SteamAPI.Services
             PluginSensor monitoredGamesTotalHoursSensor,
             // Achievement Completion Tracking sensors
             PluginSensor overallAchievementCompletionSensor,
-            PluginSensor perfectGamesCountSensor,
             PluginSensor totalAchievementsUnlockedSensor,
             PluginSensor achievementCompletionRankSensor,
             // News and Update Monitoring sensors
@@ -575,7 +566,7 @@ namespace InfoPanel.SteamAPI.Services
                         SetAdvancedFeaturesSensorsErrorState(
                             primaryGameStatsSensor, secondaryGameStatsSensor, tertiaryGameStatsSensor,
                             monitoredGamesCountSensor, monitoredGamesTotalHoursSensor,
-                            overallAchievementCompletionSensor, perfectGamesCountSensor, totalAchievementsUnlockedSensor,
+                            overallAchievementCompletionSensor, totalAchievementsUnlockedSensor,
                             achievementCompletionRankSensor, latestGameNewsSensor, unreadNewsCountSensor,
                             mostActiveNewsGameSensor, data.ErrorMessage ?? "Unknown error");
                         return;
@@ -588,7 +579,7 @@ namespace InfoPanel.SteamAPI.Services
                     UpdateMultipleGameMonitoringSensors(monitoredGamesCountSensor, monitoredGamesTotalHoursSensor, data);
                     
                     // Update achievement completion tracking
-                    UpdateAchievementCompletionTrackingSensors(overallAchievementCompletionSensor, perfectGamesCountSensor,
+                    UpdateAchievementCompletionTrackingSensors(overallAchievementCompletionSensor,
                         totalAchievementsUnlockedSensor, achievementCompletionRankSensor, data);
                     
                     // Update news and update monitoring
@@ -603,7 +594,7 @@ namespace InfoPanel.SteamAPI.Services
                     SetAdvancedFeaturesSensorsErrorState(
                         primaryGameStatsSensor, secondaryGameStatsSensor, tertiaryGameStatsSensor,
                         monitoredGamesCountSensor, monitoredGamesTotalHoursSensor,
-                        overallAchievementCompletionSensor, perfectGamesCountSensor, totalAchievementsUnlockedSensor,
+                        overallAchievementCompletionSensor, totalAchievementsUnlockedSensor,
                         achievementCompletionRankSensor, latestGameNewsSensor, unreadNewsCountSensor,
                         mostActiveNewsGameSensor, ex.Message);
                 }
@@ -654,7 +645,6 @@ namespace InfoPanel.SteamAPI.Services
         /// </summary>
         private void UpdateAchievementCompletionTrackingSensors(
             PluginSensor overallAchievementCompletionSensor,
-            PluginSensor perfectGamesCountSensor,
             PluginSensor totalAchievementsUnlockedSensor,
             PluginSensor achievementCompletionRankSensor,
             SteamData data)
@@ -662,9 +652,6 @@ namespace InfoPanel.SteamAPI.Services
             var overallCompletion = (float)Math.Round(data.OverallAchievementCompletion, 1);
             overallAchievementCompletionSensor.Value = overallCompletion;
             _logger?.LogDebug($"Overall Achievement Completion Sensor: {overallCompletion}%");
-            
-            perfectGamesCountSensor.Value = (float)data.PerfectGamesCount;
-            _logger?.LogDebug($"Perfect Games Count Sensor: {data.PerfectGamesCount} games");
             
             totalAchievementsUnlockedSensor.Value = (float)data.TotalAchievementsUnlocked;
             _logger?.LogDebug($"Total Achievements Unlocked Sensor: {data.TotalAchievementsUnlocked}");
@@ -703,7 +690,6 @@ namespace InfoPanel.SteamAPI.Services
             PluginSensor monitoredGamesCountSensor,
             PluginSensor monitoredGamesTotalHoursSensor,
             PluginSensor overallAchievementCompletionSensor,
-            PluginSensor perfectGamesCountSensor,
             PluginSensor totalAchievementsUnlockedSensor,
             PluginSensor achievementCompletionRankSensor,
             PluginText latestGameNewsSensor,
@@ -722,7 +708,6 @@ namespace InfoPanel.SteamAPI.Services
             monitoredGamesCountSensor.Value = 0f;
             monitoredGamesTotalHoursSensor.Value = 0f;
             overallAchievementCompletionSensor.Value = 0f;
-            perfectGamesCountSensor.Value = 0f;
             totalAchievementsUnlockedSensor.Value = 0f;
             achievementCompletionRankSensor.Value = 0f;
             unreadNewsCountSensor.Value = 0f;
@@ -741,15 +726,12 @@ namespace InfoPanel.SteamAPI.Services
             PluginText mostActiveFriendSensor,
             // Friend Network Games sensors
             PluginText trendingFriendGameSensor,
-            PluginSensor friendNetworkGameCountSensor,
-            PluginText topFriendGameSensor,
             // Community Badge sensors
             PluginSensor totalBadgesEarnedSensor,
             PluginSensor totalBadgeXPSensor,
             PluginText latestBadgeSensor,
             PluginSensor badgeCompletionRateSensor,
             // Global Statistics sensors
-            PluginSensor globalPlaytimePercentileSensor,
             PluginText globalUserCategorySensor,
             SteamData data)
         {
@@ -757,9 +739,9 @@ namespace InfoPanel.SteamAPI.Services
             {
                 _logger?.LogWarning("SteamData is null in UpdateSocialFeaturesSensors");
                 SetSocialFeaturesSensorsToError(totalFriendsCountSensor, recentlyActiveFriendsCountSensor, friendActivityStatusSensor,
-                    mostActiveFriendSensor, trendingFriendGameSensor, friendNetworkGameCountSensor, topFriendGameSensor,
+                    mostActiveFriendSensor, trendingFriendGameSensor,
                     totalBadgesEarnedSensor, totalBadgeXPSensor, latestBadgeSensor, badgeCompletionRateSensor,
-                    globalPlaytimePercentileSensor, globalUserCategorySensor, "No data available");
+                    globalUserCategorySensor, "No data available");
                 return;
             }
 
@@ -767,9 +749,9 @@ namespace InfoPanel.SteamAPI.Services
             {
                 _logger?.LogWarning($"SteamData has error in UpdateSocialFeaturesSensors: {data.ErrorMessage}");
                 SetSocialFeaturesSensorsToError(totalFriendsCountSensor, recentlyActiveFriendsCountSensor, friendActivityStatusSensor,
-                    mostActiveFriendSensor, trendingFriendGameSensor, friendNetworkGameCountSensor, topFriendGameSensor,
+                    mostActiveFriendSensor, trendingFriendGameSensor,
                     totalBadgesEarnedSensor, totalBadgeXPSensor, latestBadgeSensor, badgeCompletionRateSensor,
-                    globalPlaytimePercentileSensor, globalUserCategorySensor, data.ErrorMessage ?? "Unknown error");
+                    globalUserCategorySensor, data.ErrorMessage ?? "Unknown error");
                 return;
             }
 
@@ -795,11 +777,6 @@ namespace InfoPanel.SteamAPI.Services
                     // Update Friend Network Games sensors
                     trendingFriendGameSensor.Value = !string.IsNullOrEmpty(data.TrendingFriendGame) ? data.TrendingFriendGame : "None";
                     
-                    // Set friend game count to 0 since we removed overlap data
-                    friendNetworkGameCountSensor.Value = 0;
-                    
-                    topFriendGameSensor.Value = !string.IsNullOrEmpty(data.MostOwnedFriendGame) ? data.MostOwnedFriendGame : "None";
-
                     // Update Community Badge sensors
                     totalBadgesEarnedSensor.Value = data.TotalBadgesEarned;
                     totalBadgeXPSensor.Value = data.TotalBadgeXP;
@@ -810,7 +787,6 @@ namespace InfoPanel.SteamAPI.Services
                     badgeCompletionRateSensor.Value = (float)Math.Round(badgeCompletionRate, 1);
 
                     // Update Global Statistics sensors
-                    globalPlaytimePercentileSensor.Value = (float)Math.Round(data.GlobalPlaytimePercentile, 1);
                     globalUserCategorySensor.Value = !string.IsNullOrEmpty(data.GlobalUserCategory) ? data.GlobalUserCategory : "Unknown";
 
                     _logger?.LogDebug("Updated Social & Community Features sensors successfully");
@@ -823,9 +799,9 @@ namespace InfoPanel.SteamAPI.Services
                     _logger?.LogError("Error updating Social & Community Features sensors", ex);
                     Console.WriteLine($"[SensorManagementService] Error updating social features sensors: {ex.Message}");
                     SetSocialFeaturesSensorsToError(totalFriendsCountSensor, recentlyActiveFriendsCountSensor, friendActivityStatusSensor,
-                        mostActiveFriendSensor, trendingFriendGameSensor, friendNetworkGameCountSensor, topFriendGameSensor,
+                        mostActiveFriendSensor, trendingFriendGameSensor,
                         totalBadgesEarnedSensor, totalBadgeXPSensor, latestBadgeSensor, badgeCompletionRateSensor,
-                        globalPlaytimePercentileSensor, globalUserCategorySensor, ex.Message);
+                        globalUserCategorySensor, ex.Message);
                 }
             }
         }
@@ -839,13 +815,10 @@ namespace InfoPanel.SteamAPI.Services
             PluginText friendActivityStatusSensor,
             PluginText mostActiveFriendSensor,
             PluginText trendingFriendGameSensor,
-            PluginSensor friendNetworkGameCountSensor,
-            PluginText topFriendGameSensor,
             PluginSensor totalBadgesEarnedSensor,
             PluginSensor totalBadgeXPSensor,
             PluginText latestBadgeSensor,
             PluginSensor badgeCompletionRateSensor,
-            PluginSensor globalPlaytimePercentileSensor,
             PluginText globalUserCategorySensor,
             string errorMessage)
         {
@@ -857,8 +830,6 @@ namespace InfoPanel.SteamAPI.Services
             
             // Friend Network Games error values
             trendingFriendGameSensor.Value = "Error";
-            friendNetworkGameCountSensor.Value = 0f;
-            topFriendGameSensor.Value = "Error";
             
             // Community Badge error values
             totalBadgesEarnedSensor.Value = 0f;
@@ -867,7 +838,6 @@ namespace InfoPanel.SteamAPI.Services
             badgeCompletionRateSensor.Value = 0f;
             
             // Global Statistics error values
-            globalPlaytimePercentileSensor.Value = 0f;
             globalUserCategorySensor.Value = "Error";
             
             _logger?.LogError($"Set Social & Community Features sensors to error state: {errorMessage}");

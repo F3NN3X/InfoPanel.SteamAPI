@@ -42,98 +42,66 @@ namespace InfoPanel.SteamAPI
 
         #region Sensors
         
-        // Steam Profile Sensors
+        // User Profile and Status
         private readonly PluginText _playerNameSensor = new("player-name", "Player Name", "Unknown");
         private readonly PluginText _onlineStatusSensor = new("online-status", "Status", "Offline");
         private readonly PluginSensor _steamLevelSensor = new("steam-level", "Steam Level", 0, "");
-        
-        // Current Game Sensors
-        private readonly PluginText _currentGameSensor = new("current-game", "Current Game", "Not Playing");
-        private readonly PluginSensor _currentGamePlaytimeSensor = new("current-game-playtime", "Game Playtime", 0, "hrs");
-        
-        // Library Statistics Sensors
-        private readonly PluginSensor _totalGamesSensor = new("total-games", "Games Owned", 0, "");
-        private readonly PluginSensor _totalPlaytimeSensor = new("total-playtime", "Total Playtime", 0, "hrs");
-        private readonly PluginSensor _recentPlaytimeSensor = new("recent-playtime", "Recent Playtime", 0, "hrs");
-        
-        // Status and Details
         private readonly PluginText _statusSensor = new("status", "Plugin Status", "Initializing...");
         private readonly PluginText _detailsSensor = new("details", "Details", "Loading Steam data...");
+        private readonly PluginText _globalUserCategorySensor = new("global-user-category", "User Category", "Unknown");
         
-        // Phase 2: Enhanced Gaming Metrics
-        // Recent Gaming Activity (2-week stats)
-        private readonly PluginSensor _recentGamesCountSensor = new("recent-games-count", "Games Played (2w)", 0, "games");
-        private readonly PluginText _mostPlayedRecentSensor = new("most-played-recent", "Top Recent Game", "None");
-        private readonly PluginSensor _recentSessionsSensor = new("recent-sessions", "Gaming Sessions (2w)", 0, "sessions");
-        
-        // Session Time Tracking
+        // Current Game and Session Tracking
+        private readonly PluginText _currentGameSensor = new("current-game", "Current Game", "Not Playing");
+        private readonly PluginSensor _currentGamePlaytimeSensor = new("current-game-playtime", "Game Playtime", 0, "hrs");
         private readonly PluginSensor _currentSessionTimeSensor = new("current-session-time", "Current Session", 0, "min");
         private readonly PluginText _sessionStartTimeSensor = new("session-start-time", "Session Started", "Not in game");
         private readonly PluginSensor _averageSessionTimeSensor = new("avg-session-time", "Avg Session Length", 0, "min");
         
-        // Friends Online Monitoring  
-        private readonly PluginSensor _friendsOnlineSensor = new("friends-online", "Friends Online", 0, "friends");
-        private readonly PluginSensor _friendsInGameSensor = new("friends-in-game", "Friends Gaming", 0, "friends");
-        private readonly PluginText _friendsCurrentGameSensor = new("friends-current-game", "Popular Game", "None");
+        // Library and Overall Playtime Statistics
+        private readonly PluginSensor _totalGamesSensor = new("total-games", "Games Owned", 0, "");
+        private readonly PluginSensor _totalPlaytimeSensor = new("total-playtime", "Total Playtime", 0, "hrs");
+        private readonly PluginSensor _recentPlaytimeSensor = new("recent-playtime", "Recent Playtime", 0, "hrs");
+        private readonly PluginSensor _recentGamesCountSensor = new("recent-games-count", "Games Played (2w)", 0, "games");
+        private readonly PluginText _mostPlayedRecentSensor = new("most-played-recent", "Top Recent Game", "None");
+        private readonly PluginSensor _recentSessionsSensor = new("recent-sessions", "Gaming Sessions (2w)", 0, "sessions");
+        private readonly PluginSensor _monitoredGamesCountSensor = new("monitored-games-count", "Monitored Games", 0, "games");
+        private readonly PluginSensor _monitoredGamesTotalHoursSensor = new("monitored-total-hours", "Monitored Total Hours", 0, "hrs");
         
-        // Achievement Tracking (for current game)
+        // Achievements and Badges
         private readonly PluginSensor _currentGameAchievementsSensor = new("current-achievements", "Achievements", 0, "%");
         private readonly PluginSensor _currentGameAchievementsUnlockedSensor = new("achievements-unlocked", "Unlocked", 0, "");
         private readonly PluginSensor _currentGameAchievementsTotalSensor = new("achievements-total", "Total", 0, "");
         private readonly PluginText _latestAchievementSensor = new("latest-achievement", "Latest Achievement", "None");
-
-        // Recent Games Table
-        private static readonly string _recentGamesTableFormat = "0:200|1:80|2:100";
-        private readonly PluginTable _recentGamesTable;
-
-        // Phase 3: Advanced Features
-        // Detailed Game-Specific Statistics
-        private readonly PluginText _primaryGameStatsSensor = new("primary-game-stats", "Primary Game Stats", "No data");
-        private readonly PluginText _secondaryGameStatsSensor = new("secondary-game-stats", "Secondary Game Stats", "No data");
-        private readonly PluginText _tertiaryGameStatsSensor = new("tertiary-game-stats", "Tertiary Game Stats", "No data");
-        
-        // Multiple Game Monitoring
-        private readonly PluginSensor _monitoredGamesCountSensor = new("monitored-games-count", "Monitored Games", 0, "games");
-        private readonly PluginSensor _monitoredGamesTotalHoursSensor = new("monitored-total-hours", "Monitored Total Hours", 0, "hrs");
-        
-        // Achievement Completion Tracking
         private readonly PluginSensor _overallAchievementCompletionSensor = new("overall-achievement-completion", "Overall Achievement %", 0, "%");
-        private readonly PluginSensor _perfectGamesCountSensor = new("perfect-games-count", "Perfect Games", 0, "games");
         private readonly PluginSensor _totalAchievementsUnlockedSensor = new("total-achievements-unlocked", "Total Achievements", 0, "");
         private readonly PluginSensor _achievementCompletionRankSensor = new("achievement-completion-rank", "Achievement Rank", 0, "%ile");
-        
-        // News and Update Monitoring
-        private readonly PluginText _latestGameNewsSensor = new("latest-game-news", "Latest Game News", "No news");
-        private readonly PluginSensor _unreadNewsCountSensor = new("unread-news-count", "Unread News", 0, "items");
-        private readonly PluginText _mostActiveNewsGameSensor = new("most-active-news-game", "Most Active News Game", "None");
-
-        // Game Statistics Table
-        private static readonly string _gameStatsTableFormat = "0:150|1:80|2:80|3:60|4:100";
-        private readonly PluginTable _gameStatsTable;
-
-        // Phase 4: Social & Community Features
-        // Friends Activity Monitoring
-        private readonly PluginSensor _totalFriendsCountSensor = new("total-friends-count", "Total Friends", 0, "friends");
-        private readonly PluginSensor _recentlyActiveFriendsCountSensor = new("recently-active-friends", "Recently Active", 0, "friends");
-        private readonly PluginText _friendActivityStatusSensor = new("friend-activity-status", "Friend Activity", "No recent activity");
-        private readonly PluginText _mostActiveFriendSensor = new("most-active-friend", "Most Active Friend", "None");
-
-        // Popular Games in Friend Network
-        private readonly PluginText _trendingFriendGameSensor = new("trending-friend-game", "Trending Among Friends", "None");
-        private readonly PluginSensor _friendNetworkGameCountSensor = new("friend-network-games", "Popular Friend Games", 0, "games");
-        private readonly PluginText _topFriendGameSensor = new("top-friend-game", "Top Friend Game", "None");
-
-        // Community Badge Tracking
         private readonly PluginSensor _totalBadgesEarnedSensor = new("total-badges-earned", "Badges Earned", 0, "badges");
         private readonly PluginSensor _totalBadgeXPSensor = new("total-badge-xp", "Badge XP", 0, "XP");
         private readonly PluginText _latestBadgeSensor = new("latest-badge", "Latest Badge", "None");
         private readonly PluginSensor _badgeCompletionRateSensor = new("badge-completion-rate", "Badge Completion", 0, "%");
-
-        // Global Statistics Comparison
-        private readonly PluginSensor _globalPlaytimePercentileSensor = new("global-playtime-percentile", "Playtime Percentile", 0, "%ile");
-        private readonly PluginText _globalUserCategorySensor = new("global-user-category", "User Category", "Unknown");
-
-        // Friends Activity Table
+        
+        // Friends and Social Activity
+        private readonly PluginSensor _friendsOnlineSensor = new("friends-online", "Friends Online", 0, "friends");
+        private readonly PluginSensor _friendsInGameSensor = new("friends-in-game", "Friends Gaming", 0, "friends");
+        private readonly PluginSensor _totalFriendsCountSensor = new("total-friends-count", "Total Friends", 0, "friends");
+        private readonly PluginSensor _recentlyActiveFriendsCountSensor = new("recently-active-friends", "Recently Active", 0, "friends");
+        private readonly PluginText _friendActivityStatusSensor = new("friend-activity-status", "Friend Activity", "No recent activity");
+        private readonly PluginText _mostActiveFriendSensor = new("most-active-friend", "Most Active Friend", "None");
+        private readonly PluginText _trendingFriendGameSensor = new("trending-friend-game", "Trending Among Friends", "None");
+        
+        // Game-Specific Details and News
+        private readonly PluginText _primaryGameStatsSensor = new("primary-game-stats", "Primary Game Stats", "No data");
+        private readonly PluginText _secondaryGameStatsSensor = new("secondary-game-stats", "Secondary Game Stats", "No data");
+        private readonly PluginText _tertiaryGameStatsSensor = new("tertiary-game-stats", "Tertiary Game Stats", "No data");
+        private readonly PluginText _latestGameNewsSensor = new("latest-game-news", "Latest Game News", "No news");
+        private readonly PluginSensor _unreadNewsCountSensor = new("unread-news-count", "Unread News", 0, "items");
+        private readonly PluginText _mostActiveNewsGameSensor = new("most-active-news-game", "Most Active News Game", "None");
+        
+        // Tables
+        private static readonly string _recentGamesTableFormat = "0:200|1:80|2:100";
+        private readonly PluginTable _recentGamesTable;
+        private static readonly string _gameStatsTableFormat = "0:150|1:80|2:80|3:60|4:100";
+        private readonly PluginTable _gameStatsTable;
         private static readonly string _friendsActivityTableFormat = "0:150|1:100|2:80|3:120";
         private readonly PluginTable _friendsActivityTable;
         
@@ -207,127 +175,88 @@ namespace InfoPanel.SteamAPI
                 // Subscribe to events
                 _monitoringService.DataUpdated += OnDataUpdated;
                 
-                // Create sensor container
-                var container = new PluginContainer("SteamAPI", "Basic Steam Data");
+                // Create User Profile & Status container
+                var profileContainer = new PluginContainer("SteamAPI-Profile", "User Profile & Status");
+                profileContainer.Entries.Add(_playerNameSensor);
+                profileContainer.Entries.Add(_onlineStatusSensor);
+                profileContainer.Entries.Add(_steamLevelSensor);
+                profileContainer.Entries.Add(_statusSensor);
+                profileContainer.Entries.Add(_detailsSensor);
+                profileContainer.Entries.Add(_globalUserCategorySensor);
+                _loggingService.LogInfo($"Created User Profile & Status container with {profileContainer.Entries.Count} sensors");
+                containers.Add(profileContainer);
                 
-                // Add Steam sensors to container using the Entries collection
-                container.Entries.Add(_playerNameSensor);
-                container.Entries.Add(_onlineStatusSensor);
-                container.Entries.Add(_steamLevelSensor);
-                container.Entries.Add(_currentGameSensor);
-                container.Entries.Add(_currentGamePlaytimeSensor);
-                container.Entries.Add(_totalGamesSensor);
-                container.Entries.Add(_totalPlaytimeSensor);
-                container.Entries.Add(_recentPlaytimeSensor);
-                container.Entries.Add(_statusSensor);
-                container.Entries.Add(_detailsSensor);
+                // Create Current Game & Session container
+                var sessionContainer = new PluginContainer("SteamAPI-Session", "Current Game & Session");
+                sessionContainer.Entries.Add(_currentGameSensor);
+                sessionContainer.Entries.Add(_currentGamePlaytimeSensor);
+                sessionContainer.Entries.Add(_currentSessionTimeSensor);
+                sessionContainer.Entries.Add(_sessionStartTimeSensor);
+                sessionContainer.Entries.Add(_averageSessionTimeSensor);
+                _loggingService.LogInfo($"Created Current Game & Session container with {sessionContainer.Entries.Count} sensors");
+                containers.Add(sessionContainer);
                 
-                _loggingService.LogInfo($"Created Basic Steam Data container with {container.Entries.Count} sensors");
+                // Create Library & Playtime container
+                var libraryContainer = new PluginContainer("SteamAPI-Library", "Library & Playtime Statistics");
+                libraryContainer.Entries.Add(_totalGamesSensor);
+                libraryContainer.Entries.Add(_totalPlaytimeSensor);
+                libraryContainer.Entries.Add(_recentPlaytimeSensor);
+                libraryContainer.Entries.Add(_recentGamesCountSensor);
+                libraryContainer.Entries.Add(_mostPlayedRecentSensor);
+                libraryContainer.Entries.Add(_recentSessionsSensor);
+                libraryContainer.Entries.Add(_monitoredGamesCountSensor);
+                libraryContainer.Entries.Add(_monitoredGamesTotalHoursSensor);
+                libraryContainer.Entries.Add(_recentGamesTable);
+                _loggingService.LogInfo($"Created Library & Playtime Statistics container with {libraryContainer.Entries.Count} items (8 sensors + 1 table)");
+                containers.Add(libraryContainer);
                 
-                // Register basic container with InfoPanel
-                containers.Add(container);
+                // Create Achievements & Badges container
+                var achievementsContainer = new PluginContainer("SteamAPI-Achievements", "Achievements & Badges");
+                achievementsContainer.Entries.Add(_currentGameAchievementsSensor);
+                achievementsContainer.Entries.Add(_currentGameAchievementsUnlockedSensor);
+                achievementsContainer.Entries.Add(_currentGameAchievementsTotalSensor);
+                achievementsContainer.Entries.Add(_latestAchievementSensor);
+                achievementsContainer.Entries.Add(_overallAchievementCompletionSensor);
+                achievementsContainer.Entries.Add(_totalAchievementsUnlockedSensor);
+                achievementsContainer.Entries.Add(_achievementCompletionRankSensor);
+                achievementsContainer.Entries.Add(_totalBadgesEarnedSensor);
+                achievementsContainer.Entries.Add(_totalBadgeXPSensor);
+                achievementsContainer.Entries.Add(_latestBadgeSensor);
+                achievementsContainer.Entries.Add(_badgeCompletionRateSensor);
+                _loggingService.LogInfo($"Created Achievements & Badges container with {achievementsContainer.Entries.Count} sensors");
+                containers.Add(achievementsContainer);
                 
-                // Create Phase 2: Enhanced Gaming Data container
-                var enhancedContainer = new PluginContainer("SteamAPI-Enhanced", "Enhanced Gaming Data");
-                
-                // Add Phase 2 sensors: Recent Gaming Activity
-                enhancedContainer.Entries.Add(_recentGamesCountSensor);
-                enhancedContainer.Entries.Add(_mostPlayedRecentSensor);
-                enhancedContainer.Entries.Add(_recentSessionsSensor);
-                
-                // Add Phase 2 sensors: Session Time Tracking
-                enhancedContainer.Entries.Add(_currentSessionTimeSensor);
-                enhancedContainer.Entries.Add(_sessionStartTimeSensor);
-                enhancedContainer.Entries.Add(_averageSessionTimeSensor);
-                
-                // Add Phase 2 sensors: Friends Online Monitoring
-                enhancedContainer.Entries.Add(_friendsOnlineSensor);
-                enhancedContainer.Entries.Add(_friendsInGameSensor);
-                enhancedContainer.Entries.Add(_friendsCurrentGameSensor);
-                
-                // Add Phase 2 sensors: Achievement Tracking
-                enhancedContainer.Entries.Add(_currentGameAchievementsSensor);
-                enhancedContainer.Entries.Add(_currentGameAchievementsUnlockedSensor);
-                enhancedContainer.Entries.Add(_currentGameAchievementsTotalSensor);
-                enhancedContainer.Entries.Add(_latestAchievementSensor);
-                
-                // Add Recent Games Table
-                enhancedContainer.Entries.Add(_recentGamesTable);
-                
-                _loggingService.LogInfo($"Created Enhanced Gaming Data container with {enhancedContainer.Entries.Count} items (13 sensors + 1 table)");
-                
-                // Register enhanced container with InfoPanel
-                containers.Add(enhancedContainer);
-                
-                // Create Phase 3: Advanced Features container
-                var advancedContainer = new PluginContainer("SteamAPI-Advanced", "Advanced Steam Features");
-                
-                // Add Phase 3 sensors: Detailed Game-Specific Statistics
-                advancedContainer.Entries.Add(_primaryGameStatsSensor);
-                advancedContainer.Entries.Add(_secondaryGameStatsSensor);
-                advancedContainer.Entries.Add(_tertiaryGameStatsSensor);
-                
-                // Add Phase 3 sensors: Multiple Game Monitoring
-                advancedContainer.Entries.Add(_monitoredGamesCountSensor);
-                advancedContainer.Entries.Add(_monitoredGamesTotalHoursSensor);
-                
-                // Add Phase 3 sensors: Achievement Completion Tracking
-                advancedContainer.Entries.Add(_overallAchievementCompletionSensor);
-                advancedContainer.Entries.Add(_perfectGamesCountSensor);
-                advancedContainer.Entries.Add(_totalAchievementsUnlockedSensor);
-                advancedContainer.Entries.Add(_achievementCompletionRankSensor);
-                
-                // Add Phase 3 sensors: News and Update Monitoring
-                advancedContainer.Entries.Add(_latestGameNewsSensor);
-                advancedContainer.Entries.Add(_unreadNewsCountSensor);
-                advancedContainer.Entries.Add(_mostActiveNewsGameSensor);
-                
-                // Add Game Statistics Table
-                advancedContainer.Entries.Add(_gameStatsTable);
-                
-                _loggingService.LogInfo($"Created Advanced Steam Features container with {advancedContainer.Entries.Count} items (12 sensors + 1 table)");
-                
-                // Register advanced container with InfoPanel
-                containers.Add(advancedContainer);
-                
-                // Create Phase 4: Social & Community Features container
-                var socialContainer = new PluginContainer("SteamAPI-Social", "Social & Community Features");
-                
-                // Add Phase 4 sensors: Friends Activity Monitoring
+                // Create Friends & Social container
+                var socialContainer = new PluginContainer("SteamAPI-Social", "Friends & Social Activity");
+                socialContainer.Entries.Add(_friendsOnlineSensor);
+                socialContainer.Entries.Add(_friendsInGameSensor);
                 socialContainer.Entries.Add(_totalFriendsCountSensor);
                 socialContainer.Entries.Add(_recentlyActiveFriendsCountSensor);
                 socialContainer.Entries.Add(_friendActivityStatusSensor);
                 socialContainer.Entries.Add(_mostActiveFriendSensor);
-                
-                // Add Phase 4 sensors: Popular Games in Friend Network
                 socialContainer.Entries.Add(_trendingFriendGameSensor);
-                socialContainer.Entries.Add(_friendNetworkGameCountSensor);
-                socialContainer.Entries.Add(_topFriendGameSensor);
-                
-                // Add Phase 4 sensors: Community Badge Tracking
-                socialContainer.Entries.Add(_totalBadgesEarnedSensor);
-                socialContainer.Entries.Add(_totalBadgeXPSensor);
-                socialContainer.Entries.Add(_latestBadgeSensor);
-                socialContainer.Entries.Add(_badgeCompletionRateSensor);
-                
-                // Add Phase 4 sensors: Global Statistics Comparison
-                socialContainer.Entries.Add(_globalPlaytimePercentileSensor);
-                socialContainer.Entries.Add(_globalUserCategorySensor);
-                
-                // Add Friends Activity Table
                 socialContainer.Entries.Add(_friendsActivityTable);
-                
-                _loggingService.LogInfo($"Created Social & Community Features container with {socialContainer.Entries.Count} items (13 sensors + 1 table)");
-                
-                // Register social container with InfoPanel
+                _loggingService.LogInfo($"Created Friends & Social Activity container with {socialContainer.Entries.Count} items (7 sensors + 1 table)");
                 containers.Add(socialContainer);
+                
+                // Create Game Details & News container
+                var gameDetailsContainer = new PluginContainer("SteamAPI-GameDetails", "Game Details & News");
+                gameDetailsContainer.Entries.Add(_primaryGameStatsSensor);
+                gameDetailsContainer.Entries.Add(_secondaryGameStatsSensor);
+                gameDetailsContainer.Entries.Add(_tertiaryGameStatsSensor);
+                gameDetailsContainer.Entries.Add(_latestGameNewsSensor);
+                gameDetailsContainer.Entries.Add(_unreadNewsCountSensor);
+                gameDetailsContainer.Entries.Add(_mostActiveNewsGameSensor);
+                gameDetailsContainer.Entries.Add(_gameStatsTable);
+                _loggingService.LogInfo($"Created Game Details & News container with {gameDetailsContainer.Entries.Count} items (6 sensors + 1 table)");
+                containers.Add(gameDetailsContainer);
                 
                 // Start monitoring
                 _cancellationTokenSource = new CancellationTokenSource();
                 _ = StartMonitoringAsync(_cancellationTokenSource.Token);
                 
-                Console.WriteLine("[SteamAPI] Plugin initialized successfully - 4 containers created");
-                _loggingService.LogInfo("SteamAPI plugin loaded successfully - all 4 containers created, monitoring started");
+                Console.WriteLine("[SteamAPI] Plugin initialized successfully - 6 containers created");
+                _loggingService.LogInfo("SteamAPI plugin loaded successfully - all 6 containers created, monitoring started");
             }
             catch (Exception ex)
             {
@@ -450,7 +379,6 @@ namespace InfoPanel.SteamAPI
                         // Friends Online Monitoring
                         _friendsOnlineSensor,
                         _friendsInGameSensor,
-                        _friendsCurrentGameSensor,
                         // Achievement Tracking
                         _currentGameAchievementsSensor,
                         _currentGameAchievementsUnlockedSensor,
@@ -471,7 +399,6 @@ namespace InfoPanel.SteamAPI
                         _monitoredGamesTotalHoursSensor,
                         // Achievement Completion Tracking
                         _overallAchievementCompletionSensor,
-                        _perfectGamesCountSensor,
                         _totalAchievementsUnlockedSensor,
                         _achievementCompletionRankSensor,
                         // News and Update Monitoring
@@ -491,15 +418,12 @@ namespace InfoPanel.SteamAPI
                         _mostActiveFriendSensor,
                         // Friend Network Games sensors
                         _trendingFriendGameSensor,
-                        _friendNetworkGameCountSensor,
-                        _topFriendGameSensor,
                         // Community Badge sensors
                         _totalBadgesEarnedSensor,
                         _totalBadgeXPSensor,
                         _latestBadgeSensor,
                         _badgeCompletionRateSensor,
                         // Global Statistics sensors
-                        _globalPlaytimePercentileSensor,
                         _globalUserCategorySensor,
                         e.Data
                     );
@@ -710,13 +634,26 @@ namespace InfoPanel.SteamAPI
                 
                 if (data.FriendsList != null && data.FriendsList.Count > 0)
                 {
-                    // Display detailed friend profile information from enhanced collection
-                    foreach (var friend in data.FriendsList.Take(10)) // Limit to top 10 for display
+                    // Apply filtering based on configuration
+                    var filteredFriends = FilterFriendsList(data.FriendsList);
+                    
+                    // Apply sorting based on configuration
+                    var sortedFriends = SortFriendsList(filteredFriends);
+                    
+                    // Apply display limit if configured
+                    var displayFriends = ApplyDisplayLimit(sortedFriends);
+                    
+                    // Display friends based on configuration
+                    foreach (var friend in displayFriends)
                     {
                         AddFriendToActivityTable(dataTable, friend);
                     }
                     
-                    _loggingService?.LogDebug($"Built Friends Activity table with {dataTable.Rows.Count} friends");
+                    var totalCount = sortedFriends.Count;
+                    var displayCount = displayFriends.Count;
+                    var limitInfo = totalCount != displayCount ? $" (showing {displayCount} of {totalCount})" : "";
+                    
+                    _loggingService?.LogDebug($"Built Friends Activity table with {dataTable.Rows.Count} friends{limitInfo} (Filter: {_configService?.FriendsFilter}, Sort: {_configService?.FriendsSortBy})");
                 }
                 else
                 {
@@ -730,6 +667,123 @@ namespace InfoPanel.SteamAPI
                 _loggingService?.LogError("Error building Friends Activity table", ex);
                 return new DataTable();
             }
+        }
+
+        /// <summary>
+        /// Filters the friends list based on configuration settings
+        /// </summary>
+        private List<SteamFriend> FilterFriendsList(List<SteamFriend> friends)
+        {
+            var filter = (_configService?.FriendsFilter ?? "All").ToLowerInvariant();
+            var now = DateTime.UtcNow;
+            
+            // Apply activity/time-based filter
+            var filteredFriends = filter switch
+            {
+                "onlineonly" => friends.Where(f => f.OnlineStatus != "Offline").ToList(),
+                "active3days" => friends.Where(f => IsFriendActiveWithinDays(f, 3, now)).ToList(),
+                "active5days" => friends.Where(f => IsFriendActiveWithinDays(f, 5, now)).ToList(),
+                "active7days" => friends.Where(f => IsFriendActiveWithinDays(f, 7, now)).ToList(),
+                _ => friends // "all" or any other value
+            };
+            
+            // Apply hidden statuses filter
+            var hiddenStatuses = (_configService?.HiddenStatuses ?? "")
+                .Split(',', StringSplitOptions.RemoveEmptyEntries)
+                .Select(s => s.Trim().ToLowerInvariant())
+                .ToHashSet();
+            
+            if (hiddenStatuses.Count > 0)
+            {
+                filteredFriends = filteredFriends
+                    .Where(f => !hiddenStatuses.Contains(f.OnlineStatus.ToLowerInvariant()))
+                    .ToList();
+            }
+            
+            return filteredFriends;
+        }
+        
+        /// <summary>
+        /// Applies display limit to friends list if configured
+        /// </summary>
+        private List<SteamFriend> ApplyDisplayLimit(List<SteamFriend> friends)
+        {
+            var maxDisplay = _configService?.MaxFriendsToDisplay ?? 0;
+            
+            if (maxDisplay > 0 && friends.Count > maxDisplay)
+            {
+                return friends.Take(maxDisplay).ToList();
+            }
+            
+            return friends;
+        }
+        
+        /// <summary>
+        /// Checks if a friend has been active within the specified number of days
+        /// </summary>
+        private bool IsFriendActiveWithinDays(SteamFriend friend, int days, DateTime now)
+        {
+            if (friend.OnlineStatus != "Offline") 
+                return true; // Currently online counts as active
+                
+            if (friend.LastLogOff <= 0) 
+                return false; // No logoff data available
+                
+            var lastActive = DateTimeOffset.FromUnixTimeSeconds(friend.LastLogOff).DateTime;
+            var timeSinceActive = now - lastActive;
+            return timeSinceActive.TotalDays <= days;
+        }
+        
+        /// <summary>
+        /// Sorts the friends list based on configuration settings
+        /// </summary>
+        private List<SteamFriend> SortFriendsList(List<SteamFriend> friends)
+        {
+            var sortBy = (_configService?.FriendsSortBy ?? "LastOnline").ToLowerInvariant();
+            var descending = _configService?.SortDescending ?? true;
+            
+            return sortBy switch
+            {
+                "name" => descending 
+                    ? friends.OrderByDescending(f => f.PersonaName).ToList()
+                    : friends.OrderBy(f => f.PersonaName).ToList(),
+                    
+                "status" => descending
+                    ? friends.OrderByDescending(f => GetStatusSortOrder(f.OnlineStatus)).ToList()
+                    : friends.OrderBy(f => GetStatusSortOrder(f.OnlineStatus)).ToList(),
+                    
+                "lastonline" => descending
+                    ? friends.OrderByDescending(f => GetLastOnlineSortKey(f)).ToList()
+                    : friends.OrderBy(f => GetLastOnlineSortKey(f)).ToList(),
+                    
+                _ => friends // Default order
+            };
+        }
+        
+        /// <summary>
+        /// Gets a sort order value for online status (Online = 3, Away/Busy = 2, Offline = 1)
+        /// </summary>
+        private int GetStatusSortOrder(string status)
+        {
+            return status.ToLowerInvariant() switch
+            {
+                "online" => 3,
+                "away" => 2,
+                "busy" => 2,
+                "snooze" => 2,
+                _ => 1 // Offline or unknown
+            };
+        }
+        
+        /// <summary>
+        /// Gets a sort key for last online time (online friends get current time)
+        /// </summary>
+        private long GetLastOnlineSortKey(SteamFriend friend)
+        {
+            if (friend.OnlineStatus != "Offline")
+                return DateTimeOffset.UtcNow.ToUnixTimeSeconds(); // Currently online gets highest priority
+                
+            return friend.LastLogOff > 0 ? friend.LastLogOff : 0; // Use actual last logoff time
         }
 
         /// <summary>
@@ -750,8 +804,8 @@ namespace InfoPanel.SteamAPI
         {
             var row = dataTable.NewRow();
             
-            // Friend name (use PersonaName if available, fallback to SteamID)
-            var friendName = !string.IsNullOrEmpty(friend.PersonaName) ? friend.PersonaName : friend.SteamId;
+            // Format friend name according to configuration
+            var friendName = FormatFriendName(friend);
             row["Friend"] = new PluginText($"friend_{friend.SteamId}", friendName);
             
             // Online status (use detailed status if available, fallback to relationship)
@@ -762,36 +816,99 @@ namespace InfoPanel.SteamAPI
             var gameText = !string.IsNullOrEmpty(friend.GameName) ? friend.GameName : "Not Playing";
             row["Playing"] = new PluginText($"friend_game_{friend.SteamId}", gameText);
             
-            // Last online or friend since date
-            string lastOnlineText;
-            if (friend.LastLogOff > 0)
-            {
-                var lastOnline = DateTimeOffset.FromUnixTimeSeconds(friend.LastLogOff);
-                var timeSince = DateTime.UtcNow - lastOnline.DateTime;
-                
-                if (timeSince.TotalDays < 1)
-                {
-                    lastOnlineText = $"{timeSince.Hours}h ago";
-                }
-                else if (timeSince.TotalDays < 7)
-                {
-                    lastOnlineText = $"{(int)timeSince.TotalDays}d ago";
-                }
-                else
-                {
-                    lastOnlineText = lastOnline.ToString("MMM dd");
-                }
-            }
-            else
-            {
-                // Fallback to friend since date if no last logoff data
-                var friendSince = DateTimeOffset.FromUnixTimeSeconds(friend.FriendSince);
-                lastOnlineText = $"Since {friendSince:MMM dd, yyyy}";
-            }
-            
+            // Format last online time according to configuration
+            var lastOnlineText = FormatLastSeenTime(friend);
             row["Last Online"] = new PluginText($"friend_since_{friend.SteamId}", lastOnlineText);
             
             dataTable.Rows.Add(row);
+        }
+        
+        /// <summary>
+        /// Formats friend name according to configuration settings
+        /// </summary>
+        private string FormatFriendName(SteamFriend friend)
+        {
+            var baseName = !string.IsNullOrEmpty(friend.PersonaName) ? friend.PersonaName : friend.SteamId;
+            var nameDisplay = (_configService?.FriendNameDisplay ?? "DisplayName").ToLowerInvariant();
+            
+            return nameDisplay switch
+            {
+                "withstatus" => $"{GetStatusIndicator(friend.OnlineStatus)} {baseName}",
+                "truncated" => TruncateName(baseName),
+                _ => baseName // "displayname" or default
+            };
+        }
+        
+        /// <summary>
+        /// Gets a status indicator character for the friend's online status
+        /// </summary>
+        private string GetStatusIndicator(string status)
+        {
+            return status?.ToLowerInvariant() switch
+            {
+                "online" => "●",
+                "away" => "◐",
+                "busy" => "◒",
+                "snooze" => "◑",
+                _ => "○" // Offline or unknown
+            };
+        }
+        
+        /// <summary>
+        /// Truncates friend name if it exceeds the configured maximum length
+        /// </summary>
+        private string TruncateName(string name)
+        {
+            var maxLength = _configService?.MaxFriendNameLength ?? 20;
+            
+            if (name.Length <= maxLength)
+                return name;
+                
+            return name.Substring(0, maxLength - 3) + "...";
+        }
+        
+        /// <summary>
+        /// Formats last seen time according to configuration settings
+        /// </summary>
+        private string FormatLastSeenTime(SteamFriend friend)
+        {
+            var format = (_configService?.LastSeenFormat ?? "Smart").ToLowerInvariant();
+            
+            if (friend.OnlineStatus != "Offline")
+                return "Online Now";
+                
+            if (friend.LastLogOff <= 0)
+            {
+                // Fallback to friend since date if no last logoff data
+                var friendSince = DateTimeOffset.FromUnixTimeSeconds(friend.FriendSince);
+                return $"Since {friendSince:MMM dd, yyyy}";
+            }
+            
+            var lastOnline = DateTimeOffset.FromUnixTimeSeconds(friend.LastLogOff);
+            var timeSince = DateTime.UtcNow - lastOnline.DateTime;
+            
+            return format switch
+            {
+                "relative" => FormatRelativeTime(timeSince),
+                "datetime" => lastOnline.ToString("MMM dd, h:mm tt"),
+                "smart" => timeSince.TotalDays < 7 ? FormatRelativeTime(timeSince) : lastOnline.ToString("MMM dd"),
+                _ => FormatRelativeTime(timeSince)
+            };
+        }
+        
+        /// <summary>
+        /// Formats time span as relative time (e.g., "2 hours ago", "3 days ago")
+        /// </summary>
+        private string FormatRelativeTime(TimeSpan timeSince)
+        {
+            if (timeSince.TotalMinutes < 60)
+                return $"{(int)timeSince.TotalMinutes}m ago";
+            else if (timeSince.TotalHours < 24)
+                return $"{(int)timeSince.TotalHours}h ago";
+            else if (timeSince.TotalDays < 30)
+                return $"{(int)timeSince.TotalDays}d ago";
+            else
+                return $"{(int)(timeSince.TotalDays / 30)}mo ago";
         }
         
         #endregion

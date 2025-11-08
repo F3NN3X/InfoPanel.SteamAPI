@@ -53,8 +53,10 @@ namespace InfoPanel.SteamAPI.Services
             {
                 if (!File.Exists(_configFilePath))
                 {
+                    // Since the plugin comes bundled with an INI file, this should not happen
+                    // If it does, create a minimal default config as fallback
+                    Debug.WriteLine("[ConfigurationService] Warning: Bundled config file not found, creating minimal fallback.");
                     CreateDefaultConfiguration();
-                    Debug.WriteLine("[ConfigurationService] Config file created with default values.");
                 }
                 else
                 {
@@ -68,11 +70,11 @@ namespace InfoPanel.SteamAPI.Services
                     
                     Debug.WriteLine("[ConfigurationService] Configuration loaded successfully.");
                     
-                    // Auto-add missing keys for backward compatibility
+                    // Check for missing keys but don't save - preserve the original formatted file
+                    // Missing settings will use in-memory defaults from the GetSetting methods
                     if (EnsureMissingKeys())
                     {
-                        SaveConfiguration();
-                        Debug.WriteLine("[ConfigurationService] Updated config with missing keys.");
+                        Debug.WriteLine("[ConfigurationService] Using in-memory defaults for missing configuration keys to preserve original file formatting.");
                     }
                 }
             }
@@ -118,6 +120,18 @@ namespace InfoPanel.SteamAPI.Services
                 _config["Steam Settings"]["EnableAchievementMonitoring"] = "false";
                 _config["Steam Settings"]["MaxRecentGames"] = "5";
                 
+                // Friends Activity Settings
+                _config["Friends Activity Settings"]["ShowAllFriends"] = "true";
+                _config["Friends Activity Settings"]["MaxFriendsToDisplay"] = "0";
+                _config["Friends Activity Settings"]["FriendsFilter"] = "All";
+                _config["Friends Activity Settings"]["FriendsSortBy"] = "LastOnline";
+                _config["Friends Activity Settings"]["SortDescending"] = "true";
+                _config["Friends Activity Settings"]["FriendsTableColumns"] = "Friend,Status,Playing,LastOnline";
+                _config["Friends Activity Settings"]["LastSeenFormat"] = "Smart";
+                _config["Friends Activity Settings"]["HiddenStatuses"] = "";
+                _config["Friends Activity Settings"]["FriendNameDisplay"] = "DisplayName";
+                _config["Friends Activity Settings"]["MaxFriendNameLength"] = "20";
+                
                 _parser.WriteFile(_configFilePath, _config);
             }
             catch (Exception ex)
@@ -127,162 +141,60 @@ namespace InfoPanel.SteamAPI.Services
         }
         
         /// <summary>
-        /// Ensures all required configuration keys exist (for version upgrades)
+        /// Checks for missing configuration keys and logs them.
+        /// Does NOT modify the config to preserve the original formatted INI file.
+        /// Missing values will be provided by GetSetting method defaults.
         /// </summary>
-        /// <returns>True if any keys were added</returns>
+        /// <returns>False - never saves to preserve file formatting</returns>
         private bool EnsureMissingKeys()
         {
             if (_config == null)
                 return false;
 
-            bool configUpdated = false;
+            var missingKeys = new List<string>();
             
-            // Ensure Debug Settings
-            if (!_config["Debug Settings"].ContainsKey("EnableDebugLogging"))
+            // Check for missing keys across all sections
+            var requiredKeys = new Dictionary<string, string[]>
             {
-                _config["Debug Settings"]["EnableDebugLogging"] = "false";
-                configUpdated = true;
+                ["Debug Settings"] = new[] { "EnableDebugLogging" },
+                ["Monitoring Settings"] = new[] { "MonitoringIntervalMs", "EnableAutoReconnect", "ConnectionTimeoutMs" },
+                ["Display Settings"] = new[] { "ShowStatusMessages", "ShowDetailedMetrics", "UseMetricSystem" },
+                ["Steam Settings"] = new[] { "ApiKey", "SteamId64", "UpdateIntervalSeconds", "EnableProfileMonitoring", "EnableLibraryMonitoring", "EnableCurrentGameMonitoring", "EnableAchievementMonitoring", "MaxRecentGames" },
+                ["Token Management"] = new[] { "AutoRefreshTokens", "CommunityTokenEnabled", "StoreTokenEnabled", "TokenRefreshIntervalHours", "ManualTokenEntry" },
+                ["Advanced Features"] = new[] { "EnableEnhancedBadgeData", "EnableStoreIntegration", "EnableExtendedAchievements", "MaxMonitoredGamesForAchievements" },
+                ["Friends Activity Settings"] = new[] { "ShowAllFriends", "MaxFriendsToDisplay", "FriendsFilter", "FriendsSortBy", "SortDescending", "FriendsTableColumns", "LastSeenFormat", "HiddenStatuses", "FriendNameDisplay", "MaxFriendNameLength" }
+            };
+
+            foreach (var section in requiredKeys)
+            {
+                if (!_config.Sections.ContainsSection(section.Key))
+                {
+                    missingKeys.AddRange(section.Value.Select(key => $"[{section.Key}] {key}"));
+                }
+                else
+                {
+                    foreach (var key in section.Value)
+                    {
+                        if (!_config[section.Key].ContainsKey(key))
+                        {
+                            missingKeys.Add($"[{section.Key}] {key}");
+                        }
+                    }
+                }
             }
-            
-            // Ensure Monitoring Settings
-            if (!_config["Monitoring Settings"].ContainsKey("MonitoringIntervalMs"))
+
+            if (missingKeys.Count > 0)
             {
-                _config["Monitoring Settings"]["MonitoringIntervalMs"] = "1000";
-                configUpdated = true;
+                Debug.WriteLine($"[ConfigurationService] Found {missingKeys.Count} missing configuration keys. Using in-memory defaults: {string.Join(", ", missingKeys)}");
             }
-            if (!_config["Monitoring Settings"].ContainsKey("EnableAutoReconnect"))
+            else
             {
-                _config["Monitoring Settings"]["EnableAutoReconnect"] = "true";
-                configUpdated = true;
-            }
-            if (!_config["Monitoring Settings"].ContainsKey("ConnectionTimeoutMs"))
-            {
-                _config["Monitoring Settings"]["ConnectionTimeoutMs"] = "5000";
-                configUpdated = true;
-            }
-            
-            // Ensure Display Settings
-            if (!_config["Display Settings"].ContainsKey("ShowStatusMessages"))
-            {
-                _config["Display Settings"]["ShowStatusMessages"] = "true";
-                configUpdated = true;
-            }
-            if (!_config["Display Settings"].ContainsKey("ShowDetailedMetrics"))
-            {
-                _config["Display Settings"]["ShowDetailedMetrics"] = "true";
-                configUpdated = true;
-            }
-            if (!_config["Display Settings"].ContainsKey("UseMetricSystem"))
-            {
-                _config["Display Settings"]["UseMetricSystem"] = "true";
-                configUpdated = true;
+                Debug.WriteLine("[ConfigurationService] All required configuration keys are present.");
             }
             
-            // Ensure Steam Settings
-            if (!_config["Steam Settings"].ContainsKey("ApiKey"))
-            {
-                _config["Steam Settings"]["ApiKey"] = "<your-steam-api-key-here>";
-                configUpdated = true;
-            }
-            
-            // Handle migration from old SteamId to SteamId64 format
-            if (_config["Steam Settings"].ContainsKey("SteamId") && !_config["Steam Settings"].ContainsKey("SteamId64"))
-            {
-                // Migrate old SteamId to SteamId64 format
-                var oldSteamId = _config["Steam Settings"]["SteamId"];
-                _config["Steam Settings"]["SteamId64"] = oldSteamId;
-                _config["Steam Settings"].RemoveKey("SteamId"); // Remove old key for consistency
-                configUpdated = true;
-            }
-            
-            if (!_config["Steam Settings"].ContainsKey("SteamId64"))
-            {
-                _config["Steam Settings"]["SteamId64"] = "<your-steam-id64-here>";
-                configUpdated = true;
-            }
-            if (!_config["Steam Settings"].ContainsKey("UpdateIntervalSeconds"))
-            {
-                _config["Steam Settings"]["UpdateIntervalSeconds"] = "30";
-                configUpdated = true;
-            }
-            if (!_config["Steam Settings"].ContainsKey("EnableProfileMonitoring"))
-            {
-                _config["Steam Settings"]["EnableProfileMonitoring"] = "true";
-                configUpdated = true;
-            }
-            if (!_config["Steam Settings"].ContainsKey("EnableLibraryMonitoring"))
-            {
-                _config["Steam Settings"]["EnableLibraryMonitoring"] = "true";
-                configUpdated = true;
-            }
-            if (!_config["Steam Settings"].ContainsKey("EnableCurrentGameMonitoring"))
-            {
-                _config["Steam Settings"]["EnableCurrentGameMonitoring"] = "true";
-                configUpdated = true;
-            }
-            if (!_config["Steam Settings"].ContainsKey("EnableAchievementMonitoring"))
-            {
-                _config["Steam Settings"]["EnableAchievementMonitoring"] = "false";
-                configUpdated = true;
-            }
-            if (!_config["Steam Settings"].ContainsKey("MaxRecentGames"))
-            {
-                _config["Steam Settings"]["MaxRecentGames"] = "5";
-                configUpdated = true;
-            }
-            
-            // Ensure Token Management Settings
-            if (!_config["Token Management"].ContainsKey("AutoRefreshTokens"))
-            {
-                _config["Token Management"]["AutoRefreshTokens"] = "true";
-                configUpdated = true;
-            }
-            if (!_config["Token Management"].ContainsKey("CommunityTokenEnabled"))
-            {
-                _config["Token Management"]["CommunityTokenEnabled"] = "true";
-                configUpdated = true;
-            }
-            if (!_config["Token Management"].ContainsKey("StoreTokenEnabled"))
-            {
-                _config["Token Management"]["StoreTokenEnabled"] = "true";
-                configUpdated = true;
-            }
-            if (!_config["Token Management"].ContainsKey("TokenRefreshIntervalHours"))
-            {
-                _config["Token Management"]["TokenRefreshIntervalHours"] = "12";
-                configUpdated = true;
-            }
-            if (!_config["Token Management"].ContainsKey("ManualTokenEntry"))
-            {
-                _config["Token Management"]["ManualTokenEntry"] = "false";
-                configUpdated = true;
-            }
-            
-            // Ensure Advanced Features Settings
-            if (!_config["Advanced Features"].ContainsKey("EnableEnhancedBadgeData"))
-            {
-                _config["Advanced Features"]["EnableEnhancedBadgeData"] = "false";
-                configUpdated = true;
-            }
-            if (!_config["Advanced Features"].ContainsKey("EnableStoreIntegration"))
-            {
-                _config["Advanced Features"]["EnableStoreIntegration"] = "false";
-                configUpdated = true;
-            }
-            if (!_config["Advanced Features"].ContainsKey("EnableExtendedAchievements"))
-            {
-                _config["Advanced Features"]["EnableExtendedAchievements"] = "false";
-                configUpdated = true;
-            }
-            if (!_config["Advanced Features"].ContainsKey("MaxMonitoredGamesForAchievements"))
-            {
-                _config["Advanced Features"]["MaxMonitoredGamesForAchievements"] = "5";
-                configUpdated = true;
-            }
-            
-            return configUpdated;
+            return false; // Never return true to preserve the original formatted file
         }
-        
+
         /// <summary>
         /// Saves current configuration to file
         /// </summary>
@@ -509,6 +421,74 @@ namespace InfoPanel.SteamAPI.Services
         /// </summary>
         public int MaxRecentGames => 
             GetIntSetting("Steam Settings", "MaxRecentGames", 5);
+        
+        #endregion
+
+        #region Friends Activity Settings Properties
+        
+        /// <summary>
+        /// Gets whether to show all friends (true) or limit to top 10 (false)
+        /// </summary>
+        public bool ShowAllFriends => 
+            GetBoolSetting("Friends Activity Settings", "ShowAllFriends", true);
+        
+        /// <summary>
+        /// Gets the filter mode for friends display
+        /// Options: "All", "OnlineOnly", "Active3Days", "Active5Days", "Active7Days"
+        /// </summary>
+        public string FriendsFilter => 
+            GetSetting("Friends Activity Settings", "FriendsFilter", "All");
+        
+        /// <summary>
+        /// Gets the sorting mode for friends display
+        /// Options: "LastOnline", "Name", "Status"
+        /// </summary>
+        public string FriendsSortBy => 
+            GetSetting("Friends Activity Settings", "FriendsSortBy", "LastOnline");
+        
+        /// <summary>
+        /// Gets whether to sort friends in descending order (true) or ascending (false)
+        /// </summary>
+        public bool SortDescending => 
+            GetBoolSetting("Friends Activity Settings", "SortDescending", true);
+        
+        /// <summary>
+        /// Gets the maximum number of friends to display in the table (0 = unlimited)
+        /// </summary>
+        public int MaxFriendsToDisplay => 
+            GetIntSetting("Friends Activity Settings", "MaxFriendsToDisplay", 0);
+        
+        /// <summary>
+        /// Gets the comma-separated list of columns to show in the friends table
+        /// </summary>
+        public string FriendsTableColumns => 
+            GetSetting("Friends Activity Settings", "FriendsTableColumns", "Friend,Status,Playing,LastOnline");
+        
+        /// <summary>
+        /// Gets the format for displaying last seen times
+        /// Options: "Relative", "DateTime", "Smart"
+        /// </summary>
+        public string LastSeenFormat => 
+            GetSetting("Friends Activity Settings", "LastSeenFormat", "Smart");
+        
+        /// <summary>
+        /// Gets the comma-separated list of friend statuses to hide
+        /// </summary>
+        public string HiddenStatuses => 
+            GetSetting("Friends Activity Settings", "HiddenStatuses", "");
+        
+        /// <summary>
+        /// Gets how to display friend names
+        /// Options: "DisplayName", "WithStatus", "Truncated"
+        /// </summary>
+        public string FriendNameDisplay => 
+            GetSetting("Friends Activity Settings", "FriendNameDisplay", "DisplayName");
+        
+        /// <summary>
+        /// Gets the maximum length for friend names when using truncated display
+        /// </summary>
+        public int MaxFriendNameLength => 
+            GetIntSetting("Friends Activity Settings", "MaxFriendNameLength", 20);
         
         #endregion
 

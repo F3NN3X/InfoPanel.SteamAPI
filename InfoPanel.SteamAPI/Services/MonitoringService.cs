@@ -1000,17 +1000,22 @@ namespace InfoPanel.SteamAPI.Services
                     data.TotalFriendsCount = friends.Count;
                     // Recently active friends will be calculated from real profile data after collection
                     
-                    _logger?.LogError($"=== FRIENDS FOUND === {friends.Count} friends, fetching detailed profiles for first 10...");
+                    _logger?.LogError($"=== FRIENDS FOUND === {friends.Count} friends, fetching detailed profiles...");
                     
-                    // Get detailed profile information for a subset of friends (to avoid rate limits)
-                    var friendsToQuery = friends.Take(10).ToList();
+                    // Determine how many friends to query based on configuration
+                    var showAllFriends = _configService?.ShowAllFriends ?? true;
+                    var maxFriendsToQuery = showAllFriends ? friends.Count : 10;
+                    var friendsToQuery = friends.Take(maxFriendsToQuery).ToList();
                     var detailedFriends = new List<SteamFriend>();
+                    
+                    _logger?.LogError($"=== FRIENDS PROCESSING === Querying {friendsToQuery.Count} friends (ShowAllFriends: {showAllFriends})");
                     
                     foreach (var friend in friendsToQuery)
                     {
                         try
                         {
-                            await Task.Delay(1100); // Rate limiting between friend profile calls
+                            // Rate limiting between friend profile calls (reduced for better performance when fetching all)
+                            await Task.Delay(showAllFriends ? 500 : 1100);
                             
                             // Get detailed profile for this friend
                             var friendProfile = await _steamApiService.GetPlayerSummaryAsync(friend.SteamId);
