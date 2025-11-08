@@ -109,6 +109,29 @@ All notable changes to InfoPanel Steam API Plugin will be documented in this fil
 - Debug log file location: `[Plugin Directory]\debug.log`
 - Configurable logging levels and retention policies
 
+### Added - SteamID64 Implementation & Validation
+- **Explicit SteamID64 Configuration**
+  - Primary `SteamId64` property for clear 64-bit format specification
+  - Automatic validation of 17-digit format starting with "7656119"
+  - Backward compatibility with deprecated `SteamId` property
+  - Automatic migration from old `SteamId` to `SteamId64` in configuration files
+- **Enhanced Steam API Integration**
+  - SteamID64 format validation before all API calls
+  - Clear error messages for invalid SteamID64 format
+  - Proper Steam Web API compatibility with 64-bit Steam IDs
+- **Data Model Updates**
+  - Updated `SteamFriend` class to use `SteamId64` property
+  - Friends Activity table integration with SteamID64 identifiers
+  - Example simulation data with properly formatted SteamID64 placeholders
+- **Configuration Security**
+  - No hardcoded Steam IDs in source code (only marked examples)
+  - Placeholder values in all configuration files: `<your-steam-id64-here>`
+  - Example SteamID64s in simulation data clearly marked as examples
+- **Comprehensive Validation**
+  - `IsValidSteamId64()` method for format verification
+  - Enhanced configuration validation with SteamID64 format checking
+  - Clear error messaging for configuration issues
+
 ### Technical Implementation
 - **Service-based Architecture**: MonitoringService, SensorManagementService, ConfigurationService, FileLoggingService
 - **Dual Container System**: Organized Basic and Enhanced data separation
