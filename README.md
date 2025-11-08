@@ -287,7 +287,7 @@ SteamId=YOUR_64BIT_STEAM_ID
 ### Optional Configuration
 The configuration file also includes:
 
-- **Debug Settings**: Enable logging and set log levels
+- **Debug Settings**: Enable comprehensive logging for troubleshooting
 - **Monitoring Settings**: Adjust monitoring intervals (default: 30 seconds)
 - **Display Settings**: Control how information is displayed
 - **Privacy Settings**: Control which data to display publicly
@@ -369,14 +369,40 @@ The plugin is designed to work with Steam's Web API endpoints:
 
 ### Enable Debug Logging
 
-Edit the configuration file and set:
+The plugin provides comprehensive debug logging for troubleshooting and monitoring. Edit the configuration file to enable logging:
+
 ```ini
 [Debug Settings]
 EnableDebugLogging=true
-DebugLogLevel=DEBUG
 ```
 
-Check the log file: `InfoPanel.SteamAPI-debug.log`
+**When enabled, all debug information is logged including:**
+- Major operations and results (Steam API calls, sensor updates)
+- Detailed step-by-step operations (data collection phases, timing)
+- Complete Steam Web API request/response data for troubleshooting
+- Raw JSON responses from Steam API (up to 15KB each)
+- API call timing and performance data
+- Complete error details for failed requests
+
+**Example Log Output:**
+```
+[Info] Steam data collection completed successfully - Status: Online, Player: F3NN3X
+[Debug] Collecting player summary data...
+[Debug] Getting Steam level...
+[Error] === STEAM API RESPONSE === GetPlayerSummaryAsync
+[Error] {"response":{"players":[{"steamid":"76561198011676644"...}]}}
+```
+
+**Log File Location:**
+```
+C:\ProgramData\InfoPanel\plugins\InfoPanel.SteamAPI\InfoPanel.SteamAPI-debug.log
+```
+
+**Log File Features:**
+- Automatic rotation to prevent excessive size
+- Thread-safe writing for concurrent operations  
+- Timestamped entries with service identification
+- File-only output (doesn't flood InfoPanel console)
 
 ### Common Issues
 

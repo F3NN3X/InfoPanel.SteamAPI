@@ -573,7 +573,7 @@ namespace InfoPanel.SteamAPI
                 
                 if (data.RecentGames != null && data.RecentGames.Count > 0)
                 {
-                    foreach (var game in data.RecentGames.OrderByDescending(g => g.Playtime2Weeks))
+                    foreach (var game in data.RecentGames.OrderByDescending(g => g.Playtime2weeks ?? 0))
                     {
                         AddGameToRecentGamesTable(dataTable, game);
                     }
@@ -605,7 +605,7 @@ namespace InfoPanel.SteamAPI
         /// <summary>
         /// Adds a game row to the Recent Games table
         /// </summary>
-        private void AddGameToRecentGamesTable(DataTable dataTable, InfoPanel.SteamAPI.Services.RecentlyPlayedGame game)
+        private void AddGameToRecentGamesTable(DataTable dataTable, SteamGame game)
         {
             var row = dataTable.NewRow();
             
@@ -613,7 +613,7 @@ namespace InfoPanel.SteamAPI
             row["Game"] = new PluginText($"recent-game_{game.AppId}", game.Name ?? "Unknown Game");
             
             // Recent playtime (2 weeks) in hours
-            var recentHours = game.Playtime2Weeks / 60.0;
+            var recentHours = (game.Playtime2weeks ?? 0) / 60.0;
             row["2w Hours"] = new PluginText($"recent-hours_{game.AppId}", $"{recentHours:F1}h");
             
             // Total playtime in hours  
@@ -717,13 +717,8 @@ namespace InfoPanel.SteamAPI
                 
                 if (data.FriendsList != null && data.FriendsList.Count > 0)
                 {
-                    // Sort friends by most recent activity first
-                    var sortedFriends = data.FriendsList
-                        .OrderBy(f => f.PersonaState == "Offline" ? 1 : 0) // Online friends first
-                        .ThenByDescending(f => f.LastOnline ?? DateTime.MinValue)
-                        .Take(10); // Limit to top 10 for display
-                    
-                    foreach (var friend in sortedFriends)
+                    // Display detailed friend profile information from enhanced collection
+                    foreach (var friend in data.FriendsList.Take(10)) // Limit to top 10 for display
                     {
                         AddFriendToActivityTable(dataTable, friend);
                     }
@@ -756,34 +751,52 @@ namespace InfoPanel.SteamAPI
         }
 
         /// <summary>
-        /// Adds a friend row to the Friends Activity table
+        /// Adds a friend row to the Friends Activity table with detailed profile information
         /// </summary>
         private void AddFriendToActivityTable(DataTable dataTable, SteamFriend friend)
         {
             var row = dataTable.NewRow();
             
-            // Friend name column with status indicator
-            var statusIndicator = friend.PersonaState switch
-            {
-                "Online" => "🟢",
-                "In-Game" => "🎮",
-                "Away" => "🟡",
-                "Busy" => "🔴",
-                _ => "⚫"
-            };
-            var friendDisplayName = $"{statusIndicator} {friend.PersonaName ?? "Unknown"}";
-            row["Friend"] = new PluginText($"friend_{friend.SteamId64}", friendDisplayName);
+            // Friend name (use PersonaName if available, fallback to SteamID)
+            var friendName = !string.IsNullOrEmpty(friend.PersonaName) ? friend.PersonaName : friend.SteamId;
+            row["Friend"] = new PluginText($"friend_{friend.SteamId}", friendName);
             
-            // Status column
-            row["Status"] = new PluginText($"friend_status_{friend.SteamId64}", friend.PersonaState ?? "Unknown");
+            // Online status (use detailed status if available, fallback to relationship)
+            var statusText = !string.IsNullOrEmpty(friend.OnlineStatus) ? friend.OnlineStatus : friend.Relationship;
+            row["Status"] = new PluginText($"friend_status_{friend.SteamId}", statusText ?? "Unknown");
             
             // Currently playing game
-            var currentGame = !string.IsNullOrEmpty(friend.CurrentGame) ? friend.CurrentGame : "Not in game";
-            row["Playing"] = new PluginText($"friend_game_{friend.SteamId64}", currentGame);
+            var gameText = !string.IsNullOrEmpty(friend.GameName) ? friend.GameName : "Not Playing";
+            row["Playing"] = new PluginText($"friend_game_{friend.SteamId}", gameText);
             
-            // Last online time
-            var lastOnlineText = friend.LastOnline?.ToString("MMM dd HH:mm") ?? "Unknown";
-            row["Last Online"] = new PluginText($"friend_lastonline_{friend.SteamId64}", lastOnlineText);
+            // Last online or friend since date
+            string lastOnlineText;
+            if (friend.LastLogOff > 0)
+            {
+                var lastOnline = DateTimeOffset.FromUnixTimeSeconds(friend.LastLogOff);
+                var timeSince = DateTime.UtcNow - lastOnline.DateTime;
+                
+                if (timeSince.TotalDays < 1)
+                {
+                    lastOnlineText = $"{timeSince.Hours}h ago";
+                }
+                else if (timeSince.TotalDays < 7)
+                {
+                    lastOnlineText = $"{(int)timeSince.TotalDays}d ago";
+                }
+                else
+                {
+                    lastOnlineText = lastOnline.ToString("MMM dd");
+                }
+            }
+            else
+            {
+                // Fallback to friend since date if no last logoff data
+                var friendSince = DateTimeOffset.FromUnixTimeSeconds(friend.FriendSince);
+                lastOnlineText = $"Since {friendSince:MMM dd, yyyy}";
+            }
+            
+            row["Last Online"] = new PluginText($"friend_since_{friend.SteamId}", lastOnlineText);
             
             dataTable.Rows.Add(row);
         }

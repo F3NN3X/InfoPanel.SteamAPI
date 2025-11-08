@@ -61,38 +61,46 @@ namespace InfoPanel.SteamAPI.Tests
                 // Test player summary
                 Console.WriteLine("Getting player summary...");
                 var playerSummary = await steamApiService.GetPlayerSummaryAsync();
-                if (playerSummary != null)
+                if (playerSummary?.Response?.Players?.Any() == true)
                 {
-                    Console.WriteLine($"Player: {playerSummary.PersonaName}");
-                    Console.WriteLine($"Status: {SteamApiService.GetPersonaStateString(playerSummary.PersonaState)}");
-                    if (!string.IsNullOrEmpty(playerSummary.GameExtraInfo))
+                    var player = playerSummary.Response.Players.First();
+                    Console.WriteLine($"Player: {player.PersonaName}");
+                    Console.WriteLine($"Status: {SteamApiService.GetPersonaStateString(player.PersonaState)}");
+                    if (!string.IsNullOrEmpty(player.GameExtraInfo))
                     {
-                        Console.WriteLine($"Current Game: {playerSummary.GameExtraInfo}");
+                        Console.WriteLine($"Current Game: {player.GameExtraInfo}");
                     }
                 }
                 
                 // Test owned games
                 Console.WriteLine("Getting owned games...");
                 var ownedGames = await steamApiService.GetOwnedGamesAsync();
-                Console.WriteLine($"Total Games: {ownedGames.Count}");
-                if (ownedGames.Count > 0)
+                if (ownedGames?.Response?.Games?.Any() == true)
                 {
-                    var totalPlaytime = ownedGames.Sum(g => g.PlaytimeForever) / 60.0;
+                    var games = ownedGames.Response.Games;
+                    Console.WriteLine($"Total Games: {games.Count}");
+                    
+                    var totalPlaytime = games.Sum(g => g.PlaytimeForever) / 60.0;
                     Console.WriteLine($"Total Playtime: {totalPlaytime:F1} hours");
                     
-                    var mostPlayed = ownedGames.OrderByDescending(g => g.PlaytimeForever).First();
+                    var mostPlayed = games.OrderByDescending(g => g.PlaytimeForever).First();
                     Console.WriteLine($"Most Played: {mostPlayed.Name} ({mostPlayed.PlaytimeForever / 60.0:F1}h)");
+                }
+                else
+                {
+                    Console.WriteLine("No owned games found or API error");
                 }
                 
                 // Test Steam level
                 Console.WriteLine("Getting Steam level...");
                 var steamLevel = await steamApiService.GetSteamLevelAsync();
-                Console.WriteLine($"Steam Level: {steamLevel}");
+                Console.WriteLine($"Steam Level: {steamLevel?.Response?.PlayerLevel ?? 0}");
                 
                 // Test recent games
                 Console.WriteLine("Getting recent games...");
                 var recentGames = await steamApiService.GetRecentlyPlayedGamesAsync();
-                Console.WriteLine($"Recent Games: {recentGames.Count}");
+                var recentGameCount = recentGames?.Response?.Games?.Count ?? 0;
+                Console.WriteLine($"Recent Games: {recentGameCount}");
                 
             }
             catch (Exception ex)

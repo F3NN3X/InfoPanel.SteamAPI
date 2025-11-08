@@ -97,7 +97,7 @@ namespace InfoPanel.SteamAPI.Services
                     // Add startup entries to buffer
                     AddLogEntry(LogLevel.Info, "=== SteamAPI Debug Session Started ===");
                     AddLogEntry(LogLevel.Info, $"Plugin Version: 1.0.0");
-                    AddLogEntry(LogLevel.Info, $"Log Level: {_configService.DebugLogLevel}");
+                    AddLogEntry(LogLevel.Info, $"Debug Logging: Enabled (All levels)");
                     AddLogEntry(LogLevel.Info, $"Log File: {_logFilePath}");
                     
                     // Force immediate flush for startup messages

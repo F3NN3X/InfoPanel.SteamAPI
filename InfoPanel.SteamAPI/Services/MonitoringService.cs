@@ -165,7 +165,7 @@ namespace InfoPanel.SteamAPI.Services
                     throw new InvalidOperationException($"Steam ID64 format is invalid: {steamId64}. Must be 17 digits starting with 7656119.");
                 }
                 
-                _steamApiService = new SteamApiService(apiKey, steamId64);
+                _steamApiService = new SteamApiService(apiKey, steamId64, _logger);
                 
                 // Test the connection
                 var isValid = await _steamApiService.TestConnectionAsync();
@@ -237,20 +237,21 @@ namespace InfoPanel.SteamAPI.Services
                 {
                     _logger?.LogDebug("Collecting player summary data...");
                     var playerSummary = await _steamApiService.GetPlayerSummaryAsync();
-                    if (playerSummary != null)
+                    if (playerSummary?.Response?.Players?.Any() == true)
                     {
-                        data.PlayerName = playerSummary.PersonaName;
-                        data.ProfileUrl = playerSummary.ProfileUrl;
-                        data.AvatarUrl = playerSummary.Avatar;
-                        data.OnlineState = SteamApiService.GetPersonaStateString(playerSummary.PersonaState);
-                        data.LastLogOff = playerSummary.LastLogOff;
-                        data.CurrentGameName = playerSummary.GameExtraInfo;
-                        data.CurrentGameServerIp = playerSummary.GameServerIp;
+                        var player = playerSummary.Response.Players.First();
+                        data.PlayerName = player.PersonaName;
+                        data.ProfileUrl = player.ProfileUrl;
+                        data.AvatarUrl = player.AvatarFull;
+                        data.OnlineState = SteamApiService.GetPersonaStateString(player.PersonaState);
+                        data.LastLogOff = player.LastLogoff;
+                        data.CurrentGameName = player.GameExtraInfo;
+                        data.CurrentGameServerIp = player.GameServerIp;
                         
                         _logger?.LogInfo($"Player Summary - Name: {data.PlayerName}, State: {data.OnlineState}, Current Game: {data.CurrentGameName ?? "None"}");
                         
                         // Try to parse game ID
-                        if (int.TryParse(playerSummary.GameId, out var gameId))
+                        if (int.TryParse(player.GameId, out var gameId))
                         {
                             data.CurrentGameAppId = gameId;
                             _logger?.LogDebug($"Current game App ID: {gameId}");
@@ -263,7 +264,8 @@ namespace InfoPanel.SteamAPI.Services
                     
                     // Get Steam level
                     _logger?.LogDebug("Getting Steam level...");
-                    data.SteamLevel = await _steamApiService.GetSteamLevelAsync();
+                    var steamLevel = await _steamApiService.GetSteamLevelAsync();
+                    data.SteamLevel = steamLevel?.Response?.PlayerLevel ?? 0;
                     _logger?.LogDebug($"Steam Level: {data.SteamLevel}");
                 }
                 else
@@ -276,15 +278,16 @@ namespace InfoPanel.SteamAPI.Services
                 {
                     _logger?.LogDebug("Collecting library data...");
                     var ownedGames = await _steamApiService.GetOwnedGamesAsync();
-                    if (ownedGames != null && ownedGames.Count > 0)
+                    if (ownedGames?.Response?.Games?.Any() == true)
                     {
-                        data.TotalGamesOwned = ownedGames.Count;
-                        data.TotalLibraryPlaytimeHours = ownedGames.Sum(g => g.PlaytimeForever) / 60.0; // Convert minutes to hours
+                        var games = ownedGames.Response.Games;
+                        data.TotalGamesOwned = games.Count;
+                        data.TotalLibraryPlaytimeHours = games.Sum(g => g.PlaytimeForever) / 60.0; // Convert minutes to hours
                         
                         _logger?.LogInfo($"Library Data - Games Owned: {data.TotalGamesOwned}, Total Playtime: {data.TotalLibraryPlaytimeHours:F1} hours");
                         
                         // Find most played game
-                        var mostPlayed = ownedGames.OrderByDescending(g => g.PlaytimeForever).FirstOrDefault();
+                        var mostPlayed = games.OrderByDescending(g => g.PlaytimeForever).FirstOrDefault();
                         if (mostPlayed != null)
                         {
                             data.MostPlayedGameName = mostPlayed.Name;
@@ -295,7 +298,7 @@ namespace InfoPanel.SteamAPI.Services
                         // Set current game playtime if currently playing
                         if (!string.IsNullOrEmpty(data.CurrentGameName))
                         {
-                            var currentGame = ownedGames.FirstOrDefault(g => 
+                            var currentGame = games.FirstOrDefault(g => 
                                 g.AppId == data.CurrentGameAppId || 
                                 g.Name.Equals(data.CurrentGameName, StringComparison.OrdinalIgnoreCase));
                             
@@ -325,37 +328,37 @@ namespace InfoPanel.SteamAPI.Services
                 {
                     _logger?.LogDebug("Collecting recent activity data...");
                     var recentGames = await _steamApiService.GetRecentlyPlayedGamesAsync();
-                    if (recentGames != null && recentGames.Count > 0)
+                    if (recentGames?.Response?.Games?.Any() == true)
                     {
-                        data.RecentPlaytimeHours = recentGames.Sum(g => g.Playtime2Weeks) / 60.0;
-                        data.RecentGamesCount = recentGames.Count;
+                        var recentGamesList = recentGames.Response.Games;
+                        data.RecentPlaytimeHours = recentGamesList.Sum(g => g.Playtime2weeks ?? 0) / 60.0;
+                        data.RecentGamesCount = recentGamesList.Count;
                         _logger?.LogInfo($"Recent Activity - Games: {data.RecentGamesCount}, Playtime (2w): {data.RecentPlaytimeHours:F1} hours");
                         
                         // Store the recent games list for table display
-                        data.RecentGames = recentGames;
+                        data.RecentGames = recentGamesList;
                         
                         // Set Enhanced Gaming Metrics - Most Played Recent Game
-                        var mostPlayedRecent = recentGames.OrderByDescending(g => g.Playtime2Weeks).FirstOrDefault();
+                        var mostPlayedRecent = recentGamesList.OrderByDescending(g => g.Playtime2weeks ?? 0).FirstOrDefault();
                         if (mostPlayedRecent != null)
                         {
                             data.MostPlayedRecentGame = mostPlayedRecent.Name;
-                            _logger?.LogDebug($"Most Played Recent: {data.MostPlayedRecentGame} ({mostPlayedRecent.Playtime2Weeks / 60.0:F1}h in 2w)");
+                            _logger?.LogDebug($"Most Played Recent: {data.MostPlayedRecentGame} ({(mostPlayedRecent.Playtime2weeks ?? 0) / 60.0:F1}h in 2w)");
                         }
                         else
                         {
                             data.MostPlayedRecentGame = "None";
                         }
                         
-                        // Calculate recent session estimates based on playtime patterns
-                        data.RecentGameSessions = Math.Max(1, recentGames.Count * 2); // Estimate 2 sessions per game
-                        data.AverageSessionTimeMinutes = data.RecentPlaytimeHours > 0 ? 
-                            (data.RecentPlaytimeHours * 60.0) / data.RecentGameSessions : 0;
-                        _logger?.LogDebug($"Estimated Sessions: {data.RecentGameSessions}, Avg Session: {data.AverageSessionTimeMinutes:F1} min");
+                        // Steam API doesn't provide session data - only total playtime
+                        data.RecentGameSessions = 0; // Unknown - no session tracking API
+                        data.AverageSessionTimeMinutes = 0; // Unknown - no session tracking API
+                        _logger?.LogDebug("Session data not available from Steam API");
                         
                         // Log details about recent games
-                        foreach (var game in recentGames.Take(3)) // Log first 3 recent games
+                        foreach (var game in recentGamesList.Take(3)) // Log first 3 recent games
                         {
-                            var recentHours = game.Playtime2Weeks / 60.0;
+                            var recentHours = (game.Playtime2weeks ?? 0) / 60.0;
                             _logger?.LogDebug($"Recent Game: {game.Name} ({recentHours:F1} hours in 2w)");
                         }
                     }
@@ -405,10 +408,11 @@ namespace InfoPanel.SteamAPI.Services
                 // Session Time Tracking
                 if (data.IsInGame())
                 {
-                    // For now, set basic session data - can be enhanced with persistent tracking later
-                    data.SessionStartTime = DateTime.Now.AddMinutes(-30); // Placeholder estimate
-                    data.CurrentSessionTimeMinutes = 30; // Placeholder estimate
-                    _logger?.LogDebug($"Session tracking: Started {data.SessionStartTime:HH:mm}, Duration: {data.CurrentSessionTimeMinutes} min");
+                    // Steam API doesn't provide real-time session data
+                    // Only set what we can actually determine
+                    data.SessionStartTime = null; // Unknown - would require persistent tracking
+                    data.CurrentSessionTimeMinutes = 0; // Unknown - no real-time session API
+                    _logger?.LogDebug("Currently in game - session data not available from Steam API");
                 }
                 else
                 {
@@ -417,8 +421,8 @@ namespace InfoPanel.SteamAPI.Services
                     _logger?.LogDebug("Not currently in game - no session tracking");
                 }
                 
-                // Friends Monitoring
-                await CollectFriendsDataAsync(data);
+                // Friends Monitoring - moved to Phase 4 for detailed collection
+                // Basic friends count will be collected in Phase 4 with detailed profiles
                 
                 // Achievement Tracking for Current Game
                 if (data.IsInGame() && data.CurrentGameAppId > 0)
@@ -454,13 +458,44 @@ namespace InfoPanel.SteamAPI.Services
             {
                 _logger?.LogDebug("Collecting friends data...");
                 
-                // TODO: Add GetFriendsListAsync to SteamApiService
-                // For now, provide realistic placeholder data based on typical Steam usage
-                data.FriendsOnline = 12; // Realistic number of online friends
-                data.FriendsInGame = 3;   // Subset playing games
-                data.FriendsPopularGame = "Counter-Strike 2"; // Popular current game
+                // Get real friends list from Steam API
+                if (_steamApiService == null)
+                {
+                    _logger?.LogDebug("SteamApiService is null, using default friends data");
+                    data.FriendsOnline = 0;
+                    data.FriendsInGame = 0;
+                    data.FriendsPopularGame = "Service unavailable";
+                    return;
+                }
                 
-                _logger?.LogDebug($"Friends status: {data.FriendsOnline} online, {data.FriendsInGame} in game, Popular: {data.FriendsPopularGame}");
+                var friendsResponse = await _steamApiService.GetFriendsListAsync();
+                
+                if (friendsResponse?.FriendsList?.Friends != null)
+                {
+                    var friends = friendsResponse.FriendsList.Friends;
+                    data.FriendsOnline = friends.Count; // For now, treat all friends as potentially online
+                    data.FriendsInGame = Math.Min(3, friends.Count / 4); // Estimate some are in game
+                    
+                    // Set a more intelligent popular game based on user's own activity
+                    if (data.RecentGames != null && data.RecentGames.Count > 0)
+                    {
+                        var topGame = data.RecentGames.OrderByDescending(g => g.Playtime2weeks ?? 0).FirstOrDefault();
+                        data.FriendsPopularGame = topGame?.Name ?? "Unknown";
+                    }
+                    else
+                    {
+                        data.FriendsPopularGame = "No Recent Activity";
+                    }
+                    
+                    _logger?.LogDebug($"Friends status: {data.FriendsOnline} total friends, {data.FriendsInGame} estimated in game, Popular: {data.FriendsPopularGame}");
+                }
+                else
+                {
+                    _logger?.LogDebug("No friends data received from Steam API, using defaults");
+                    data.FriendsOnline = 0;
+                    data.FriendsInGame = 0;
+                    data.FriendsPopularGame = "None";
+                }
             }
             catch (Exception ex)
             {
@@ -480,19 +515,18 @@ namespace InfoPanel.SteamAPI.Services
             {
                 _logger?.LogDebug($"Collecting achievement data for game: {data.CurrentGameName} (ID: {data.CurrentGameAppId})");
                 
-                // TODO: Add GetPlayerAchievementsAsync to SteamApiService
-                // For now, provide realistic placeholder data for the current game
+                // Current game achievement tracking will be populated from Advanced Features phase
+                // This method just ensures we have empty values if not in game
                 if (!string.IsNullOrEmpty(data.CurrentGameName))
                 {
-                    // Simulate realistic achievement progress
-                    data.CurrentGameAchievementsTotal = 47;     // Typical number of achievements
-                    data.CurrentGameAchievementsUnlocked = 23;  // Partial completion
-                    data.CurrentGameAchievementPercentage = (23.0 / 47.0) * 100; // ~49%
-                    data.LatestAchievementName = "Explorer";     // Recent achievement
-                    data.LatestAchievementDate = DateTime.Now.AddDays(-2); // Recent unlock
+                    // Initialize with empty data - will be filled by real API data in Advanced Features phase
+                    data.CurrentGameAchievementPercentage = 0;
+                    data.CurrentGameAchievementsUnlocked = 0;
+                    data.CurrentGameAchievementsTotal = 0;
+                    data.LatestAchievementName = "None recent";
+                    data.LatestAchievementDate = null;
                     
-                    _logger?.LogDebug($"Achievements: {data.CurrentGameAchievementsUnlocked}/{data.CurrentGameAchievementsTotal} ({data.CurrentGameAchievementPercentage:F1}%)");
-                    _logger?.LogDebug($"Latest: {data.LatestAchievementName} on {data.LatestAchievementDate:MM/dd}");
+                    _logger?.LogDebug($"Current game achievements will be collected in Advanced Features phase");
                 }
                 else
                 {
@@ -581,8 +615,8 @@ namespace InfoPanel.SteamAPI.Services
                         AchievementsTotal = data.CurrentGameAchievementsTotal,
                         LastPlayed = DateTime.Now,
                         IsCurrentlyPlaying = true,
-                        UserRating = 8.5, // Placeholder rating
-                        GameSpecificStats = $"Session: {data.CurrentSessionTimeMinutes} min, Achievements: {data.CurrentGameAchievementPercentage:F1}%"
+                        UserRating = null, // Steam API doesn't provide user ratings
+                        GameSpecificStats = $"Achievements: {data.CurrentGameAchievementPercentage:F1}%"
                     };
                     
                     monitoredGames.Add(currentGameStats);
@@ -595,15 +629,19 @@ namespace InfoPanel.SteamAPI.Services
                     var secondaryGame = data.RecentGames.Skip(1).FirstOrDefault();
                     if (secondaryGame != null)
                     {
+                        // Only use real achievement data - no estimates
+                        var secondaryHours = secondaryGame.PlaytimeForever / 60.0;
+                        var achievementCompletion = 0.0; // Will be set from real data if available
+                        
                         var secondaryStats = new MonitoredGameStats
                         {
                             GameName = secondaryGame.Name,
-                            TotalHours = (secondaryGame.PlaytimeForever / 60.0), // Convert minutes to hours
-                            RecentHours = (secondaryGame.Playtime2Weeks / 60.0), // Convert minutes to hours
-                            LastPlayed = DateTime.Now.AddDays(-1), // Placeholder - recent game
+                            TotalHours = secondaryHours, // Convert minutes to hours
+                            RecentHours = ((secondaryGame.Playtime2weeks ?? 0) / 60.0), // Convert minutes to hours
+                            LastPlayed = DateTimeOffset.FromUnixTimeSeconds(secondaryGame.RtimeLastPlayed).DateTime,
                             IsCurrentlyPlaying = false,
-                            UserRating = 7.8,
-                            AchievementCompletion = 65.0 // Placeholder
+                            UserRating = null, // Steam API doesn't provide user ratings
+                            AchievementCompletion = achievementCompletion
                         };
                         
                         monitoredGames.Add(secondaryStats);
@@ -613,15 +651,19 @@ namespace InfoPanel.SteamAPI.Services
                     var tertiaryGame = data.RecentGames.Skip(2).FirstOrDefault();
                     if (tertiaryGame != null)
                     {
+                        // Only use real achievement data - no estimates
+                        var tertiaryHours = tertiaryGame.PlaytimeForever / 60.0;
+                        var achievementCompletion = 0.0; // Will be set from real data if available
+                        
                         var tertiaryStats = new MonitoredGameStats
                         {
                             GameName = tertiaryGame.Name,
-                            TotalHours = (tertiaryGame.PlaytimeForever / 60.0), // Convert minutes to hours
-                            RecentHours = (tertiaryGame.Playtime2Weeks / 60.0), // Convert minutes to hours
-                            LastPlayed = DateTime.Now.AddDays(-3), // Placeholder - older recent game
+                            TotalHours = tertiaryHours, // Convert minutes to hours
+                            RecentHours = ((tertiaryGame.Playtime2weeks ?? 0) / 60.0), // Convert minutes to hours
+                            LastPlayed = DateTimeOffset.FromUnixTimeSeconds(tertiaryGame.RtimeLastPlayed).DateTime,
                             IsCurrentlyPlaying = false,
-                            UserRating = 8.2,
-                            AchievementCompletion = 42.0 // Placeholder
+                            UserRating = null, // Steam API doesn't provide user ratings
+                            AchievementCompletion = achievementCompletion
                         };
                         
                         monitoredGames.Add(tertiaryStats);
@@ -686,36 +728,126 @@ namespace InfoPanel.SteamAPI.Services
         {
             try
             {
-                _logger?.LogDebug("Collecting achievement completion tracking data...");
+                _logger?.LogError("=== COLLECTING ACHIEVEMENT TRACKING DATA ===");
                 
-                // Simulate overall achievement completion tracking
-                // In a real implementation, this would aggregate data from all owned games
-                
-                // Calculate estimated overall completion based on sample data
-                var estimatedTotalGames = (int)data.TotalGamesOwned;
-                var estimatedCompletedGames = Math.Max(1, estimatedTotalGames / 10); // ~10% completion rate
-                var estimatedTotalAchievements = estimatedTotalGames * 25; // ~25 achievements per game average
-                var estimatedUnlockedAchievements = (int)(estimatedTotalAchievements * 0.35); // 35% unlock rate
-                
-                data.OverallAchievementCompletion = (double)estimatedUnlockedAchievements / estimatedTotalAchievements * 100;
-                data.PerfectGamesCount = estimatedCompletedGames;
-                data.TotalAchievementsUnlocked = estimatedUnlockedAchievements;
-                data.TotalAchievementsAvailable = estimatedTotalAchievements;
-                data.AchievementCompletionRank = 65.0; // Estimated percentile ranking
-                
-                _logger?.LogDebug($"Achievement tracking: {data.OverallAchievementCompletion:F1}% overall, {data.PerfectGamesCount} perfect games, {data.TotalAchievementsUnlocked}/{data.TotalAchievementsAvailable} achievements");
-                
-                await Task.CompletedTask;
+                if (_steamApiService != null && data.RecentGames != null && data.RecentGames.Count > 0)
+                {
+                    var totalAchievements = 0;
+                    var unlockedAchievements = 0;
+                    var perfectGamesCount = 0;
+                    var processedGames = 0;
+                    var maxGamesToCheck = 5; // Limit to avoid rate limiting
+                    
+                    _logger?.LogError($"=== ACHIEVEMENT ANALYSIS === Checking achievements for up to {maxGamesToCheck} recent games");
+                    
+                    foreach (var game in data.RecentGames.Take(maxGamesToCheck))
+                    {
+                        try
+                        {
+                            await Task.Delay(1100); // Rate limiting
+                            
+                            var achievementResponse = await _steamApiService.GetPlayerAchievementsAsync(game.AppId);
+                            
+                            if (achievementResponse?.PlayerStats?.Achievements != null)
+                            {
+                                var gameTotal = achievementResponse.PlayerStats.Achievements.Count;
+                                var gameUnlocked = achievementResponse.PlayerStats.Achievements.Count(a => a.Achieved == 1);
+                                
+                                totalAchievements += gameTotal;
+                                unlockedAchievements += gameUnlocked;
+                                processedGames++;
+                                
+                                if (gameTotal > 0 && gameUnlocked == gameTotal)
+                                {
+                                    perfectGamesCount++;
+                                }
+                                
+                                // Check if this is the current game being played
+                                if (data.IsInGame() && data.CurrentGameAppId == game.AppId)
+                                {
+                                    data.CurrentGameAchievementsTotal = gameTotal;
+                                    data.CurrentGameAchievementsUnlocked = gameUnlocked;
+                                    data.CurrentGameAchievementPercentage = gameTotal > 0 ? (double)gameUnlocked / gameTotal * 100 : 0;
+                                    
+                                    // Find the most recent achievement for this game
+                                    var latestAchievement = achievementResponse.PlayerStats.Achievements
+                                        .Where(a => a.Achieved == 1 && a.UnlockTime > 0)
+                                        .OrderByDescending(a => a.UnlockTime)
+                                        .FirstOrDefault();
+                                    
+                                    if (latestAchievement != null)
+                                    {
+                                        data.LatestAchievementName = latestAchievement.ApiName;
+                                        data.LatestAchievementDate = DateTimeOffset.FromUnixTimeSeconds(latestAchievement.UnlockTime).DateTime;
+                                    }
+                                    
+                                    _logger?.LogError($"=== CURRENT GAME ACHIEVEMENTS === {game.Name}: {gameUnlocked}/{gameTotal} achievements ({data.CurrentGameAchievementPercentage:F1}%)");
+                                }
+                                
+                                // Update any monitored games with real achievement data
+                                if (data.MonitoredGamesStats != null)
+                                {
+                                    var monitoredGame = data.MonitoredGamesStats.FirstOrDefault(mg => mg.GameName == game.Name);
+                                    if (monitoredGame != null)
+                                    {
+                                        monitoredGame.AchievementCompletion = gameTotal > 0 ? (double)gameUnlocked / gameTotal * 100 : 0;
+                                        monitoredGame.AchievementsUnlocked = gameUnlocked;
+                                        monitoredGame.AchievementsTotal = gameTotal;
+                                    }
+                                }
+                                
+                                _logger?.LogError($"=== GAME ACHIEVEMENTS === {game.Name}: {gameUnlocked}/{gameTotal} achievements ({(gameTotal > 0 ? (double)gameUnlocked/gameTotal*100 : 0):F1}%)");
+                            }
+                        }
+                        catch (Exception gameEx)
+                        {
+                            _logger?.LogError($"=== ACHIEVEMENT ERROR === Failed to get achievements for {game.Name}: {gameEx.Message}");
+                        }
+                    }
+                    
+                    if (totalAchievements > 0)
+                    {
+                        // Calculate real completion percentage
+                        data.OverallAchievementCompletion = (double)unlockedAchievements / totalAchievements * 100;
+                        data.TotalAchievementsUnlocked = unlockedAchievements;
+                        data.TotalAchievementsAvailable = totalAchievements;
+                        data.PerfectGamesCount = perfectGamesCount;
+                        
+                        // Estimate completion rank based on actual completion rate
+                        if (data.OverallAchievementCompletion >= 80) data.AchievementCompletionRank = 95.0;
+                        else if (data.OverallAchievementCompletion >= 60) data.AchievementCompletionRank = 80.0;
+                        else if (data.OverallAchievementCompletion >= 40) data.AchievementCompletionRank = 60.0;
+                        else if (data.OverallAchievementCompletion >= 20) data.AchievementCompletionRank = 40.0;
+                        else data.AchievementCompletionRank = 20.0;
+                        
+                        _logger?.LogError($"=== ACHIEVEMENT SUMMARY === {processedGames} games analyzed: {data.OverallAchievementCompletion:F1}% overall completion, {data.PerfectGamesCount} perfect games, {data.TotalAchievementsUnlocked}/{data.TotalAchievementsAvailable} achievements, Rank: {data.AchievementCompletionRank}%");
+                    }
+                    else
+                    {
+                        _logger?.LogError("=== ACHIEVEMENT FALLBACK === No achievement data found, using defaults");
+                        SetDefaultAchievementValues(data);
+                    }
+                }
+                else
+                {
+                    _logger?.LogError("=== ACHIEVEMENT FALLBACK === No recent games available for analysis");
+                    SetDefaultAchievementValues(data);
+                }
             }
             catch (Exception ex)
             {
-                _logger?.LogError("Error collecting achievement completion tracking", ex);
-                data.OverallAchievementCompletion = 0;
-                data.PerfectGamesCount = 0;
-                data.TotalAchievementsUnlocked = 0;
-                data.TotalAchievementsAvailable = 0;
-                data.AchievementCompletionRank = 0;
+                _logger?.LogError($"=== ACHIEVEMENT ERROR === Error collecting achievement completion tracking: {ex.Message}");
+                SetDefaultAchievementValues(data);
             }
+        }
+        
+        private void SetDefaultAchievementValues(SteamData data)
+        {
+            data.OverallAchievementCompletion = 0;
+            data.PerfectGamesCount = 0;
+            data.TotalAchievementsUnlocked = 0;
+            data.TotalAchievementsAvailable = 0;
+            data.AchievementCompletionRank = 0;
         }
 
         /// <summary>
@@ -858,55 +990,147 @@ namespace InfoPanel.SteamAPI.Services
         {
             try
             {
-                _logger?.LogDebug("Collecting friends activity data...");
+                _logger?.LogError("=== COLLECTING FRIENDS ACTIVITY DATA ===");
                 
-                // TODO: Implement Steam Friends API integration
-                // For now, simulate data based on configuration or use placeholder values
-                
-                // Simulate friends data (replace with actual Steam Friends API calls)
-                data.TotalFriendsCount = 42; // Placeholder
-                data.RecentlyActiveFriends = 8; // Friends active in last 48 hours
-                data.FriendsAverageWeeklyHours = 15.5; // Average weekly hours among friends
-                data.MostActiveFriend = "PlayerOne"; // Most active friend name
-                
-                // Create sample friends list for the table
-                data.FriendsList = new List<SteamFriend>
+                // Get real friends list from Steam API
+                if (_steamApiService == null)
                 {
-                    new SteamFriend 
-                    { 
-                        SteamId64 = "76561198000000001", // Example SteamID64
-                        PersonaName = "PlayerOne", 
-                        PersonaState = "Online", 
-                        CurrentGame = "Counter-Strike 2",
-                        LastOnline = DateTime.Now.AddMinutes(-15)
-                    },
-                    new SteamFriend 
-                    { 
-                        SteamId64 = "76561198000000002", // Example SteamID64
-                        PersonaName = "GamerTwo", 
-                        PersonaState = "In-Game", 
-                        CurrentGame = "Dota 2",
-                        LastOnline = DateTime.Now.AddMinutes(-30)
-                    },
-                    new SteamFriend 
-                    { 
-                        SteamId64 = "76561198000000003", // Example SteamID64
-                        PersonaName = "SteamUser3", 
-                        PersonaState = "Away", 
-                        CurrentGame = null,
-                        LastOnline = DateTime.Now.AddHours(-2)
-                    }
-                };
+                    _logger?.LogError("=== FRIENDS ERROR === SteamApiService is null");
+                    SetDefaultFriendsData(data);
+                    return;
+                }
+
+                var friendsResponse = await _steamApiService.GetFriendsListAsync();
                 
-                _logger?.LogInfo($"Friends Activity - Total: {data.TotalFriendsCount}, Recently Active: {data.RecentlyActiveFriends}");
+                if (friendsResponse?.FriendsList?.Friends != null && friendsResponse.FriendsList.Friends.Count > 0)
+                {
+                    var friends = friendsResponse.FriendsList.Friends;
+                    data.TotalFriendsCount = friends.Count;
+                    // Recently active friends will be calculated from real profile data after collection
+                    
+                    _logger?.LogError($"=== FRIENDS FOUND === {friends.Count} friends, fetching detailed profiles for first 10...");
+                    
+                    // Get detailed profile information for a subset of friends (to avoid rate limits)
+                    var friendsToQuery = friends.Take(10).ToList();
+                    var detailedFriends = new List<SteamFriend>();
+                    
+                    foreach (var friend in friendsToQuery)
+                    {
+                        try
+                        {
+                            await Task.Delay(1100); // Rate limiting between friend profile calls
+                            
+                            // Get detailed profile for this friend
+                            var friendProfile = await _steamApiService.GetPlayerSummaryAsync(friend.SteamId);
+                            
+                            if (friendProfile?.Response?.Players?.Count > 0)
+                            {
+                                var player = friendProfile.Response.Players.First();
+                                
+                                // Convert to SteamFriend with detailed info
+                                var detailedFriend = new SteamFriend
+                                {
+                                    SteamId = friend.SteamId,
+                                    Relationship = friend.Relationship,
+                                    FriendSince = friend.FriendSince,
+                                    PersonaName = player.PersonaName ?? "Unknown",
+                                    OnlineStatus = GetOnlineStatusText(player.PersonaState),
+                                    GameName = player.GameExtraInfo ?? (!string.IsNullOrEmpty(player.GameId) ? "In Game" : "Not Playing"),
+                                    LastLogOff = player.LastLogoff,
+                                    AvatarUrl = player.Avatar ?? string.Empty,
+                                    ProfileUrl = player.ProfileUrl ?? string.Empty,
+                                    CountryCode = player.LocCountryCode ?? string.Empty
+                                };
+                                
+                                detailedFriends.Add(detailedFriend);
+                                
+                                _logger?.LogError($"=== FRIEND PROFILE === {detailedFriend.PersonaName}: {detailedFriend.OnlineStatus}, Playing: {detailedFriend.GameName}");
+                            }
+                            else
+                            {
+                                _logger?.LogError($"=== FRIEND PROFILE ERROR === No profile data for Steam ID: {friend.SteamId}");
+                            }
+                        }
+                        catch (Exception friendEx)
+                        {
+                            _logger?.LogError($"=== FRIEND PROFILE ERROR === Failed to get profile for {friend.SteamId}: {friendEx.Message}");
+                        }
+                    }
+                    
+                    // Set the detailed friends list
+                    data.FriendsList = detailedFriends;
+                    
+                    // Calculate enhanced statistics based on detailed data
+                    var onlineFriends = detailedFriends.Count(f => f.OnlineStatus != "Offline");
+                    var friendsInGame = detailedFriends.Count(f => !string.IsNullOrEmpty(f.GameName) && f.GameName != "Not Playing");
+                    
+                    // Calculate recently active friends based on real data
+                    var now = DateTime.UtcNow;
+                    var recentlyActive = detailedFriends.Count(f => 
+                    {
+                        if (f.OnlineStatus != "Offline") return true; // Currently online
+                        if (f.LastLogOff <= 0) return false; // No logoff data
+                        
+                        var lastActive = DateTimeOffset.FromUnixTimeSeconds(f.LastLogOff).DateTime;
+                        var timeSinceActive = now - lastActive;
+                        return timeSinceActive.TotalDays <= 7; // Active within last week
+                    });
+                    
+                    // Update friend statistics with real data
+                    data.FriendsOnline = onlineFriends;
+                    data.FriendsInGame = friendsInGame;
+                    data.RecentlyActiveFriends = recentlyActive;
+                    
+                    // Find most active friend (prioritize online friends, then recent activity)
+                    var mostActiveFriend = detailedFriends
+                        .OrderByDescending(f => f.OnlineStatus != "Offline")
+                        .ThenByDescending(f => f.LastLogOff)
+                        .FirstOrDefault();
+                    
+                    data.MostActiveFriend = mostActiveFriend?.PersonaName ?? "None";
+                    
+                    // Steam API doesn't provide friends' playtime data
+                    data.FriendsAverageWeeklyHours = 0; // Unknown - not available from Steam API
+                    
+                    _logger?.LogError($"=== FRIENDS ACTIVITY SUCCESS === Total: {data.TotalFriendsCount}, Detailed profiles: {detailedFriends.Count}, Online: {onlineFriends}, In Game: {friendsInGame}, Most Active: {data.MostActiveFriend}");
+                }
+                else
+                {
+                    _logger?.LogError("=== FRIENDS FALLBACK === No friends data received from Steam API");
+                    SetDefaultFriendsData(data);
+                }
             }
             catch (Exception ex)
             {
-                _logger?.LogError("Error collecting friends activity data", ex);
-                data.TotalFriendsCount = 0;
-                data.RecentlyActiveFriends = 0;
-                data.MostActiveFriend = "Error loading friends";
+                _logger?.LogError($"=== FRIENDS ACTIVITY ERROR === Error collecting friends activity data: {ex.Message}");
+                SetDefaultFriendsData(data);
             }
+        }
+        
+        private void SetDefaultFriendsData(SteamData data)
+        {
+            data.TotalFriendsCount = 0;
+            data.RecentlyActiveFriends = 0;
+            data.FriendsAverageWeeklyHours = 0;
+            data.MostActiveFriend = "None";
+            data.FriendsList = new List<SteamFriend>();
+            data.FriendsOnline = 0;
+            data.FriendsInGame = 0;
+        }
+        
+        private string GetOnlineStatusText(int personaState)
+        {
+            return personaState switch
+            {
+                0 => "Offline",
+                1 => "Online",
+                2 => "Busy",
+                3 => "Away",
+                4 => "Snooze",
+                5 => "Looking to trade",
+                6 => "Looking to play",
+                _ => "Unknown"
+            };
         }
 
         /// <summary>
@@ -916,43 +1140,55 @@ namespace InfoPanel.SteamAPI.Services
         {
             try
             {
-                _logger?.LogDebug("Collecting friend network games data...");
+                _logger?.LogError("=== COLLECTING FRIEND NETWORK GAME DATA ===");
                 
-                // TODO: Implement Steam Friends Games API integration
-                // For now, simulate popular games data
+                // Since we don't store detailed friend gaming data, provide intelligent estimates
+                // based on the user's own gaming patterns and friend count
                 
-                data.TrendingFriendGame = "Counter-Strike 2"; // Currently trending among friends
-                data.FriendsGameOverlapPercentage = 65.5; // Overlap percentage with friends
-                data.MostOwnedFriendGame = "Counter-Strike 2"; // Most popular game overall
-                
-                // Create sample popular friend games
-                data.PopularFriendGames = new List<FriendNetworkGame>
+                if (data.FriendsOnline > 0)
                 {
-                    new FriendNetworkGame 
-                    { 
-                        GameName = "Counter-Strike 2", 
-                        PlayingFriendsCount = 8, 
-                        OwningFriendsCount = 25,
-                        PopularityRank = 1,
-                        TrendDirection = "Up"
-                    },
-                    new FriendNetworkGame 
-                    { 
-                        GameName = "Dota 2", 
-                        PlayingFriendsCount = 3, 
-                        OwningFriendsCount = 18,
-                        PopularityRank = 2,
-                        TrendDirection = "Stable"
+                    // Analyze user's own recent games to predict friend preferences
+                    if (data.RecentGames != null && data.RecentGames.Count > 0)
+                    {
+                        var mostPlayedGame = data.RecentGames
+                            .OrderByDescending(g => g.Playtime2weeks ?? 0)
+                            .FirstOrDefault();
+                        
+                        if (mostPlayedGame != null)
+                        {
+                            data.TrendingFriendGame = mostPlayedGame.Name;
+                            
+                            // Steam API doesn't provide friends' game ownership data
+                            data.FriendsGameOverlapPercentage = 0; // Unknown - not available from Steam API
+                            
+                            _logger?.LogError($"=== FRIEND NETWORK SUCCESS === Trending: {data.TrendingFriendGame} (based on user activity), Overlap data not available from Steam API");
+                        }
+                        else
+                        {
+                            data.TrendingFriendGame = "No Recent Activity";
+                            data.FriendsGameOverlapPercentage = 0.0;
+                            _logger?.LogError("=== FRIEND NETWORK INFO === No recent game activity to analyze");
+                        }
                     }
-                };
-                
-                _logger?.LogInfo($"Friend Network Games - Trending: {data.TrendingFriendGame}, Overlap: {data.FriendsGameOverlapPercentage}%");
+                    else
+                    {
+                        data.TrendingFriendGame = "No Game Data";
+                        data.FriendsGameOverlapPercentage = 0.0;
+                        _logger?.LogError("=== FRIEND NETWORK INFO === No recent games data available");
+                    }
+                }
+                else
+                {
+                    data.TrendingFriendGame = "No Friends Online";
+                    data.FriendsGameOverlapPercentage = 0.0;
+                    _logger?.LogError("=== FRIEND NETWORK INFO === No friends online");
+                }
             }
             catch (Exception ex)
             {
-                _logger?.LogError("Error collecting friend network games data", ex);
-                data.TrendingFriendGame = "Unable to load";
-                data.FriendsGameOverlapPercentage = 0;
+                _logger?.LogError($"=== FRIEND NETWORK ERROR === Error collecting friend network games data: {ex.Message}");
+                data.TrendingFriendGame = "Error";
+                data.FriendsGameOverlapPercentage = 0.0;
             }
         }
 
@@ -963,45 +1199,79 @@ namespace InfoPanel.SteamAPI.Services
         {
             try
             {
-                _logger?.LogDebug("Collecting community badge data...");
+                _logger?.LogError("=== COLLECTING COMMUNITY BADGE DATA ===");
                 
-                // TODO: Implement Steam Badges API integration
-                // For now, simulate badge data
-                
-                data.TotalBadgesEarned = 156; // Total badges earned
-                data.TotalBadgeXP = 3240; // Total XP from badges
-                data.NextBadgeProgress = "Community Ambassador (80% complete)"; // Next badge progress
-                data.RarestBadge = "Beta Tester"; // Rarest badge owned
-                
-                // Create sample badges list
-                data.SteamBadges = new List<SteamBadge>
+                // Get real badge data from Steam API
+                if (_steamApiService != null)
                 {
-                    new SteamBadge 
-                    { 
-                        Name = "Community Ambassador", 
-                        Level = 5, 
-                        XP = 500,
-                        CompletionTime = DateTime.Now.AddDays(-2),
-                        Rarity = "Rare"
-                    },
-                    new SteamBadge 
-                    { 
-                        Name = "Years of Service", 
-                        Level = 12, 
-                        XP = 1200,
-                        CompletionTime = DateTime.Now.AddDays(-30),
-                        Rarity = "Common"
-                    }
-                };
+                    var badgeResponse = await _steamApiService.GetPlayerBadgesAsync();
                 
-                _logger?.LogInfo($"Community Badges - Total: {data.TotalBadgesEarned}, XP: {data.TotalBadgeXP}, Next: {data.NextBadgeProgress}");
+                    if (badgeResponse?.Response != null)
+                    {
+                        data.TotalBadgesEarned = badgeResponse.Response.Badges?.Count ?? 0;
+                        data.TotalBadgeXP = badgeResponse.Response.PlayerXp;
+                        data.SteamLevel = badgeResponse.Response.PlayerLevel;
+                        
+                        // Find the rarest badge (highest scarcity)
+                        var rarestBadge = badgeResponse.Response.Badges?
+                            .OrderByDescending(b => b.Scarcity)
+                            .FirstOrDefault();
+                        
+                        data.RarestBadge = rarestBadge != null ? 
+                            $"Badge ID {rarestBadge.BadgeId} (Scarcity: {rarestBadge.Scarcity})" : 
+                            "No rare badges";
+                        
+                        // Calculate next badge progress (estimate XP needed for next level)
+                        var currentLevel = badgeResponse.Response.PlayerLevel;
+                        var currentXp = badgeResponse.Response.PlayerXp;
+                        var xpForCurrentLevel = currentLevel * 100; // Steam formula approximation
+                        var xpForNextLevel = (currentLevel + 1) * 100;
+                        var progressPercent = currentLevel > 0 ? 
+                            ((currentXp - xpForCurrentLevel) * 100) / (xpForNextLevel - xpForCurrentLevel) : 0;
+                        
+                        data.NextBadgeProgress = $"Level {currentLevel + 1} ({progressPercent:F0}% complete)";
+                        
+                        // Convert Steam badges to our model
+                        data.SteamBadges = badgeResponse.Response.Badges?.Select(b => new SteamBadge
+                        {
+                            BadgeId = b.BadgeId,
+                            Level = b.Level,
+                            Xp = b.Xp,
+                            CompletionTime = b.CompletionTime,
+                            Scarcity = b.Scarcity
+                        }).ToList() ?? new List<SteamBadge>();
+                        
+                        _logger?.LogError($"=== BADGE DATA SUCCESS === Total: {data.TotalBadgesEarned}, XP: {data.TotalBadgeXP}, Level: {data.SteamLevel}, Rarest: {data.RarestBadge}");
+                    }
+                    else
+                    {
+                        _logger?.LogError("=== BADGE DATA FAILED === No badge data received from Steam API");
+                        // Set fallback values
+                        data.TotalBadgesEarned = 0;
+                        data.TotalBadgeXP = 0;
+                        data.NextBadgeProgress = "Unable to load badge data";
+                        data.RarestBadge = "No data available";
+                        data.SteamBadges = new List<SteamBadge>();
+                    }
+                }
+                else
+                {
+                    _logger?.LogError("=== BADGE DATA ERROR === Steam API service not initialized");
+                    data.TotalBadgesEarned = 0;
+                    data.TotalBadgeXP = 0;
+                    data.NextBadgeProgress = "Service error";
+                    data.RarestBadge = "Service error";
+                    data.SteamBadges = new List<SteamBadge>();
+                }
             }
             catch (Exception ex)
             {
-                _logger?.LogError("Error collecting community badge data", ex);
+                _logger?.LogError($"=== BADGE DATA ERROR === Error collecting community badge data: {ex.Message}");
                 data.TotalBadgesEarned = 0;
                 data.TotalBadgeXP = 0;
-                data.NextBadgeProgress = "Unable to load";
+                data.NextBadgeProgress = "Error loading badges";
+                data.RarestBadge = "Error";
+                data.SteamBadges = new List<SteamBadge>();
             }
         }
 
@@ -1012,28 +1282,57 @@ namespace InfoPanel.SteamAPI.Services
         {
             try
             {
-                _logger?.LogDebug("Collecting global statistics data...");
+                _logger?.LogError("=== COLLECTING GLOBAL STATISTICS DATA ===");
                 
-                // TODO: Implement global statistics comparison using Steam Community features
-                // For now, simulate global comparison data
+                // Calculate sophisticated percentile based on multiple gaming factors
+                var percentileScore = 0.0;
+                var factors = new List<string>();
                 
-                // Calculate percentile based on playtime (placeholder calculation)
+                // Factor 1: Total playtime (40% weight)
                 if (data.TotalLibraryPlaytimeHours > 0)
                 {
-                    // Simulate percentile calculation - higher playtime = higher percentile
-                    data.GlobalPlaytimePercentile = Math.Min(99, Math.Max(1, (int)(data.TotalLibraryPlaytimeHours / 50.0)));
-                }
-                else
-                {
-                    data.GlobalPlaytimePercentile = 5; // Default low percentile
+                    var playtimeScore = Math.Min(40.0, data.TotalLibraryPlaytimeHours / 25.0); // 1000+ hours = 40 points max
+                    percentileScore += playtimeScore;
+                    factors.Add($"Playtime: {playtimeScore:F1}/40");
                 }
                 
-                // Determine user category based on activity level
+                // Factor 2: Library size (25% weight)
+                if (data.TotalGamesOwned > 0)
+                {
+                    var libraryScore = Math.Min(25.0, data.TotalGamesOwned / 4.0); // 100+ games = 25 points max
+                    percentileScore += libraryScore;
+                    factors.Add($"Library: {libraryScore:F1}/25");
+                }
+                
+                // Factor 3: Achievement completion (20% weight)
+                if (data.OverallAchievementCompletion > 0)
+                {
+                    var achievementScore = (data.OverallAchievementCompletion / 100.0) * 20.0;
+                    percentileScore += achievementScore;
+                    factors.Add($"Achievements: {achievementScore:F1}/20");
+                }
+                
+                // Factor 4: Account age/level (15% weight)
+                if (data.SteamLevel > 0)
+                {
+                    var levelScore = Math.Min(15.0, data.SteamLevel / 10.0); // Level 150+ = 15 points max
+                    percentileScore += levelScore;
+                    factors.Add($"Level: {levelScore:F1}/15");
+                }
+                
+                // Convert score to percentile (0-100)
+                data.GlobalPlaytimePercentile = Math.Min(99, Math.Max(1, (int)percentileScore));
+                
+                // Determine user category based on comprehensive scoring
                 if (data.GlobalPlaytimePercentile >= 90)
+                {
+                    data.GlobalUserCategory = "Elite Gamer";
+                }
+                else if (data.GlobalPlaytimePercentile >= 75)
                 {
                     data.GlobalUserCategory = "Hardcore Gamer";
                 }
-                else if (data.GlobalPlaytimePercentile >= 70)
+                else if (data.GlobalPlaytimePercentile >= 60)
                 {
                     data.GlobalUserCategory = "Dedicated Player";
                 }
@@ -1050,11 +1349,13 @@ namespace InfoPanel.SteamAPI.Services
                     data.GlobalUserCategory = "New Player";
                 }
                 
-                _logger?.LogInfo($"Global Statistics - Percentile: {data.GlobalPlaytimePercentile}%, Category: {data.GlobalUserCategory}");
+                var factorDetails = string.Join(", ", factors);
+                _logger?.LogError($"=== GLOBAL STATS SUCCESS === Percentile: {data.GlobalPlaytimePercentile}% (Score: {percentileScore:F1}/100), Category: {data.GlobalUserCategory}");
+                _logger?.LogError($"=== SCORING BREAKDOWN === {factorDetails}");
             }
             catch (Exception ex)
             {
-                _logger?.LogError("Error collecting global statistics data", ex);
+                _logger?.LogError($"=== GLOBAL STATS ERROR === Error collecting global statistics data: {ex.Message}");
                 data.GlobalPlaytimePercentile = 0;
                 data.GlobalUserCategory = "Unknown";
             }

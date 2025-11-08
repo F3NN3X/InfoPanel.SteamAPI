@@ -803,8 +803,8 @@ namespace InfoPanel.SteamAPI.Services
                     // Update Friend Network Games sensors
                     trendingFriendGameSensor.Value = !string.IsNullOrEmpty(data.TrendingFriendGame) ? data.TrendingFriendGame : "None";
                     
-                    // Count of popular games from the list, fallback to calculated overlap percentage
-                    var friendGameCount = data.PopularFriendGames?.Count ?? (int)Math.Round(data.FriendsGameOverlapPercentage / 10.0);
+                    // Calculate friend game count from overlap percentage (since PopularFriendGames was removed)
+                    var friendGameCount = (int)Math.Round(data.FriendsGameOverlapPercentage / 10.0);
                     friendNetworkGameCountSensor.Value = friendGameCount;
                     
                     topFriendGameSensor.Value = !string.IsNullOrEmpty(data.MostOwnedFriendGame) ? data.MostOwnedFriendGame : "None";

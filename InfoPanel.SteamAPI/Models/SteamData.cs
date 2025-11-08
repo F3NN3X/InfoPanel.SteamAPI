@@ -170,7 +170,7 @@ namespace InfoPanel.SteamAPI.Models
         /// <summary>
         /// List of recently played games with details
         /// </summary>
-        public List<InfoPanel.SteamAPI.Services.RecentlyPlayedGame>? RecentGames { get; set; }
+        public List<SteamGame>? RecentGames { get; set; }
         
         // Session Time Tracking
         /// <summary>
@@ -354,11 +354,6 @@ namespace InfoPanel.SteamAPI.Models
         public string? MostActiveFriend { get; set; }
         
         // Popular Games in Friend Network
-        /// <summary>
-        /// List of games popular among friends with play statistics
-        /// </summary>
-        public List<FriendNetworkGame>? PopularFriendGames { get; set; }
-        
         /// <summary>
         /// Most trending game in friend network (biggest increase in players)
         /// </summary>
@@ -764,163 +759,5 @@ namespace InfoPanel.SteamAPI.Models
         /// Type of news (update, announcement, event, etc.)
         /// </summary>
         public string? NewsType { get; set; }
-    }
-
-    /// <summary>
-    /// Represents a Steam friend's information and activity
-    /// </summary>
-    public class SteamFriend
-    {
-        /// <summary>
-        /// Steam ID64 of the friend (64-bit format, 17 digits)
-        /// </summary>
-        public string? SteamId64 { get; set; }
-        
-        /// <summary>
-        /// Display name of the friend
-        /// </summary>
-        public string? PersonaName { get; set; }
-        
-        /// <summary>
-        /// Friend's current online status (online, offline, away, etc.)
-        /// </summary>
-        public string? PersonaState { get; set; }
-        
-        /// <summary>
-        /// Current game being played by the friend
-        /// </summary>
-        public string? CurrentGame { get; set; }
-        
-        /// <summary>
-        /// App ID of the game currently being played
-        /// </summary>
-        public int? CurrentGameAppId { get; set; }
-        
-        /// <summary>
-        /// Last time the friend was online
-        /// </summary>
-        public DateTime? LastOnline { get; set; }
-        
-        /// <summary>
-        /// Avatar URL for the friend
-        /// </summary>
-        public string? AvatarUrl { get; set; }
-        
-        /// <summary>
-        /// Profile URL of the friend
-        /// </summary>
-        public string? ProfileUrl { get; set; }
-        
-        /// <summary>
-        /// Friendship duration in days
-        /// </summary>
-        public int? FriendSince { get; set; }
-    }
-
-    /// <summary>
-    /// Represents a popular game within the user's friend network
-    /// </summary>
-    public class FriendNetworkGame
-    {
-        /// <summary>
-        /// App ID of the game
-        /// </summary>
-        public int AppId { get; set; }
-        
-        /// <summary>
-        /// Name of the game
-        /// </summary>
-        public string? GameName { get; set; }
-        
-        /// <summary>
-        /// Number of friends currently playing this game
-        /// </summary>
-        public int PlayingFriendsCount { get; set; }
-        
-        /// <summary>
-        /// Number of friends who own this game
-        /// </summary>
-        public int OwningFriendsCount { get; set; }
-        
-        /// <summary>
-        /// List of friend names currently playing
-        /// </summary>
-        public List<string>? PlayingFriends { get; set; }
-        
-        /// <summary>
-        /// Average playtime among friends (in minutes)
-        /// </summary>
-        public double? AveragePlaytime { get; set; }
-        
-        /// <summary>
-        /// Popularity ranking within friend network
-        /// </summary>
-        public int? PopularityRank { get; set; }
-        
-        /// <summary>
-        /// Recent activity level (trending up/down/stable)
-        /// </summary>
-        public string? TrendDirection { get; set; }
-    }
-
-    /// <summary>
-    /// Represents a Steam community badge earned by the user
-    /// </summary>
-    public class SteamBadge
-    {
-        /// <summary>
-        /// Unique identifier for the badge
-        /// </summary>
-        public int BadgeId { get; set; }
-        
-        /// <summary>
-        /// Name of the badge
-        /// </summary>
-        public string? Name { get; set; }
-        
-        /// <summary>
-        /// Description of the badge
-        /// </summary>
-        public string? Description { get; set; }
-        
-        /// <summary>
-        /// Current level of the badge
-        /// </summary>
-        public int Level { get; set; }
-        
-        /// <summary>
-        /// Maximum possible level for this badge
-        /// </summary>
-        public int? MaxLevel { get; set; }
-        
-        /// <summary>
-        /// XP earned from this badge
-        /// </summary>
-        public int XP { get; set; }
-        
-        /// <summary>
-        /// Date when the badge was earned
-        /// </summary>
-        public DateTime? CompletionTime { get; set; }
-        
-        /// <summary>
-        /// App ID associated with the badge (if game-specific)
-        /// </summary>
-        public int? AppId { get; set; }
-        
-        /// <summary>
-        /// Rarity of the badge (common, uncommon, rare, etc.)
-        /// </summary>
-        public string? Rarity { get; set; }
-        
-        /// <summary>
-        /// URL to the badge icon
-        /// </summary>
-        public string? IconUrl { get; set; }
-        
-        /// <summary>
-        /// Whether this is a foil badge
-        /// </summary>
-        public bool IsFoil { get; set; }
     }
 }

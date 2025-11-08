@@ -89,10 +89,16 @@
       <TargetPath>PluginInfo.ini</TargetPath>
     </None>
     
-    <!-- Configuration Files -->
-    <None Include="InfoPanel.SteamAPI.ini" Condition="Exists('InfoPanel.SteamAPI.ini')">
+    <!-- Default Configuration Template -->
+    <None Include="InfoPanel.SteamAPI.dll.ini">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      <TargetPath>InfoPanel.SteamAPI.ini</TargetPath>
+      <TargetPath>InfoPanel.SteamAPI.dll.ini.template</TargetPath>
+    </None>
+    
+    <!-- Configuration Files -->
+    <None Include="InfoPanel.SteamAPI.dll.ini" Condition="Exists('InfoPanel.SteamAPI.dll.ini')">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <TargetPath>InfoPanel.SteamAPI.dll.ini</TargetPath>
     </None>
     
     <!-- Documentation Files -->

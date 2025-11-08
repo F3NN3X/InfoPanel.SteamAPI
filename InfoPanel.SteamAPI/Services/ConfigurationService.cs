@@ -97,7 +97,6 @@ namespace InfoPanel.SteamAPI.Services
                 
                 // Debug Settings
                 _config["Debug Settings"]["EnableDebugLogging"] = "false";
-                _config["Debug Settings"]["DebugLogLevel"] = "Info";
                 
                 // Monitoring Settings
                 _config["Monitoring Settings"]["MonitoringIntervalMs"] = "1000";
@@ -144,11 +143,6 @@ namespace InfoPanel.SteamAPI.Services
                 _config["Debug Settings"]["EnableDebugLogging"] = "false";
                 configUpdated = true;
             }
-            if (!_config["Debug Settings"].ContainsKey("DebugLogLevel"))
-            {
-                _config["Debug Settings"]["DebugLogLevel"] = "Info";
-                configUpdated = true;
-            }
             
             // Ensure Monitoring Settings
             if (!_config["Monitoring Settings"].ContainsKey("MonitoringIntervalMs"))
@@ -191,13 +185,13 @@ namespace InfoPanel.SteamAPI.Services
                 configUpdated = true;
             }
             
-            // Handle migration from old SteamId to SteamId64
+            // Handle migration from old SteamId to SteamId64 format
             if (_config["Steam Settings"].ContainsKey("SteamId") && !_config["Steam Settings"].ContainsKey("SteamId64"))
             {
-                // Migrate old SteamId to SteamId64
+                // Migrate old SteamId to SteamId64 format
                 var oldSteamId = _config["Steam Settings"]["SteamId"];
                 _config["Steam Settings"]["SteamId64"] = oldSteamId;
-                _config["Steam Settings"].RemoveKey("SteamId"); // Remove old key
+                _config["Steam Settings"].RemoveKey("SteamId"); // Remove old key for consistency
                 configUpdated = true;
             }
             
@@ -234,6 +228,55 @@ namespace InfoPanel.SteamAPI.Services
             if (!_config["Steam Settings"].ContainsKey("MaxRecentGames"))
             {
                 _config["Steam Settings"]["MaxRecentGames"] = "5";
+                configUpdated = true;
+            }
+            
+            // Ensure Token Management Settings
+            if (!_config["Token Management"].ContainsKey("AutoRefreshTokens"))
+            {
+                _config["Token Management"]["AutoRefreshTokens"] = "true";
+                configUpdated = true;
+            }
+            if (!_config["Token Management"].ContainsKey("CommunityTokenEnabled"))
+            {
+                _config["Token Management"]["CommunityTokenEnabled"] = "true";
+                configUpdated = true;
+            }
+            if (!_config["Token Management"].ContainsKey("StoreTokenEnabled"))
+            {
+                _config["Token Management"]["StoreTokenEnabled"] = "true";
+                configUpdated = true;
+            }
+            if (!_config["Token Management"].ContainsKey("TokenRefreshIntervalHours"))
+            {
+                _config["Token Management"]["TokenRefreshIntervalHours"] = "12";
+                configUpdated = true;
+            }
+            if (!_config["Token Management"].ContainsKey("ManualTokenEntry"))
+            {
+                _config["Token Management"]["ManualTokenEntry"] = "false";
+                configUpdated = true;
+            }
+            
+            // Ensure Advanced Features Settings
+            if (!_config["Advanced Features"].ContainsKey("EnableEnhancedBadgeData"))
+            {
+                _config["Advanced Features"]["EnableEnhancedBadgeData"] = "false";
+                configUpdated = true;
+            }
+            if (!_config["Advanced Features"].ContainsKey("EnableStoreIntegration"))
+            {
+                _config["Advanced Features"]["EnableStoreIntegration"] = "false";
+                configUpdated = true;
+            }
+            if (!_config["Advanced Features"].ContainsKey("EnableExtendedAchievements"))
+            {
+                _config["Advanced Features"]["EnableExtendedAchievements"] = "false";
+                configUpdated = true;
+            }
+            if (!_config["Advanced Features"].ContainsKey("MaxMonitoredGamesForAchievements"))
+            {
+                _config["Advanced Features"]["MaxMonitoredGamesForAchievements"] = "5";
                 configUpdated = true;
             }
             
@@ -356,12 +399,6 @@ namespace InfoPanel.SteamAPI.Services
             GetBoolSetting("Debug Settings", "EnableDebugLogging", false);
         
         /// <summary>
-        /// Gets the debug log level
-        /// </summary>
-        public string DebugLogLevel => 
-            GetSetting("Debug Settings", "DebugLogLevel", "Info");
-        
-        /// <summary>
         /// Gets the monitoring interval in milliseconds
         /// </summary>
         public int MonitoringIntervalMs => 
@@ -416,7 +453,6 @@ namespace InfoPanel.SteamAPI.Services
         /// <summary>
         /// Gets the Steam ID (backward compatibility - returns SteamId64)
         /// </summary>
-        [Obsolete("Use SteamId64 instead for clarity about the 64-bit format")]
         public string SteamId => SteamId64;
         
         /// <summary>
@@ -476,6 +512,68 @@ namespace InfoPanel.SteamAPI.Services
         
         #endregion
 
+        #region Token Management Properties
+        
+        /// <summary>
+        /// Gets whether automatic token refresh is enabled
+        /// </summary>
+        public bool AutoRefreshTokens => 
+            GetBoolSetting("Token Management", "AutoRefreshTokens", true);
+        
+        /// <summary>
+        /// Gets whether community token features are enabled
+        /// </summary>
+        public bool CommunityTokenEnabled => 
+            GetBoolSetting("Token Management", "CommunityTokenEnabled", true);
+        
+        /// <summary>
+        /// Gets whether store token features are enabled
+        /// </summary>
+        public bool StoreTokenEnabled => 
+            GetBoolSetting("Token Management", "StoreTokenEnabled", true);
+        
+        /// <summary>
+        /// Gets the token refresh interval in hours
+        /// </summary>
+        public int TokenRefreshIntervalHours => 
+            GetIntSetting("Token Management", "TokenRefreshIntervalHours", 12);
+        
+        /// <summary>
+        /// Gets whether manual token entry mode is enabled
+        /// </summary>
+        public bool ManualTokenEntry => 
+            GetBoolSetting("Token Management", "ManualTokenEntry", false);
+        
+        #endregion
+
+        #region Advanced Features Properties
+        
+        /// <summary>
+        /// Gets whether enhanced badge data collection is enabled
+        /// </summary>
+        public bool EnableEnhancedBadgeData => 
+            GetBoolSetting("Advanced Features", "EnableEnhancedBadgeData", false);
+        
+        /// <summary>
+        /// Gets whether store integration is enabled
+        /// </summary>
+        public bool EnableStoreIntegration => 
+            GetBoolSetting("Advanced Features", "EnableStoreIntegration", false);
+        
+        /// <summary>
+        /// Gets whether extended achievement tracking is enabled
+        /// </summary>
+        public bool EnableExtendedAchievements => 
+            GetBoolSetting("Advanced Features", "EnableExtendedAchievements", false);
+        
+        /// <summary>
+        /// Gets the maximum number of games to monitor for achievements
+        /// </summary>
+        public int MaxMonitoredGamesForAchievements => 
+            GetIntSetting("Advanced Features", "MaxMonitoredGamesForAchievements", 5);
+        
+        #endregion
+
         #region Validation Methods
         
         /// <summary>
@@ -530,6 +628,34 @@ namespace InfoPanel.SteamAPI.Services
                 Debug.WriteLine($"[ConfigurationService] Error validating configuration: {ex.Message}");
                 return false;
             }
+        }
+        
+        #endregion
+
+        #region Helper Methods
+        
+        /// <summary>
+        /// Gets a boolean value from the configuration
+        /// </summary>
+        public bool GetBoolValue(string section, string key, bool defaultValue = false)
+        {
+            return GetBoolSetting(section, key, defaultValue);
+        }
+        
+        /// <summary>
+        /// Gets an integer value from the configuration
+        /// </summary>
+        public int GetIntValue(string section, string key, int defaultValue = 0)
+        {
+            return GetIntSetting(section, key, defaultValue);
+        }
+        
+        /// <summary>
+        /// Gets a string value from the configuration
+        /// </summary>
+        public string GetStringValue(string section, string key, string defaultValue = "")
+        {
+            return GetSetting(section, key, defaultValue);
         }
         
         #endregion
