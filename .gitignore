@@ -49,8 +49,7 @@ UpgradeLog*.XML
 UpgradeLog*.htm
 
 # Configuration files with potential sensitive data
-*.ini
-!*.ini.example
+
 
 # Test configuration
 test-config.ini
