@@ -19,6 +19,16 @@ namespace InfoPanel.SteamAPI.Services
         public int DurationMinutes => EndTime.HasValue 
             ? (int)(EndTime.Value - StartTime).TotalMinutes 
             : (int)(DateTime.Now - StartTime).TotalMinutes;
+        public string DurationFormatted 
+        {
+            get
+            {
+                var totalMinutes = DurationMinutes;
+                var hours = totalMinutes / 60;
+                var minutes = totalMinutes % 60;
+                return hours > 0 ? $"{hours}:{minutes:D2}" : $"{minutes}m";
+            }
+        }
         public bool IsActive => !EndTime.HasValue;
     }
 

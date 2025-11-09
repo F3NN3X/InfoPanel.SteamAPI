@@ -336,9 +336,9 @@ namespace InfoPanel.SteamAPI.Services
             PluginText mostPlayedRecentSensor,
             PluginSensor recentSessionsSensor,
             // Session Time Tracking sensors
-            PluginSensor currentSessionTimeSensor,
+            PluginText currentSessionTimeSensor,
             PluginText sessionStartTimeSensor,
-            PluginSensor averageSessionTimeSensor,
+            PluginText averageSessionTimeSensor,
             // Friends Online Monitoring sensors
             PluginSensor friendsOnlineSensor,
             PluginSensor friendsInGameSensor,
@@ -421,21 +421,24 @@ namespace InfoPanel.SteamAPI.Services
         /// Updates session time tracking sensors
         /// </summary>
         private void UpdateSessionTimeSensors(
-            PluginSensor currentSessionTimeSensor,
+            PluginText currentSessionTimeSensor,
             PluginText sessionStartTimeSensor,
-            PluginSensor averageSessionTimeSensor,
+            PluginText averageSessionTimeSensor,
             SteamData data)
         {
-            currentSessionTimeSensor.Value = (float)data.CurrentSessionTimeMinutes;
-            _logger?.LogDebug($"Current Session Time Sensor: {data.CurrentSessionTimeMinutes} minutes");
+            // Format current session time
+            var currentSessionFormatted = FormatMinutesToHourMin(data.CurrentSessionTimeMinutes);
+            currentSessionTimeSensor.Value = currentSessionFormatted;
+            _logger?.LogDebug($"Current Session Time Sensor: {currentSessionFormatted} ({data.CurrentSessionTimeMinutes} minutes)");
             
             var sessionStartTime = data.SessionStartTime?.ToString("HH:mm") ?? "Not in game";
             sessionStartTimeSensor.Value = sessionStartTime;
             _logger?.LogDebug($"Session Start Time Sensor: '{sessionStartTime}'");
             
-            var avgSessionTime = (float)Math.Round(data.AverageSessionTimeMinutes, 1);
-            averageSessionTimeSensor.Value = avgSessionTime;
-            _logger?.LogDebug($"Average Session Time Sensor: {avgSessionTime} minutes");
+            // Format average session time
+            var avgSessionFormatted = FormatMinutesToHourMin((int)Math.Round(data.AverageSessionTimeMinutes));
+            averageSessionTimeSensor.Value = avgSessionFormatted;
+            _logger?.LogDebug($"Average Session Time Sensor: {avgSessionFormatted} ({data.AverageSessionTimeMinutes:F1} minutes)");
         }
         
         /// <summary>
@@ -493,9 +496,9 @@ namespace InfoPanel.SteamAPI.Services
             PluginSensor recentGamesCountSensor,
             PluginText mostPlayedRecentSensor,
             PluginSensor recentSessionsSensor,
-            PluginSensor currentSessionTimeSensor,
+            PluginText currentSessionTimeSensor,
             PluginText sessionStartTimeSensor,
-            PluginSensor averageSessionTimeSensor,
+            PluginText averageSessionTimeSensor,
             PluginSensor friendsOnlineSensor,
             PluginSensor friendsInGameSensor,
             PluginSensor currentGameAchievementsSensor,
@@ -512,9 +515,9 @@ namespace InfoPanel.SteamAPI.Services
                 recentSessionsSensor.Value = 0;
                 
                 // Set error state for session time tracking
-                currentSessionTimeSensor.Value = 0;
+                currentSessionTimeSensor.Value = "Error";
                 sessionStartTimeSensor.Value = "Error";
-                averageSessionTimeSensor.Value = 0;
+                averageSessionTimeSensor.Value = "Error";
                 
                 // Set error state for friends monitoring
                 friendsOnlineSensor.Value = 0;
@@ -841,6 +844,19 @@ namespace InfoPanel.SteamAPI.Services
             globalUserCategorySensor.Value = "Error";
             
             _logger?.LogError($"Set Social & Community Features sensors to error state: {errorMessage}");
+        }
+        
+        /// <summary>
+        /// Formats minutes to hour:minute format (e.g., 90 -> "1:30", 30 -> "30m")
+        /// </summary>
+        private static string FormatMinutesToHourMin(int totalMinutes)
+        {
+            if (totalMinutes <= 0) return "0m";
+            
+            var hours = totalMinutes / 60;
+            var minutes = totalMinutes % 60;
+            
+            return hours > 0 ? $"{hours}:{minutes:D2}" : $"{minutes}m";
         }
         
         #endregion

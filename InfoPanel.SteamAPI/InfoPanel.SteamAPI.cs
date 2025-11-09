@@ -53,9 +53,9 @@ namespace InfoPanel.SteamAPI
         // Current Game and Session Tracking
         private readonly PluginText _currentGameSensor = new("current-game", "Current Game", "Not Playing");
         private readonly PluginSensor _currentGamePlaytimeSensor = new("current-game-playtime", "Game Playtime", 0, "hrs");
-        private readonly PluginSensor _currentSessionTimeSensor = new("current-session-time", "Current Session", 0, "min");
+        private readonly PluginText _currentSessionTimeSensor = new("current-session-time", "Current Session", "0m");
         private readonly PluginText _sessionStartTimeSensor = new("session-start-time", "Session Started", "Not in game");
-        private readonly PluginSensor _averageSessionTimeSensor = new("avg-session-time", "Avg Session Length", 0, "min");
+        private readonly PluginText _averageSessionTimeSensor = new("avg-session-time", "Avg Session Length", "0m");
         
         // Library and Overall Playtime Statistics
         private readonly PluginSensor _totalGamesSensor = new("total-games", "Games Owned", 0, "");
@@ -833,7 +833,9 @@ namespace InfoPanel.SteamAPI
         /// </summary>
         private bool IsCurrentlyPlaying(SteamFriend friend)
         {
-            return !string.IsNullOrWhiteSpace(friend.GameName) && 
+            // Must be online and have a valid game name that's not "Not Playing"
+            return friend.OnlineStatus != "Offline" && 
+                   !string.IsNullOrWhiteSpace(friend.GameName) && 
                    !friend.GameName.Equals("Not Playing", StringComparison.OrdinalIgnoreCase);
         }
 

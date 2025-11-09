@@ -111,7 +111,7 @@ namespace InfoPanel.SteamAPI.Services
                 _config["Debug Settings"]["EnableDebugLogging"] = "false";
                 _config["Steam Settings"]["ApiKey"] = "<your-steam-api-key-here>";
                 _config["Steam Settings"]["SteamId64"] = "<your-steam-id64-here>";
-                _config["Steam Settings"]["UpdateIntervalSeconds"] = "30";
+                _config["Steam Settings"]["UpdateIntervalSeconds"] = "15";
                 
                 // Add Friends Activity Settings with defaults
                 _config["Friends Activity Settings"]["ShowAllFriends"] = "true";
@@ -175,7 +175,7 @@ namespace InfoPanel.SteamAPI.Services
                 // Steam Settings
                 _config["Steam Settings"]["ApiKey"] = "<your-steam-api-key-here>";
                 _config["Steam Settings"]["SteamId64"] = "<your-steam-id64-here>";
-                _config["Steam Settings"]["UpdateIntervalSeconds"] = "30";
+                _config["Steam Settings"]["UpdateIntervalSeconds"] = "15";
                 _config["Steam Settings"]["EnableProfileMonitoring"] = "true";
                 _config["Steam Settings"]["EnableLibraryMonitoring"] = "true";
                 _config["Steam Settings"]["EnableCurrentGameMonitoring"] = "true";
@@ -454,7 +454,7 @@ namespace InfoPanel.SteamAPI.Services
         /// Gets the update interval for Steam data in seconds
         /// </summary>
         public int UpdateIntervalSeconds => 
-            GetIntSetting("Steam Settings", "UpdateIntervalSeconds", 30);
+            GetIntSetting("Steam Settings", "UpdateIntervalSeconds", 15);
         
         /// <summary>
         /// Gets whether profile monitoring is enabled
