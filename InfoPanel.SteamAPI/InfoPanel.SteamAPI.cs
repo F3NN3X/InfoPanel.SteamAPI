@@ -52,33 +52,33 @@ namespace InfoPanel.SteamAPI
         
         // Current Game and Session Tracking
         private readonly PluginText _currentGameSensor = new("current-game", "Current Game", "Not Playing");
-        private readonly PluginSensor _currentGamePlaytimeSensor = new("current-game-playtime", "Game Playtime", 0, "hrs");
-        private readonly PluginText _currentSessionTimeSensor = new("current-session-time", "Current Session", "0m");
-        private readonly PluginText _sessionStartTimeSensor = new("session-start-time", "Session Started", "Not in game");
-        private readonly PluginText _averageSessionTimeSensor = new("avg-session-time", "Avg Session Length", "0m");
+        private readonly PluginSensor _currentGamePlaytimeSensor = new("current-game-playtime", "Current Game Total Hours", 0, "hrs");
+        private readonly PluginText _currentSessionTimeSensor = new("current-session-time", "Current Session Duration", "0m");
+        private readonly PluginText _sessionStartTimeSensor = new("session-start-time", "Session Started At", "Not in game");
+        private readonly PluginText _averageSessionTimeSensor = new("avg-session-time", "Avg Session Duration", "0m");
         
         // Library and Overall Playtime Statistics
-        private readonly PluginSensor _totalGamesSensor = new("total-games", "Games Owned", 0, "");
-        private readonly PluginSensor _totalPlaytimeSensor = new("total-playtime", "Total Playtime", 0, "hrs");
-        private readonly PluginSensor _recentPlaytimeSensor = new("recent-playtime", "Recent Playtime", 0, "hrs");
-        private readonly PluginSensor _recentGamesCountSensor = new("recent-games-count", "Games Played (2w)", 0, "games");
-        private readonly PluginText _mostPlayedRecentSensor = new("most-played-recent", "Top Recent Game", "None");
+        private readonly PluginSensor _totalGamesSensor = new("total-games", "Total Games Owned", 0, "");
+        private readonly PluginSensor _totalPlaytimeSensor = new("total-playtime", "All Games Total Hours", 0, "hrs");
+        private readonly PluginSensor _recentPlaytimeSensor = new("recent-playtime", "Recent Play Hours (2w)", 0, "hrs");
+        private readonly PluginSensor _recentGamesCountSensor = new("recent-games-count", "Games Played Last 2w", 0, "games");
+        private readonly PluginText _mostPlayedRecentSensor = new("most-played-recent", "Most Played Game (2w)", "None");
         private readonly PluginSensor _recentSessionsSensor = new("recent-sessions", "Gaming Sessions (2w)", 0, "sessions");
-        private readonly PluginSensor _monitoredGamesCountSensor = new("monitored-games-count", "Monitored Games", 0, "games");
-        private readonly PluginSensor _monitoredGamesTotalHoursSensor = new("monitored-total-hours", "Monitored Total Hours", 0, "hrs");
+        private readonly PluginSensor _monitoredGamesCountSensor = new("monitored-games-count", "Top Games Being Tracked", 0, "games");
+        private readonly PluginSensor _monitoredGamesTotalHoursSensor = new("monitored-total-hours", "Top Games Total Hours", 0, "hrs");
         
         // Achievements and Badges
-        private readonly PluginSensor _currentGameAchievementsSensor = new("current-achievements", "Achievements", 0, "%");
-        private readonly PluginSensor _currentGameAchievementsUnlockedSensor = new("achievements-unlocked", "Unlocked", 0, "");
-        private readonly PluginSensor _currentGameAchievementsTotalSensor = new("achievements-total", "Total", 0, "");
+        private readonly PluginSensor _currentGameAchievementsSensor = new("current-achievements", "Current Game Achievements", 0, "%");
+        private readonly PluginSensor _currentGameAchievementsUnlockedSensor = new("achievements-unlocked", "Achievements Unlocked", 0, "");
+        private readonly PluginSensor _currentGameAchievementsTotalSensor = new("achievements-total", "Total Achievements", 0, "");
         private readonly PluginText _latestAchievementSensor = new("latest-achievement", "Latest Achievement", "None");
-        private readonly PluginSensor _overallAchievementCompletionSensor = new("overall-achievement-completion", "Overall Achievement %", 0, "%");
-        private readonly PluginSensor _totalAchievementsUnlockedSensor = new("total-achievements-unlocked", "Total Achievements", 0, "");
-        private readonly PluginSensor _achievementCompletionRankSensor = new("achievement-completion-rank", "Achievement Rank", 0, "%ile");
-        private readonly PluginSensor _totalBadgesEarnedSensor = new("total-badges-earned", "Badges Earned", 0, "badges");
-        private readonly PluginSensor _totalBadgeXPSensor = new("total-badge-xp", "Badge XP", 0, "XP");
-        private readonly PluginText _latestBadgeSensor = new("latest-badge", "Latest Badge", "None");
-        private readonly PluginSensor _badgeCompletionRateSensor = new("badge-completion-rate", "Badge Completion", 0, "%");
+        private readonly PluginSensor _overallAchievementCompletionSensor = new("overall-achievement-completion", "All Games Achievement %", 0, "%");
+        private readonly PluginSensor _totalAchievementsUnlockedSensor = new("total-achievements-unlocked", "All Achievements Unlocked", 0, "");
+        private readonly PluginSensor _achievementCompletionRankSensor = new("achievement-completion-rank", "Achievement Percentile Rank", 0, "%ile");
+        private readonly PluginSensor _totalBadgesEarnedSensor = new("total-badges-earned", "Steam Badges Earned", 0, "badges");
+        private readonly PluginSensor _totalBadgeXPSensor = new("total-badge-xp", "Total Badge XP", 0, "XP");
+        private readonly PluginText _latestBadgeSensor = new("latest-badge", "Latest Badge Earned", "None");
+        private readonly PluginSensor _badgeCompletionRateSensor = new("badge-completion-rate", "Badge Collection %", 0, "%");
         
         // Friends and Social Activity
         private readonly PluginSensor _friendsOnlineSensor = new("friends-online", "Friends Online", 0, "friends");

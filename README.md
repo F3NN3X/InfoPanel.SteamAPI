@@ -128,6 +128,37 @@ This plugin provides **48 sensors and 3 tables** organized into **4 containers**
   - Shows up to 10 most recently active friends with real-time status updates
   - Friends sorted by online status first, then by most recent activity
 
+## Key Terms Explained
+
+### Time Periods & Tracking
+- **Recent Playtime (2w)**: Hours played across all games in the last 14 days
+- **Total Playtime**: Lifetime hours across your entire Steam library since account creation
+- **Current Session Duration**: Time spent in current gaming session (e.g., "2:30" = 2 hours 30 minutes)
+- **Average Session Duration**: Average length of your gaming sessions (e.g., "7:21" = 7 hours 21 minutes)
+
+### Monitored Games Concept
+- **Monitored Games**: Your top 3-5 most actively played games that are tracked for detailed statistics
+- **Selection**: Automatically chosen based on recent playtime and achievement activity
+- **Purpose**: Provides in-depth tracking without overwhelming data from entire 300+ game library
+- **Configurable**: Maximum monitored games can be adjusted in configuration (default: 5 games)
+- **Top Games Being Tracked**: Shows how many games are currently monitored for detailed stats
+
+### Game Categories
+- **Games Played Last 2w**: Any game launched in the last 14 days (even 1 minute counts)
+- **Recent Games**: Your 5 most recently played games, sorted by recent activity
+- **All Games Total Hours**: Lifetime playtime across every game you own
+- **Top Games Total Hours**: Combined playtime for just your monitored games
+
+### Session Tracking
+- **Gaming Sessions (2w)**: Estimated number of separate gaming periods in last 14 days
+- **Session Started At**: Clock time when current gaming session began
+- **Session Persistence**: Session data survives InfoPanel restarts and is saved to disk
+
+### Social Features
+- **Friends Online**: Steam friends currently online (any status except offline)
+- **Friends Gaming**: Friends currently playing games (not just online/idle)
+- **Popular Game**: Most commonly played game among your online friends right now
+
 ## Understanding Your Data
 
 ### Gaming Activity Patterns
@@ -156,7 +187,7 @@ The plugin helps you understand your gaming habits through several key metrics:
 - **Global Statistics** provide context for your gaming habits compared to the broader Steam community
 
 ### Data Refresh & Accuracy
-- All data updates **every 30 seconds** automatically
+- All data updates **every 15 seconds** automatically for faster friends activity updates
 - **Steam API Integration** ensures data accuracy and real-time updates
 - **Session tracking** begins when InfoPanel detects you've started playing a game
 - **Achievement progress** updates only for games you're currently playing
