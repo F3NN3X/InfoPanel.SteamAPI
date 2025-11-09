@@ -132,11 +132,64 @@ All notable changes to InfoPanel Steam API Plugin will be documented in this fil
   - Enhanced configuration validation with SteamID64 format checking
   - Clear error messaging for configuration issues
 
+### Improved (v1.0.0 Updates) - 2025-11-09
+
+#### User Experience & Clarity Enhancements
+- **Enhanced Sensor Descriptions**
+  - Improved all sensor names for better clarity and understanding
+  - `"Current Game Total Hours"` instead of generic `"Game Playtime"`
+  - `"Recent Play Hours (2w)"` instead of ambiguous `"Recent Playtime"`
+  - `"Games Played Last 2w"` clarifying the 14-day scope
+  - `"Most Played Game (2w)"` specifying recent focus period
+  - `"Top Games Being Tracked"` explaining monitored games concept
+  - `"All Games Achievement %"` vs game-specific achievements
+  - `"Steam Badges Earned"` clarifying community badge context
+
+#### Session Time Format Clarification
+- **Session Duration Display Improvements**
+  - Fixed session time format confusion (7:21 = 7 hours 21 minutes, not minutes)
+  - Updated sensor descriptions: "Current Session Duration", "Avg Session Duration"
+  - Maintained proper hr:min formatting logic (441 minutes → "7:21")
+  - Converted PluginSensor to PluginText for better time display control
+  - Added `FormatMinutesToHourMin()` helper for consistent time formatting
+
+#### Performance Optimizations
+- **Faster Refresh Intervals**
+  - Reduced update interval from 30 seconds to 15 seconds for friends activity
+  - Improved real-time experience for social features and current session tracking
+  - Enhanced responsiveness for PlayingFirst friend sorting
+  - Better real-time session time updates
+
+#### Friends Activity Enhancements
+- **Improved Friend Sorting Logic**
+  - Fixed offline friends incorrectly appearing as "playing" in PlayingFirst sorting
+  - Enhanced `IsCurrentlyPlaying()` method to check `OnlineStatus != "Offline"`
+  - More accurate friend activity detection combining game status and online state
+  - Better separation of online vs playing friend counts
+
+#### Comprehensive Documentation Updates
+- **README.md Major Enhancement**
+  - Added comprehensive "Key Terms Explained" section
+  - **Time Periods & Tracking**: Clear definitions of Recent (2w), Total, Session durations
+  - **Monitored Games Concept**: Explained auto-selection of top 3-5 active games
+  - **Game Categories**: Distinguished Recent vs All games vs Top games tracking
+  - **Session Tracking**: Clarified gaming session counting and persistence
+  - **Social Features**: Clear distinction between "Friends Online" vs "Friends Gaming"
+  - Updated refresh interval documentation to reflect 15-second updates
+
+#### JSON Session Persistence
+- **Session Data Preservation**
+  - Confirmed sessions.json file survives InfoPanel restarts
+  - Session tracking data persists across plugin disposal/restart cycles
+  - Only removes sessions older than 14 days (not the entire file)
+  - Automatic session recovery on plugin initialization
+  - Proper cleanup on disposal without data loss
+
 ### Technical Implementation
 - **Service-based Architecture**: MonitoringService, SensorManagementService, ConfigurationService, FileLoggingService
 - **Dual Container System**: Organized Basic and Enhanced data separation
 - **Table Integration**: Proper InfoPanel DataTable implementation with PluginText formatting
-- **Real-time Updates**: Event-driven sensor and table updates every 30 seconds
+- **Real-time Updates**: Event-driven sensor and table updates every 15 seconds (improved from 30s)
 - **Steam Web API Integration**: Complete implementation with rate limiting and error handling
 - **Thread-safe Operations**: Comprehensive locking for sensor updates and data collection
 - **Professional Build System**: Versioned output with clean distribution packaging
