@@ -702,14 +702,8 @@ namespace InfoPanel.SteamAPI.Services
                 // Detailed Game-Specific Statistics
                 await CollectDetailedGameStatsAsync(data);
                 
-                // Multiple Game Monitoring
-                await CollectMultipleGameMonitoringDataAsync(data);
-                
                 // Achievement Completion Tracking
                 await CollectAchievementCompletionTrackingAsync(data);
-                
-                // News and Update Monitoring
-                await CollectGameNewsDataAsync(data);
                 
                 _logger?.LogDebug("Advanced Features data collection completed");
             }
@@ -824,35 +818,7 @@ namespace InfoPanel.SteamAPI.Services
         /// <summary>
         /// Collects multiple game monitoring data
         /// </summary>
-        private async Task CollectMultipleGameMonitoringDataAsync(SteamData data)
-        {
-            try
-            {
-                _logger?.LogDebug("Collecting multiple game monitoring data...");
-                
-                var monitoredGamesCount = data.MonitoredGamesStats?.Count ?? 0;
-                data.MonitoredGamesCount = monitoredGamesCount;
-                
-                if (data.MonitoredGamesStats?.Any() == true)
-                {
-                    data.MonitoredGamesTotalHours = data.MonitoredGamesStats.Sum(g => g.TotalHours);
-                }
-                else
-                {
-                    data.MonitoredGamesTotalHours = 0;
-                }
-                
-                _logger?.LogDebug($"Multi-game monitoring: {data.MonitoredGamesCount} games, {data.MonitoredGamesTotalHours:F1}h total");
-                
-                await Task.CompletedTask; // Placeholder for future async operations
-            }
-            catch (Exception ex)
-            {
-                _logger?.LogError("Error collecting multiple game monitoring data", ex);
-                data.MonitoredGamesCount = 0;
-                data.MonitoredGamesTotalHours = 0;
-            }
-        }
+
 
         /// <summary>
         /// Collects achievement completion tracking data
@@ -983,79 +949,7 @@ namespace InfoPanel.SteamAPI.Services
             data.AchievementCompletionRank = 0;
         }
 
-        /// <summary>
-        /// Collects Steam news and update data for monitored games
-        /// </summary>
-        private async Task CollectGameNewsDataAsync(SteamData data)
-        {
-            try
-            {
-                _logger?.LogDebug("Collecting game news data...");
-                
-                // Initialize news list if needed
-                data.RecentNews ??= new List<SteamNewsItem>();
-                
-                var newsItems = new List<SteamNewsItem>();
-                
-                // Generate sample news for monitored games
-                if (data.MonitoredGamesStats?.Any() == true)
-                {
-                    foreach (var game in data.MonitoredGamesStats.Take(3))
-                    {
-                        var newsItem = new SteamNewsItem
-                        {
-                            AppId = game.AppId,
-                            GameName = game.GameName,
-                            Title = $"{game.GameName} - Latest Update Available",
-                            Content = $"New content and bug fixes available for {game.GameName}",
-                            PublishDate = DateTime.Now.AddDays(-Random.Shared.Next(1, 7)),
-                            Author = "Steam News",
-                            IsRead = false,
-                            NewsType = "Update",
-                            Url = $"https://store.steampowered.com/app/{game.AppId}"
-                        };
-                        
-                        newsItems.Add(newsItem);
-                    }
-                }
-                else if (!string.IsNullOrEmpty(data.CurrentGameName))
-                {
-                    // At least create news for current game
-                    var currentGameNews = new SteamNewsItem
-                    {
-                        AppId = (uint)Math.Max(0, data.CurrentGameAppId),
-                        GameName = data.CurrentGameName,
-                        Title = $"{data.CurrentGameName} - Community Update",
-                        Content = "Latest community updates and events",
-                        PublishDate = DateTime.Now.AddDays(-2),
-                        Author = "Steam Community",
-                        IsRead = false,
-                        NewsType = "Community",
-                        Url = $"https://store.steampowered.com/app/{data.CurrentGameAppId}"
-                    };
-                    
-                    newsItems.Add(currentGameNews);
-                }
-                
-                data.RecentNews = newsItems;
-                data.UnreadNewsCount = newsItems.Count(n => !n.IsRead);
-                data.LatestGameNews = newsItems.FirstOrDefault()?.Title ?? "No recent news";
-                data.LatestNewsDate = newsItems.FirstOrDefault()?.PublishDate;
-                data.MostActiveNewsGame = newsItems.GroupBy(n => n.GameName).OrderByDescending(g => g.Count()).FirstOrDefault()?.Key ?? "None";
-                
-                _logger?.LogDebug($"Game news: {newsItems.Count} items, {data.UnreadNewsCount} unread, latest: {data.LatestGameNews}");
-                
-                await Task.CompletedTask;
-            }
-            catch (Exception ex)
-            {
-                _logger?.LogError("Error collecting game news data", ex);
-                data.LatestGameNews = "Error loading news";
-                data.UnreadNewsCount = 0;
-                data.MostActiveNewsGame = "Error";
-                data.LatestNewsDate = null;
-            }
-        }
+
 
         /// <summary>
         /// Triggers the DataUpdated event
