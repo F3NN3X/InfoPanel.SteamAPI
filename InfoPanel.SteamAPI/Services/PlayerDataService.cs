@@ -65,6 +65,19 @@ namespace InfoPanel.SteamAPI.Services
                     playerData.LastLogOff = player.LastLogoff;
                     playerData.OnlineState = MapPersonaStateToString(player.PersonaState);
                     
+                    // Get Steam Level (separate API call)
+                    try
+                    {
+                        var levelResponse = await _steamApiService.GetSteamLevelAsync();
+                        playerData.SteamLevel = levelResponse?.Response?.PlayerLevel ?? 0;
+                        _logger?.LogDebug($"[PlayerDataService] Steam Level: {playerData.SteamLevel}");
+                    }
+                    catch (Exception levelEx)
+                    {
+                        _logger?.LogWarning($"[PlayerDataService] Could not fetch Steam Level: {levelEx.Message}");
+                        playerData.SteamLevel = 0; // Default to 0 if unable to fetch
+                    }
+                    
                     // Current game state (CRITICAL for responsiveness)
                     if (!string.IsNullOrEmpty(player.GameExtraInfo))
                     {
@@ -100,17 +113,29 @@ namespace InfoPanel.SteamAPI.Services
                     return playerData;
                 }
 
-                // 2. Session tracking would be handled here (temporarily simplified)
-                // TODO: Add session tracking integration after validating SteamData model compatibility
+                // 2. Session tracking integration
                 if (_sessionTracker != null)
                 {
-                    _logger?.LogDebug("[PlayerDataService] Session tracking integration will be added in next iteration");
+                    var sessionInfo = _sessionTracker.GetCurrentSessionInfo();
+                    playerData.CurrentSessionTimeMinutes = sessionInfo.sessionMinutes;
+                    playerData.CurrentSessionStartTime = sessionInfo.sessionStart;
+                    
+                    if (sessionInfo.isActive && sessionInfo.sessionStart.HasValue)
+                    {
+                        _logger?.LogDebug($"[PlayerDataService] Active session: {sessionInfo.sessionMinutes} minutes (started: {sessionInfo.sessionStart.Value:HH:mm:ss})");
+                    }
+                    else
+                    {
+                        _logger?.LogDebug("[PlayerDataService] No active gaming session");
+                    }
                 }
-
-                // Set basic session defaults for now
-                playerData.CurrentSessionTimeMinutes = 0;
-                playerData.TodayPlaytimeHours = 0;
-                playerData.CurrentSessionStartTime = null;
+                else
+                {
+                    // Set basic session defaults when no tracker available
+                    playerData.CurrentSessionTimeMinutes = 0;
+                    playerData.TodayPlaytimeHours = 0;
+                    playerData.CurrentSessionStartTime = null;
+                }
 
                 // 3. Set status based on collected data
                 playerData.Status = playerData.IsOnline() ? "Online" : "Offline";
@@ -179,6 +204,7 @@ namespace InfoPanel.SteamAPI.Services
         public string? AvatarUrl { get; set; }
         public string? OnlineState { get; set; }
         public long LastLogOff { get; set; }
+        public int SteamLevel { get; set; } // Added missing SteamLevel field
         
         #endregion
 

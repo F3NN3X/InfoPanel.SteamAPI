@@ -174,6 +174,22 @@ namespace InfoPanel.SteamAPI.Services
         }
         
         /// <summary>
+        /// Gets current session information
+        /// </summary>
+        /// <returns>Current session data or null if no active session</returns>
+        public (int sessionMinutes, DateTime? sessionStart, bool isActive) GetCurrentSessionInfo()
+        {
+            lock (_sessionLock)
+            {
+                if (_sessionHistory.CurrentSession?.IsActive == true)
+                {
+                    return (_sessionHistory.CurrentSession.DurationMinutes, _sessionHistory.CurrentSession.StartTime, true);
+                }
+                return (0, null, false);
+            }
+        }
+
+        /// <summary>
         /// Forces end of current session (useful when plugin is shutting down)
         /// </summary>
         public void EndCurrentSessionIfActive()
