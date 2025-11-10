@@ -30,6 +30,14 @@ namespace InfoPanel.SteamAPI.Services
         public const int RECENT_ACHIEVEMENT_DAYS = 7;
         #endregion
         
+        #region Calculation Constants
+        /// <summary>Placeholder multiplier for badge completion rate calculation</summary>
+        public const double BADGE_COMPLETION_RATE_MULTIPLIER = 0.5;
+        
+        /// <summary>Time conversion: minutes per hour</summary>
+        public const int MINUTES_PER_HOUR = 60;
+        #endregion
+        
         #region Validation Thresholds  
         public const int MINIMUM_GAMES_OWNED = 0;
         public const double MINIMUM_PLAYTIME_HOURS = 0.0;
@@ -509,7 +517,7 @@ namespace InfoPanel.SteamAPI.Services
             _logger?.LogDebug($"Current Game Achievements Total Sensor: {data.CurrentGameAchievementsTotal}");
             
             string latestAchievement;
-            if (data.LatestAchievementDate.HasValue && data.LatestAchievementDate.Value > DateTime.Now.AddDays(-7))
+            if (data.LatestAchievementDate.HasValue && data.LatestAchievementDate.Value > DateTime.Now.AddDays(-SensorManagementConstants.RECENT_ACHIEVEMENT_DAYS))
             {
                 latestAchievement = data.LatestAchievementName ?? "None";
             }
@@ -818,7 +826,7 @@ namespace InfoPanel.SteamAPI.Services
                     latestBadgeSensor.Value = !string.IsNullOrEmpty(data.NextBadgeProgress) ? data.NextBadgeProgress : "None";
                     
                     // Calculate badge completion rate from available data (placeholder calculation)
-                    var badgeCompletionRate = data.TotalBadgesEarned > 0 ? Math.Min(100.0, data.TotalBadgesEarned * 0.5) : 0.0;
+                    var badgeCompletionRate = data.TotalBadgesEarned > 0 ? Math.Min(100.0, data.TotalBadgesEarned * SensorManagementConstants.BADGE_COMPLETION_RATE_MULTIPLIER) : 0.0;
                     badgeCompletionRateSensor.Value = (float)Math.Round(badgeCompletionRate, 1);
 
                     // Update Global Statistics sensors
@@ -885,8 +893,8 @@ namespace InfoPanel.SteamAPI.Services
         {
             if (totalMinutes <= 0) return "0m";
             
-            var hours = totalMinutes / 60;
-            var minutes = totalMinutes % 60;
+            var hours = totalMinutes / SensorManagementConstants.MINUTES_PER_HOUR;
+            var minutes = totalMinutes % SensorManagementConstants.MINUTES_PER_HOUR;
             
             return hours > 0 ? $"{hours}:{minutes:D2}" : $"{minutes}m";
         }

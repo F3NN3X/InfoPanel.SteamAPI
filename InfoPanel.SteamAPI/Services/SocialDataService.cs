@@ -1,6 +1,5 @@
 using InfoPanel.SteamAPI.Models;
 using System;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace InfoPanel.SteamAPI.Services

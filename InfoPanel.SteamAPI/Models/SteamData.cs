@@ -9,6 +9,28 @@ namespace InfoPanel.SteamAPI.Models
     /// </summary>
     public class SteamData
     {
+        #region Activity Level Constants
+        /// <summary>Hours threshold for "Very Active" gaming level</summary>
+        private const double VERY_ACTIVE_HOURS_THRESHOLD = 20.0;
+        
+        /// <summary>Hours threshold for "Active" gaming level</summary>
+        private const double ACTIVE_HOURS_THRESHOLD = 10.0;
+        
+        /// <summary>Hours threshold for "Casual" gaming level</summary>
+        private const double CASUAL_HOURS_THRESHOLD = 2.0;
+        
+        /// <summary>Days threshold for "recent" time formatting</summary>
+        private const int DAYS_THRESHOLD_FOR_RECENT = 30;
+        
+        /// <summary>Minimum minutes threshold for "Just now" status</summary>
+        private const double JUST_NOW_MINUTES_THRESHOLD = 1.0;
+        
+        /// <summary>Minimum hours threshold for hourly formatting</summary>
+        private const double HOURS_THRESHOLD_FOR_HOURLY = 1.0;
+        
+        /// <summary>Minimum days threshold for daily formatting</summary>
+        private const double DAYS_THRESHOLD_FOR_DAILY = 1.0;
+        #endregion
         #region Core Properties
         
         /// <summary>
@@ -518,10 +540,10 @@ namespace InfoPanel.SteamAPI.Models
             var dateTime = DateTimeOffset.FromUnixTimeSeconds(LastLogOff).DateTime;
             var timeSpan = DateTime.Now - dateTime;
             
-            if (timeSpan.TotalMinutes < 1) return "Just now";
-            if (timeSpan.TotalHours < 1) return $"{(int)timeSpan.TotalMinutes} minutes ago";
-            if (timeSpan.TotalDays < 1) return $"{(int)timeSpan.TotalHours} hours ago";
-            if (timeSpan.TotalDays < 30) return $"{(int)timeSpan.TotalDays} days ago";
+            if (timeSpan.TotalMinutes < JUST_NOW_MINUTES_THRESHOLD) return "Just now";
+            if (timeSpan.TotalHours < HOURS_THRESHOLD_FOR_HOURLY) return $"{(int)timeSpan.TotalMinutes} minutes ago";
+            if (timeSpan.TotalDays < DAYS_THRESHOLD_FOR_DAILY) return $"{(int)timeSpan.TotalHours} hours ago";
+            if (timeSpan.TotalDays < DAYS_THRESHOLD_FOR_RECENT) return $"{(int)timeSpan.TotalDays} days ago";
             
             return dateTime.ToString("MMM dd, yyyy");
         }
@@ -583,9 +605,9 @@ namespace InfoPanel.SteamAPI.Models
         public string GetActivityLevel()
         {
             if (HasError) return "Unknown";
-            if (RecentPlaytimeHours > 20) return "Very Active";
-            if (RecentPlaytimeHours > 10) return "Active";
-            if (RecentPlaytimeHours > 2) return "Casual";
+            if (RecentPlaytimeHours > VERY_ACTIVE_HOURS_THRESHOLD) return "Very Active";
+            if (RecentPlaytimeHours > ACTIVE_HOURS_THRESHOLD) return "Active";
+            if (RecentPlaytimeHours > CASUAL_HOURS_THRESHOLD) return "Casual";
             if (RecentPlaytimeHours > 0) return "Light";
             return "Inactive";
         }

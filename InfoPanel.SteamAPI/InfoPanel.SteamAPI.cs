@@ -35,6 +35,9 @@ namespace InfoPanel.SteamAPI
         /// <summary>Minutes per hour conversion factor</summary>
         public const double MINUTES_PER_HOUR = 60.0;
         
+        /// <summary>Hours per day for time calculations</summary>
+        public const int HOURS_PER_DAY = 24;
+        
         /// <summary>Default update interval in seconds when configuration is not available</summary>
         public const int DEFAULT_UPDATE_INTERVAL_SECONDS = 30;
         #endregion
@@ -1044,9 +1047,9 @@ namespace InfoPanel.SteamAPI
         /// </summary>
         private string FormatRelativeTime(TimeSpan timeSince)
         {
-            if (timeSince.TotalMinutes < 60)
+            if (timeSince.TotalMinutes < SteamAPIConstants.MINUTES_PER_HOUR)
                 return $"{(int)timeSince.TotalMinutes}m ago";
-            else if (timeSince.TotalHours < 24)
+            else if (timeSince.TotalHours < SteamAPIConstants.HOURS_PER_DAY)
                 return $"{(int)timeSince.TotalHours}h ago";
             else if (timeSince.TotalDays < SteamAPIConstants.DAYS_PER_MONTH)
                 return $"{(int)timeSince.TotalDays}d ago";

@@ -120,6 +120,10 @@ namespace InfoPanel.SteamAPI.Services
         private volatile int _mediumCycleCount = MonitoringConstants.INITIAL_CYCLE_COUNT;
         private volatile int _slowCycleCount = MonitoringConstants.INITIAL_CYCLE_COUNT;
         
+        // Current aggregated state - accumulates data from all services
+        private SteamData? _currentAggregatedState;
+        private readonly object _statelock = new();
+        
         #endregion
 
         #region Constructor
@@ -194,14 +198,14 @@ namespace InfoPanel.SteamAPI.Services
             }
             finally
             {
-                await StopMonitoringAsync();
+                StopMonitoring();
             }
         }
         
         /// <summary>
         /// Stops the Steam monitoring process
         /// </summary>
-        public async Task StopMonitoringAsync()
+        public void StopMonitoring()
         {
             lock (_lockObject)
             {
@@ -393,17 +397,44 @@ namespace InfoPanel.SteamAPI.Services
                 _slowCycleCount++;
                 _logger?.LogDebug($"[SlowTimer] Cycle {_slowCycleCount}: Collecting library and achievement data...");
                 
-                // Collect comprehensive data from all services for slow updates
+                // Collect ONLY library and game stats data (don't re-collect player data)
                 _ = Task.Run(async () =>
                 {
                     try
                     {
-                        var aggregatedData = await CollectAndAggregateAllDataAsync();
-                        OnDataUpdated(aggregatedData);
+                        var libraryData = await _libraryDataService.CollectLibraryDataAsync();
+                        var gameStatsData = await _gameStatsService.CollectGameStatsDataAsync("", 0);
+                        
+                        var steamData = new SteamData
+                        {
+                            Status = "Library data updated",
+                            Timestamp = DateTime.Now
+                        };
+                        
+                        // Only update library and achievement data
+                        if (libraryData != null)
+                        {
+                            steamData.TotalGamesOwned = libraryData.TotalGamesOwned;
+                            steamData.TotalLibraryPlaytimeHours = libraryData.TotalLibraryPlaytimeHours;
+                            steamData.MostPlayedGameName = libraryData.MostPlayedGameName;
+                            steamData.MostPlayedGameHours = libraryData.MostPlayedGameHours;
+                            steamData.RecentPlaytimeHours = libraryData.RecentPlaytimeHours;
+                            steamData.RecentGamesCount = libraryData.RecentGamesCount;
+                            steamData.MostPlayedRecentGame = libraryData.MostPlayedRecentGame;  // Fix: Added missing recent game mapping
+                        }
+                        
+                        if (gameStatsData != null)
+                        {
+                            steamData.TotalAchievements = gameStatsData.TotalAchievements;
+                            steamData.PerfectGames = gameStatsData.PerfectGames;
+                            steamData.AverageGameCompletion = gameStatsData.AverageGameCompletion;
+                        }
+                        
+                        OnDataUpdated(steamData);
                     }
                     catch (Exception ex)
                     {
-                        _logger?.LogError("Error collecting slow/aggregated data", ex);
+                        _logger?.LogError("Error collecting slow data", ex);
                         OnDataUpdated(new SteamData($"Slow data error: {ex.Message}"));
                     }
                 });
@@ -416,18 +447,110 @@ namespace InfoPanel.SteamAPI.Services
         }
         
         /// <summary>
-        /// Triggers the DataUpdated event
+        /// Triggers the DataUpdated event with accumulated/merged data
         /// </summary>
-        private void OnDataUpdated(SteamData data)
+        private void OnDataUpdated(SteamData newData)
         {
             try
             {
-                DataUpdated?.Invoke(this, new DataUpdatedEventArgs(data));
+                SteamData dataToSend;
+                
+                lock (_statelock)
+                {
+                    // Merge new data with current aggregated state
+                    _currentAggregatedState = MergeDataIntoCurrentState(newData);
+                    dataToSend = _currentAggregatedState;
+                }
+                
+                DataUpdated?.Invoke(this, new DataUpdatedEventArgs(dataToSend));
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"[{MonitoringConstants.SERVICE_NAME}] Error in DataUpdated event: {ex.Message}");
             }
+        }
+        
+        /// <summary>
+        /// Merges new data into the current aggregated state, only updating non-empty values
+        /// </summary>
+        private SteamData MergeDataIntoCurrentState(SteamData newData)
+        {
+            // If we don't have a current state, create one from the new data
+            if (_currentAggregatedState == null)
+            {
+                return new SteamData
+                {
+                    Status = newData.Status,
+                    Timestamp = newData.Timestamp,
+                    HasError = newData.HasError,
+                    ErrorMessage = newData.ErrorMessage,
+                    
+                    // Copy all available data from the new data
+                    PlayerName = newData.PlayerName,
+                    OnlineState = newData.OnlineState,
+                    SteamLevel = newData.SteamLevel,
+                    CurrentGameName = newData.CurrentGameName,
+                    CurrentGameAppId = newData.CurrentGameAppId,
+                    CurrentGameExtraInfo = newData.CurrentGameExtraInfo,
+                    TotalGamesOwned = newData.TotalGamesOwned,
+                    TotalLibraryPlaytimeHours = newData.TotalLibraryPlaytimeHours,
+                    MostPlayedGameName = newData.MostPlayedGameName,
+                    MostPlayedGameHours = newData.MostPlayedGameHours,
+                    RecentPlaytimeHours = newData.RecentPlaytimeHours,
+                    RecentGamesCount = newData.RecentGamesCount,
+                    MostPlayedRecentGame = newData.MostPlayedRecentGame,
+                    TotalAchievements = newData.TotalAchievements,
+                    PerfectGames = newData.PerfectGames,
+                    AverageGameCompletion = newData.AverageGameCompletion,
+                    
+                    // Social data
+                    TotalFriendsCount = newData.TotalFriendsCount,
+                    FriendsOnline = newData.FriendsOnline,
+                    FriendsInGame = newData.FriendsInGame,
+                    FriendsPopularGame = newData.FriendsPopularGame
+                };
+            }
+            
+            // Merge new data with existing state - only update non-empty/non-default values
+            var mergedData = new SteamData
+            {
+                Status = !string.IsNullOrEmpty(newData.Status) ? newData.Status : _currentAggregatedState.Status,
+                Timestamp = newData.Timestamp != default ? newData.Timestamp : _currentAggregatedState.Timestamp,
+                HasError = newData.HasError || _currentAggregatedState.HasError,
+                ErrorMessage = !string.IsNullOrEmpty(newData.ErrorMessage) ? newData.ErrorMessage : _currentAggregatedState.ErrorMessage,
+                
+                // Player profile - only update if new data has meaningful values
+                PlayerName = !string.IsNullOrEmpty(newData.PlayerName) ? newData.PlayerName : _currentAggregatedState.PlayerName,
+                OnlineState = !string.IsNullOrEmpty(newData.OnlineState) ? newData.OnlineState : _currentAggregatedState.OnlineState,
+                SteamLevel = newData.SteamLevel > 0 ? newData.SteamLevel : _currentAggregatedState.SteamLevel,
+                
+                // Current game - update if new data provides game info
+                CurrentGameName = !string.IsNullOrEmpty(newData.CurrentGameName) ? newData.CurrentGameName : _currentAggregatedState.CurrentGameName,
+                CurrentGameAppId = newData.CurrentGameAppId > 0 ? newData.CurrentGameAppId : _currentAggregatedState.CurrentGameAppId,
+                CurrentGameExtraInfo = !string.IsNullOrEmpty(newData.CurrentGameExtraInfo) ? newData.CurrentGameExtraInfo : _currentAggregatedState.CurrentGameExtraInfo,
+                
+                // Library data - update if new data provides library info
+                TotalGamesOwned = newData.TotalGamesOwned > 0 ? newData.TotalGamesOwned : _currentAggregatedState.TotalGamesOwned,
+                TotalLibraryPlaytimeHours = newData.TotalLibraryPlaytimeHours > 0 ? newData.TotalLibraryPlaytimeHours : _currentAggregatedState.TotalLibraryPlaytimeHours,
+                MostPlayedGameName = !string.IsNullOrEmpty(newData.MostPlayedGameName) ? newData.MostPlayedGameName : _currentAggregatedState.MostPlayedGameName,
+                MostPlayedGameHours = newData.MostPlayedGameHours > 0 ? newData.MostPlayedGameHours : _currentAggregatedState.MostPlayedGameHours,
+                RecentPlaytimeHours = newData.RecentPlaytimeHours > 0 ? newData.RecentPlaytimeHours : _currentAggregatedState.RecentPlaytimeHours,
+                RecentGamesCount = newData.RecentGamesCount > 0 ? newData.RecentGamesCount : _currentAggregatedState.RecentGamesCount,
+                MostPlayedRecentGame = !string.IsNullOrEmpty(newData.MostPlayedRecentGame) ? newData.MostPlayedRecentGame : _currentAggregatedState.MostPlayedRecentGame,
+                
+                // Achievement data - update if new data provides achievement info
+                TotalAchievements = newData.TotalAchievements > 0 ? newData.TotalAchievements : _currentAggregatedState.TotalAchievements,
+                PerfectGames = newData.PerfectGames > 0 ? newData.PerfectGames : _currentAggregatedState.PerfectGames,
+                AverageGameCompletion = newData.AverageGameCompletion > 0 ? newData.AverageGameCompletion : _currentAggregatedState.AverageGameCompletion,
+                
+                // Social data - update if new data provides social info
+                TotalFriendsCount = newData.TotalFriendsCount > 0 ? newData.TotalFriendsCount : _currentAggregatedState.TotalFriendsCount,
+                FriendsOnline = newData.FriendsOnline > 0 ? newData.FriendsOnline : _currentAggregatedState.FriendsOnline,
+                FriendsInGame = newData.FriendsInGame > 0 ? newData.FriendsInGame : _currentAggregatedState.FriendsInGame,
+                FriendsPopularGame = !string.IsNullOrEmpty(newData.FriendsPopularGame) ? newData.FriendsPopularGame : _currentAggregatedState.FriendsPopularGame
+            };
+            
+            return mergedData;
         }
         
         #endregion
@@ -449,6 +572,7 @@ namespace InfoPanel.SteamAPI.Services
                 
                 // Player profile
                 PlayerName = playerData.PlayerName,
+                SteamLevel = playerData.SteamLevel,  // Fix: Added missing Steam Level mapping
                 ProfileUrl = playerData.ProfileUrl,
                 AvatarUrl = playerData.AvatarUrl,
                 OnlineState = playerData.OnlineState,
@@ -461,7 +585,7 @@ namespace InfoPanel.SteamAPI.Services
                 CurrentGameServerIp = playerData.CurrentGameServerIp,
                 
                 // Details
-                Details = $"Player data: {playerData.PlayerName}, Game: {playerData.CurrentGameName ?? "None"}"
+                Details = $"Player data: {playerData.PlayerName}, Level: {playerData.SteamLevel}, Game: {playerData.CurrentGameName ?? "None"}"
             };
         }
 
@@ -478,8 +602,12 @@ namespace InfoPanel.SteamAPI.Services
                 HasError = socialData.HasError,
                 ErrorMessage = socialData.ErrorMessage,
                 
-                // Social data (map to existing SteamData properties)
-                // Note: These would need to be added to SteamData model or handled differently
+                // Social data mapping
+                TotalFriendsCount = socialData.TotalFriends,        // Fix: Map total friends
+                FriendsOnline = socialData.FriendsOnline,           // Fix: Map online friends
+                FriendsInGame = socialData.FriendsInGame,           // Fix: Map friends in game
+                FriendsPopularGame = socialData.FriendsPopularGame, // Fix: Map popular game
+                
                 Details = $"Social data: {socialData.FriendsOnline} friends online, {socialData.FriendsInGame} in game"
             };
         }
@@ -504,6 +632,7 @@ namespace InfoPanel.SteamAPI.Services
                 MostPlayedGameHours = libraryData.MostPlayedGameHours,
                 RecentPlaytimeHours = libraryData.RecentPlaytimeHours,
                 RecentGamesCount = libraryData.RecentGamesCount,
+                MostPlayedRecentGame = libraryData.MostPlayedRecentGame,   // Fix: Added missing recent game mapping
                 
                 Details = $"Library: {libraryData.TotalGamesOwned} games, {libraryData.TotalLibraryPlaytimeHours:F1}h total"
             };

@@ -260,7 +260,7 @@ namespace InfoPanel.SteamAPI.Services
             return true;
         }
         
-        private async Task<SteamToken?> AttemptCommunityTokenRefreshAsync()
+        private Task<SteamToken?> AttemptCommunityTokenRefreshAsync()
         {
             try
             {
@@ -277,12 +277,12 @@ namespace InfoPanel.SteamAPI.Services
                 // 4. HTML parsing for token extraction
                 
                 _logger?.LogInfo("Automatic community token refresh not implemented - manual entry required");
-                return null;
+                return Task.FromResult<SteamToken?>(null);
             }
             catch (Exception ex)
             {
                 _logger?.LogError("Community token refresh failed", ex);
-                return null;
+                return Task.FromResult<SteamToken?>(null);
             }
         }
         
