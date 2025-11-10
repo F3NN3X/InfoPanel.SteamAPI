@@ -97,7 +97,7 @@ namespace InfoPanel.SteamAPI.Services
                     // Add startup entries to buffer
                     AddLogEntry(LogLevel.Info, "=== SteamAPI Debug Session Started (Fresh Log) ===");
                     AddLogEntry(LogLevel.Info, $"Session Start Time: {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
-                    AddLogEntry(LogLevel.Info, $"Plugin Version: 1.1.0");
+                    AddLogEntry(LogLevel.Info, $"Plugin Version: {System.Reflection.Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "Unknown"}");
                     AddLogEntry(LogLevel.Info, $"Debug Logging: Enabled (All levels)");
                     AddLogEntry(LogLevel.Info, $"Log File: {_logFilePath}");
                     

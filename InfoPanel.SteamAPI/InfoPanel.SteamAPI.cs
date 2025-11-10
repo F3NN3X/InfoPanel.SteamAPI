@@ -474,6 +474,9 @@ namespace InfoPanel.SteamAPI
                                         e.Data.TotalLibraryPlaytimeHours > 0 || 
                                         e.Data.RecentGamesCount > 0;
                     
+                    // DEBUG: Log detection results
+                    _loggingService?.LogDebug($"[DEBUG] Data detection - Player:{hasPlayerData}, Social:{hasSocialData}, Library:{hasLibraryData} | TotalGamesOwned:{e.Data.TotalGamesOwned}, TotalLibraryPlaytimeHours:{e.Data.TotalLibraryPlaytimeHours}");
+                    
                     // Only update player/basic sensors if we have player data
                     if (hasPlayerData)
                     {
@@ -520,6 +523,24 @@ namespace InfoPanel.SteamAPI
                     // Only update library sensors if we have library data
                     if (hasLibraryData)
                     {
+                        _loggingService?.LogDebug("Updating library sensors...");
+                        // Update basic library sensors that are part of Steam sensors
+                        _sensorService.UpdateLibrarySensors(
+                            _totalGamesSensor,
+                            _totalPlaytimeSensor,
+                            _recentPlaytimeSensor,
+                            e.Data
+                        );
+                        
+                        _loggingService?.LogDebug("Updating recent gaming activity sensors...");
+                        // Update recent gaming activity sensors
+                        _sensorService.UpdateRecentGamingActivitySensors(
+                            _recentGamesCountSensor,
+                            _mostPlayedRecentSensor,
+                            _recentSessionsSensor,
+                            e.Data
+                        );
+                        
                         _loggingService?.LogDebug("Updating advanced features sensors...");
                         // Update Advanced Features sensors
                         _sensorService.UpdateAdvancedFeaturesSensors(
@@ -549,6 +570,9 @@ namespace InfoPanel.SteamAPI
                             // Friends Activity sensors
                             _totalFriendsCountSensor,
                             _friendActivityStatusSensor,
+                            // Friends Monitoring sensors 
+                            _friendsOnlineSensor,
+                            _friendsInGameSensor,
                             // Community Badge sensors
                             _totalBadgesEarnedSensor,
                             _totalBadgeXPSensor,
@@ -558,13 +582,13 @@ namespace InfoPanel.SteamAPI
                     }
                     
                     // Update tables with appropriate data
-                    if (hasPlayerData || hasLibraryData)
+                    if (hasLibraryData)
                     {
-                        // Update Recent Games Table
+                        // Update Recent Games Table - only when we have library data
                         _loggingService?.LogDebug("Updating recent games table...");
                         _recentGamesTable.Value = BuildRecentGamesTable(e.Data);
                         
-                        // Update Game Statistics Table
+                        // Update Game Statistics Table - only when we have library data
                         _loggingService?.LogDebug("Updating game statistics table...");
                         _gameStatsTable.Value = BuildGameStatisticsTable(e.Data);
                     }

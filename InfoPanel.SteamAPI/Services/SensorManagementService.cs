@@ -197,25 +197,34 @@ namespace InfoPanel.SteamAPI.Services
         /// <summary>
         /// Updates library statistics sensors
         /// </summary>
-        private void UpdateLibrarySensors(
+        public void UpdateLibrarySensors(
             PluginSensor totalGamesSensor,
             PluginSensor totalPlaytimeSensor,
             PluginSensor recentPlaytimeSensor,
             SteamData data)
         {
-            // Update total games owned
-            totalGamesSensor.Value = (float)data.TotalGamesOwned;
-            _logger?.LogDebug($"Total Games Sensor: {data.TotalGamesOwned}");
-            
-            // Update total playtime
-            var totalPlaytime = (float)Math.Round(data.TotalLibraryPlaytimeHours, SensorManagementConstants.DECIMAL_PRECISION);
-            totalPlaytimeSensor.Value = totalPlaytime;
-            _logger?.LogDebug($"Total Playtime Sensor: {totalPlaytime}h");
-            
-            // Update recent playtime
-            var recentPlaytime = (float)Math.Round(data.RecentPlaytimeHours, SensorManagementConstants.DECIMAL_PRECISION);
-            recentPlaytimeSensor.Value = recentPlaytime;
-            _logger?.LogDebug($"Recent Playtime Sensor: {recentPlaytime}h");
+            // Only update library sensors when we have actual library data
+            // If TotalGamesOwned is 0, this is likely player data without library info
+            if (data.TotalGamesOwned > 0 || data.TotalLibraryPlaytimeHours > 0)
+            {
+                // Update total games owned
+                totalGamesSensor.Value = (float)data.TotalGamesOwned;
+                _logger?.LogDebug($"Total Games Sensor: {data.TotalGamesOwned}");
+                
+                // Update total playtime
+                var totalPlaytime = (float)Math.Round(data.TotalLibraryPlaytimeHours, SensorManagementConstants.DECIMAL_PRECISION);
+                totalPlaytimeSensor.Value = totalPlaytime;
+                _logger?.LogDebug($"Total Playtime Sensor: {totalPlaytime}h");
+                
+                // Update recent playtime
+                var recentPlaytime = (float)Math.Round(data.RecentPlaytimeHours, SensorManagementConstants.DECIMAL_PRECISION);
+                recentPlaytimeSensor.Value = recentPlaytime;
+                _logger?.LogDebug($"Recent Playtime Sensor: {recentPlaytime}h");
+            }
+            else
+            {
+                _logger?.LogDebug("Skipping library sensor update - no library data available");
+            }
         }
         
         /// <summary>
@@ -428,7 +437,6 @@ namespace InfoPanel.SteamAPI.Services
                         SetEnhancedGamingSensorsErrorState(
                             recentGamesCountSensor, mostPlayedRecentSensor, recentSessionsSensor,
                             currentSessionTimeSensor, sessionStartTimeSensor, averageSessionTimeSensor,
-                            friendsOnlineSensor, friendsInGameSensor,
                             currentGameAchievementsSensor, currentGameAchievementsUnlockedSensor,
                             currentGameAchievementsTotalSensor, latestAchievementSensor,
                             data.ErrorMessage ?? "Unknown error");
@@ -440,9 +448,6 @@ namespace InfoPanel.SteamAPI.Services
                     
                     // Update session time tracking
                     UpdateSessionTimeSensors(currentSessionTimeSensor, sessionStartTimeSensor, averageSessionTimeSensor, data);
-                    
-                    // Update friends monitoring
-                    UpdateFriendsMonitoringSensors(friendsOnlineSensor, friendsInGameSensor, data);
                     
                     // Update achievement tracking
                     UpdateAchievementTrackingSensors(currentGameAchievementsSensor, currentGameAchievementsUnlockedSensor,
@@ -457,7 +462,6 @@ namespace InfoPanel.SteamAPI.Services
                     SetEnhancedGamingSensorsErrorState(
                         recentGamesCountSensor, mostPlayedRecentSensor, recentSessionsSensor,
                         currentSessionTimeSensor, sessionStartTimeSensor, averageSessionTimeSensor,
-                        friendsOnlineSensor, friendsInGameSensor,
                         currentGameAchievementsSensor, currentGameAchievementsUnlockedSensor,
                         currentGameAchievementsTotalSensor, latestAchievementSensor,
                         ex.Message);
@@ -468,21 +472,30 @@ namespace InfoPanel.SteamAPI.Services
         /// <summary>
         /// Updates recent gaming activity sensors
         /// </summary>
-        private void UpdateRecentGamingActivitySensors(
+        public void UpdateRecentGamingActivitySensors(
             PluginSensor recentGamesCountSensor,
             PluginText mostPlayedRecentSensor,
             PluginSensor recentSessionsSensor,
             SteamData data)
         {
-            recentGamesCountSensor.Value = (float)data.RecentGamesCount;
-            _logger?.LogDebug($"Recent Games Count Sensor: {data.RecentGamesCount}");
-            
-            var mostPlayedRecent = data.MostPlayedRecentGame ?? "None";
-            mostPlayedRecentSensor.Value = mostPlayedRecent;
-            _logger?.LogDebug($"Most Played Recent Sensor: '{mostPlayedRecent}'");
-            
-            recentSessionsSensor.Value = (float)data.RecentGameSessions;
-            _logger?.LogDebug($"Recent Sessions Sensor: {data.RecentGameSessions}");
+            // Only update recent gaming sensors when we have actual recent games data
+            // If RecentGamesCount is 0, this is likely player data without recent gaming info
+            if (data.RecentGamesCount > 0 || !string.IsNullOrEmpty(data.MostPlayedRecentGame))
+            {
+                recentGamesCountSensor.Value = (float)data.RecentGamesCount;
+                _logger?.LogDebug($"Recent Games Count Sensor: {data.RecentGamesCount}");
+                
+                var mostPlayedRecent = data.MostPlayedRecentGame ?? "None";
+                mostPlayedRecentSensor.Value = mostPlayedRecent;
+                _logger?.LogDebug($"Most Played Recent Sensor: '{mostPlayedRecent}'");
+                
+                recentSessionsSensor.Value = (float)data.RecentGameSessions;
+                _logger?.LogDebug($"Recent Sessions Sensor: {data.RecentGameSessions}");
+            }
+            else
+            {
+                _logger?.LogDebug("Skipping recent gaming activity sensor update - no recent games data available");
+            }
         }
         
         /// <summary>
@@ -578,8 +591,6 @@ namespace InfoPanel.SteamAPI.Services
             PluginText currentSessionTimeSensor,
             PluginText sessionStartTimeSensor,
             PluginText averageSessionTimeSensor,
-            PluginSensor friendsOnlineSensor,
-            PluginSensor friendsInGameSensor,
             PluginSensor currentGameAchievementsSensor,
             PluginSensor currentGameAchievementsUnlockedSensor,
             PluginSensor currentGameAchievementsTotalSensor,
@@ -597,10 +608,6 @@ namespace InfoPanel.SteamAPI.Services
                 currentSessionTimeSensor.Value = "Error";
                 sessionStartTimeSensor.Value = "Error";
                 averageSessionTimeSensor.Value = "Error";
-                
-                // Set error state for friends monitoring
-                friendsOnlineSensor.Value = 0;
-                friendsInGameSensor.Value = 0;
                 
                 // Set error state for achievement tracking
                 currentGameAchievementsSensor.Value = 0;
@@ -710,10 +717,14 @@ namespace InfoPanel.SteamAPI.Services
             PluginSensor monitoredGamesTotalHoursSensor,
             SteamData data)
         {
-            monitoredGamesCountSensor.Value = (float)data.MonitoredGamesCount;
-            _logger?.LogDebug($"Monitored Games Count Sensor: {data.MonitoredGamesCount} games");
+            // Use TotalGamesOwned instead of MonitoredGamesCount for library data
+            var gamesCount = data.TotalGamesOwned > 0 ? data.TotalGamesOwned : data.MonitoredGamesCount;
+            monitoredGamesCountSensor.Value = (float)gamesCount;
+            _logger?.LogDebug($"Monitored Games Count Sensor: {gamesCount} games");
             
-            var totalHours = (float)Math.Round(data.MonitoredGamesTotalHours, 1);
+            // Use TotalLibraryPlaytimeHours instead of MonitoredGamesTotalHours for library data  
+            var libraryHours = data.TotalLibraryPlaytimeHours > 0 ? data.TotalLibraryPlaytimeHours : data.MonitoredGamesTotalHours;
+            var totalHours = (float)Math.Round(libraryHours, 1);
             monitoredGamesTotalHoursSensor.Value = totalHours;
             _logger?.LogDebug($"Monitored Games Total Hours Sensor: {totalHours}h");
         }
@@ -781,6 +792,9 @@ namespace InfoPanel.SteamAPI.Services
             // Friends Activity sensors
             PluginSensor totalFriendsCountSensor,
             PluginText friendActivityStatusSensor,
+            // Friends Monitoring sensors
+            PluginSensor friendsOnlineSensor,
+            PluginSensor friendsInGameSensor,
             // Community Badge sensors
             PluginSensor totalBadgesEarnedSensor,
             PluginSensor totalBadgeXPSensor,
@@ -791,6 +805,7 @@ namespace InfoPanel.SteamAPI.Services
             {
                 _logger?.LogWarning("SteamData is null in UpdateSocialFeaturesSensors");
                 SetSocialFeaturesSensorsToError(totalFriendsCountSensor, friendActivityStatusSensor,
+                    friendsOnlineSensor, friendsInGameSensor,
                     totalBadgesEarnedSensor, totalBadgeXPSensor, latestBadgeSensor,
                     "No data available");
                 return;
@@ -800,6 +815,7 @@ namespace InfoPanel.SteamAPI.Services
             {
                 _logger?.LogWarning($"SteamData has error in UpdateSocialFeaturesSensors: {data.ErrorMessage}");
                 SetSocialFeaturesSensorsToError(totalFriendsCountSensor, friendActivityStatusSensor,
+                    friendsOnlineSensor, friendsInGameSensor,
                     totalBadgesEarnedSensor, totalBadgeXPSensor, latestBadgeSensor,
                     data.ErrorMessage ?? "Unknown error");
                 return;
@@ -821,6 +837,9 @@ namespace InfoPanel.SteamAPI.Services
                     };
                     friendActivityStatusSensor.Value = friendActivityText;
                     
+                    // Update Friends Monitoring sensors with correct social data
+                    UpdateFriendsMonitoringSensors(friendsOnlineSensor, friendsInGameSensor, data);
+                    
                     // Update Community Badge sensors
                     totalBadgesEarnedSensor.Value = data.TotalBadgesEarned;
                     totalBadgeXPSensor.Value = data.TotalBadgeXP;
@@ -836,6 +855,7 @@ namespace InfoPanel.SteamAPI.Services
                     _logger?.LogError("Error updating Social & Community Features sensors", ex);
                     Console.WriteLine($"[SensorManagementService] Error updating social features sensors: {ex.Message}");
                     SetSocialFeaturesSensorsToError(totalFriendsCountSensor, friendActivityStatusSensor,
+                        friendsOnlineSensor, friendsInGameSensor,
                         totalBadgesEarnedSensor, totalBadgeXPSensor, latestBadgeSensor,
                         ex.Message);
                 }
@@ -848,6 +868,8 @@ namespace InfoPanel.SteamAPI.Services
         private void SetSocialFeaturesSensorsToError(
             PluginSensor totalFriendsCountSensor,
             PluginText friendActivityStatusSensor,
+            PluginSensor friendsOnlineSensor,
+            PluginSensor friendsInGameSensor,
             PluginSensor totalBadgesEarnedSensor,
             PluginSensor totalBadgeXPSensor,
             PluginText latestBadgeSensor,
@@ -856,6 +878,10 @@ namespace InfoPanel.SteamAPI.Services
             // Friends Activity error values
             totalFriendsCountSensor.Value = 0f;
             friendActivityStatusSensor.Value = "Error";
+            
+            // Friends Monitoring error values
+            friendsOnlineSensor.Value = 0f;
+            friendsInGameSensor.Value = 0f;
             
             // Community Badge error values
             totalBadgesEarnedSensor.Value = 0f;

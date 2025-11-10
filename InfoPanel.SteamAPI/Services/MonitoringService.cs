@@ -629,10 +629,25 @@ namespace InfoPanel.SteamAPI.Services
                     FriendsInGame = socialData.FriendsInGame,
                     FriendsPopularGame = socialData.FriendsPopularGame,
                     
+                    // Convert FriendsActivity to FriendsList for table display
+                    FriendsList = socialData.FriendsActivity?.Select(fa => new SteamFriend
+                    {
+                        PersonaName = fa.FriendName,
+                        OnlineStatus = fa.Status,
+                        GameName = fa.CurrentGame == "Not in game" ? null : fa.CurrentGame,
+                        // Set the SteamId field (we don't have it from FriendActivity, so use name as fallback)
+                        SteamId = fa.FriendName, // This should be improved later with actual Steam ID
+                        // Add more properties as needed for the existing SteamFriend structure
+                    }).ToList(),
+                    
                     // Status for debugging - does NOT overwrite main status
                     Details = $"Social update: {socialData.FriendsOnline} friends online, {socialData.FriendsInGame} in game",
                     Timestamp = DateTime.Now
                 };
+                
+                // DEBUG: Log what we're sending to verify field population
+                _logger?.LogDebug($"[SOCIAL-DEBUG] Creating social SteamData: TotalFriendsCount={socialSteamData.TotalFriendsCount}, FriendsOnline={socialSteamData.FriendsOnline}, FriendsInGame={socialSteamData.FriendsInGame}");
+                _logger?.LogDebug($"[SOCIAL-DEBUG] FriendsList count: {socialSteamData.FriendsList?.Count ?? 0}");
                 
                 // Fire TARGETED DataUpdated event with only social data
                 DataUpdated?.Invoke(this, new DataUpdatedEventArgs(socialSteamData));
@@ -669,6 +684,8 @@ namespace InfoPanel.SteamAPI.Services
                     TotalLibraryPlaytimeHours = libraryData.TotalLibraryPlaytimeHours,
                     RecentPlaytimeHours = libraryData.RecentPlaytimeHours,
                     RecentGamesCount = libraryData.RecentGamesCount,
+                    RecentGames = libraryData.RecentGames, // MISSING: This was causing the table to be empty!
+                    MostPlayedRecentGame = libraryData.MostPlayedRecentGame, // MISSING: This was causing "none top recent game"!
                     MostPlayedGameName = libraryData.MostPlayedGameName,
                     MostPlayedGameHours = libraryData.MostPlayedGameHours,
                     
@@ -676,6 +693,9 @@ namespace InfoPanel.SteamAPI.Services
                     Details = $"Library update: {libraryData.TotalGamesOwned} games, {libraryData.TotalLibraryPlaytimeHours:F1}h total",
                     Timestamp = DateTime.Now
                 };
+                
+                // DEBUG: Log what we're sending to verify field population
+                _logger?.LogDebug($"[LIBRARY-DEBUG] Creating library SteamData: TotalGamesOwned={librarySteamData.TotalGamesOwned}, TotalLibraryPlaytimeHours={librarySteamData.TotalLibraryPlaytimeHours}, RecentGamesCount={librarySteamData.RecentGamesCount}");
                 
                 // Fire TARGETED DataUpdated event with only library data
                 DataUpdated?.Invoke(this, new DataUpdatedEventArgs(librarySteamData));
