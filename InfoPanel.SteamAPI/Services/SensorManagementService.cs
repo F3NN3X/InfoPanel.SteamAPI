@@ -5,6 +5,38 @@ using System;
 namespace InfoPanel.SteamAPI.Services
 {
     /// <summary>
+    /// Constants for sensor management and data formatting
+    /// </summary>
+    public static class SensorManagementConstants
+    {
+        #region Rounding Precision
+        public const int DECIMAL_PRECISION = 1;
+        #endregion
+        
+        #region Default Sensor Values
+        public const float DEFAULT_NUMERIC_SENSOR_VALUE = 0f;
+        public const int DEFAULT_STEAM_LEVEL = 0;
+        public const string DEFAULT_PLAYER_NAME_ERROR = "Error";
+        public const string DEFAULT_PLAYER_NAME_LOADING = "Loading...";
+        public const string DEFAULT_OFFLINE_STATUS = "Offline";
+        public const string DEFAULT_NOT_PLAYING = "Not Playing";
+        public const string DEFAULT_STATUS_ERROR = "Error";
+        public const string DEFAULT_STATUS_INITIALIZING = "Initializing...";
+        public const string DEFAULT_ACHIEVEMENT_NONE = "None";
+        public const string DEFAULT_ACHIEVEMENT_NONE_RECENT = "None recent";
+        #endregion
+        
+        #region Time Thresholds
+        public const int RECENT_ACHIEVEMENT_DAYS = 7;
+        #endregion
+        
+        #region Validation Thresholds  
+        public const int MINIMUM_GAMES_OWNED = 0;
+        public const double MINIMUM_PLAYTIME_HOURS = 0.0;
+        #endregion
+    }
+
+    /// <summary>
     /// Manages Steam sensor updates with thread safety and proper data formatting
     /// Implements thread-safe sensor update patterns for InfoPanel Steam monitoring
     /// </summary>
@@ -138,14 +170,14 @@ namespace InfoPanel.SteamAPI.Services
             if (data.IsInGame() && !string.IsNullOrEmpty(data.CurrentGameName))
             {
                 currentGameSensor.Value = data.CurrentGameName;
-                currentGamePlaytimeSensor.Value = (float)Math.Round(data.TotalPlaytimeHours, 1);
+                currentGamePlaytimeSensor.Value = (float)Math.Round(data.TotalPlaytimeHours, SensorManagementConstants.DECIMAL_PRECISION);
                 _logger?.LogDebug($"Current Game Sensor: '{data.CurrentGameName}' ({data.TotalPlaytimeHours:F1}h)");
             }
             else
             {
-                currentGameSensor.Value = "Not Playing";
-                currentGamePlaytimeSensor.Value = 0;
-                _logger?.LogDebug($"Current Game Sensor: 'Not Playing' (0h)");
+                currentGameSensor.Value = SensorManagementConstants.DEFAULT_NOT_PLAYING;
+                currentGamePlaytimeSensor.Value = SensorManagementConstants.DEFAULT_NUMERIC_SENSOR_VALUE;
+                _logger?.LogDebug($"Current Game Sensor: '{SensorManagementConstants.DEFAULT_NOT_PLAYING}' (0h)");
             }
         }
         
@@ -163,12 +195,12 @@ namespace InfoPanel.SteamAPI.Services
             _logger?.LogDebug($"Total Games Sensor: {data.TotalGamesOwned}");
             
             // Update total playtime
-            var totalPlaytime = (float)Math.Round(data.TotalLibraryPlaytimeHours, 1);
+            var totalPlaytime = (float)Math.Round(data.TotalLibraryPlaytimeHours, SensorManagementConstants.DECIMAL_PRECISION);
             totalPlaytimeSensor.Value = totalPlaytime;
             _logger?.LogDebug($"Total Playtime Sensor: {totalPlaytime}h");
             
             // Update recent playtime
-            var recentPlaytime = (float)Math.Round(data.RecentPlaytimeHours, 1);
+            var recentPlaytime = (float)Math.Round(data.RecentPlaytimeHours, SensorManagementConstants.DECIMAL_PRECISION);
             recentPlaytimeSensor.Value = recentPlaytime;
             _logger?.LogDebug($"Recent Playtime Sensor: {recentPlaytime}h");
         }

@@ -374,20 +374,6 @@ namespace InfoPanel.SteamAPI.Services
         #endregion
 
         #region Data Conversion Methods
-        
-        /// <summary>
-        /// Collects friends activity data including online status and current games
-        /// </summary>
-        /// <summary>
-        /// Collects global statistics comparison data
-        /// </summary>
-        #endregion
-
-        #region Tiered Data Collection Methods
-
-        #endregion
-
-        #region Data Conversion Methods
 
         /// <summary>
         /// Converts PlayerData to SteamData for event system compatibility
