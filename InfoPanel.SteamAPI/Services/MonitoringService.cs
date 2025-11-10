@@ -493,21 +493,11 @@ namespace InfoPanel.SteamAPI.Services
                     {
                         var socialData = await _socialDataService.CollectSocialDataAsync();
                         
-                        // Update social sensors directly - NO game data interference
+                        // Update social sensors directly - NO main plugin interference
                         UpdateSocialSensors(socialData);
                         
-                        // Fire social data event (does not include game fields)
-                        var steamData = new SteamData
-                        {
-                            Status = $"Social data updated - cycle {_socialCycleCount}",
-                            Timestamp = DateTime.Now,
-                            TotalFriendsCount = socialData.TotalFriends,
-                            FriendsOnline = socialData.FriendsOnline,
-                            FriendsInGame = socialData.FriendsInGame,
-                            FriendsPopularGame = socialData.FriendsPopularGame
-                        };
-                        
-                        DataUpdated?.Invoke(this, new DataUpdatedEventArgs(steamData));
+                        // NO DataUpdated event - prevents overwriting player data
+                        Console.WriteLine($"[MonitoringService] Social timer cycle {_socialCycleCount}: {socialData.FriendsOnline} friends online, {socialData.FriendsInGame} in game");
                     }
                     catch (Exception ex)
                     {
@@ -545,22 +535,11 @@ namespace InfoPanel.SteamAPI.Services
                     {
                         var libraryData = await _libraryDataService.CollectLibraryDataAsync();
                         
-                        // Update library sensors directly - NO game data interference
+                        // Update library sensors directly - NO main plugin interference
                         UpdateLibrarySensors(libraryData);
                         
-                        // Fire library data event (does not include game fields)
-                        var steamData = new SteamData
-                        {
-                            Status = $"Library data updated - cycle {_libraryCycleCount}",
-                            Timestamp = DateTime.Now,
-                            TotalGamesOwned = libraryData?.TotalGamesOwned ?? 0,
-                            TotalLibraryPlaytimeHours = libraryData?.TotalLibraryPlaytimeHours ?? 0,
-                            RecentGamesCount = libraryData?.RecentGamesCount ?? 0,
-                            MostPlayedGameName = libraryData?.MostPlayedGameName,
-                            MostPlayedGameHours = libraryData?.MostPlayedGameHours ?? 0
-                        };
-                        
-                        DataUpdated?.Invoke(this, new DataUpdatedEventArgs(steamData));
+                        // NO DataUpdated event - prevents overwriting player data
+                        Console.WriteLine($"[MonitoringService] Library timer cycle {_libraryCycleCount}: {libraryData?.TotalGamesOwned ?? 0} games, {libraryData?.TotalLibraryPlaytimeHours ?? 0:F1}h total");
                     }
                     catch (Exception ex)
                     {
@@ -638,18 +617,8 @@ namespace InfoPanel.SteamAPI.Services
         {
             try
             {
-                // Create SteamData focused on social information for the main plugin to process
-                // Note: SteamData doesn't have direct friends properties, so we pass it via status/details
-                var steamData = new SteamData
-                {
-                    // Encode social data in status and details for the main plugin to parse
-                    Status = $"Social data updated - cycle {_socialCycleCount}",
-                    Details = $"Friends: {socialData.FriendsOnline} online, {socialData.FriendsInGame} in games",
-                    Timestamp = DateTime.Now
-                };
-                
-                // Fire event for main plugin to update sensors
-                DataUpdated?.Invoke(this, new DataUpdatedEventArgs(steamData));
+                // NO DataUpdated event - social data updates handled internally
+                // Social timer only logs progress, does not interfere with main plugin sensors
                 
                 _logger?.LogDebug($"Social sensors updated - {socialData.FriendsOnline} friends online, {socialData.FriendsInGame} in game");
             }
@@ -674,25 +643,8 @@ namespace InfoPanel.SteamAPI.Services
                     return;
                 }
                 
-                // Create SteamData focused on library information for the main plugin to process
-                var steamData = new SteamData
-                {
-                    // Library statistics
-                    TotalGamesOwned = libraryData.TotalGamesOwned,
-                    TotalLibraryPlaytimeHours = libraryData.TotalLibraryPlaytimeHours,
-                    RecentPlaytimeHours = libraryData.RecentPlaytimeHours,
-                    RecentGamesCount = libraryData.RecentGamesCount,
-                    MostPlayedGameName = libraryData.MostPlayedGameName,
-                    MostPlayedGameHours = libraryData.MostPlayedGameHours,
-                    
-                    // Status and metadata
-                    Status = $"Library data updated - cycle {_libraryCycleCount}",
-                    Details = $"Library: {libraryData.TotalGamesOwned} games, {libraryData.TotalLibraryPlaytimeHours:F1} total hours",
-                    Timestamp = DateTime.Now
-                };
-                
-                // Fire event for main plugin to update sensors
-                DataUpdated?.Invoke(this, new DataUpdatedEventArgs(steamData));
+                // NO DataUpdated event - library data updates handled internally
+                // Library timer only logs progress, does not interfere with main plugin sensors
                 
                 _logger?.LogDebug($"Library sensors updated - {libraryData.TotalGamesOwned} games, {libraryData.TotalLibraryPlaytimeHours:F1} hours");
             }
