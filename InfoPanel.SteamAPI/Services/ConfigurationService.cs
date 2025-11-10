@@ -57,7 +57,7 @@ namespace InfoPanel.SteamAPI.Services
         
         #region Default Filter/Display Settings
         public const string DEFAULT_FRIENDS_FILTER = "All";
-        public const string DEFAULT_FRIENDS_SORT_BY = "LastOnline";
+        public const string DEFAULT_FRIENDS_SORT_BY = "PlayingFirst";
         public const string DEFAULT_FRIENDS_COLUMNS = "Friend,Status,Playing,LastOnline";
         public const string DEFAULT_LAST_SEEN_FORMAT = "Smart";
         public const string DEFAULT_FRIEND_NAME_DISPLAY = "DisplayName";
@@ -598,7 +598,7 @@ namespace InfoPanel.SteamAPI.Services
         /// Options: "LastOnline", "Name", "Status", "PlayingFirst"
         /// </summary>
         public string FriendsSortBy => 
-            GetSetting("Friends Activity Settings", "FriendsSortBy", "LastOnline");
+            GetSetting("Friends Activity Settings", "FriendsSortBy", "PlayingFirst");
         
         /// <summary>
         /// Gets whether to sort friends in descending order (true) or ascending (false)

@@ -916,10 +916,11 @@ namespace InfoPanel.SteamAPI
         /// </summary>
         private bool IsCurrentlyPlaying(SteamFriend friend)
         {
-            // Must be online and have a valid game name that's not "Not Playing"
+            // Must be online and have a valid game name that's not "Not Playing" or "Not in game"
             return friend.OnlineStatus != "Offline" && 
                    !string.IsNullOrWhiteSpace(friend.GameName) && 
-                   !friend.GameName.Equals(SteamAPIConstants.NOT_PLAYING, StringComparison.OrdinalIgnoreCase);
+                   !friend.GameName.Equals(SteamAPIConstants.NOT_PLAYING, StringComparison.OrdinalIgnoreCase) &&
+                   !friend.GameName.Equals("Not in game", StringComparison.OrdinalIgnoreCase);
         }
 
         /// <summary>

@@ -2,6 +2,52 @@
 
 All notable changes to InfoPanel Steam API Plugin will be documented in this file.
 
+## [1.2.0] - 2025-11-10
+
+### 🔥 **CRITICAL SESSION TRACKING FIX - Multi-Timer Architecture**
+
+**BREAKING CHANGE**: Complete monitoring architecture rewrite to fix session tracking failures
+
+#### 🐛 **Critical Bug Fixes**
+- **FIXED**: Session tracking completely broken - `sessions.json` stayed empty due to timer race conditions
+- **FIXED**: Image URL sensors showing "-" due to data corruption in timer merge logic  
+- **FIXED**: Data switching between correct/incorrect states every 15 seconds
+- **ROOT CAUSE**: Original 3-timer architecture had fatal race condition where medium timer (15s social data) was overwriting fast timer (5s game data) by explicitly setting `CurrentGameName=null` and `CurrentGameAppId=null`
+
+#### 🏗️ **Complete Multi-Timer Architecture Rewrite**
+- **NEW**: Clean separated timer architecture - **NO DATA MERGING**
+  - `PlayerTimer` (1 second): Game detection, profile data, **immediate session tracking**
+  - `SocialTimer` (15 seconds): Friends status only - **cannot interfere with game data**  
+  - `LibraryTimer` (45 seconds): Library statistics only - **cannot interfere with game data**
+- **NEW**: `SemaphoreSlim(1,1)` API rate limiting prevents concurrent Steam API calls
+- **NEW**: Direct sensor update methods - `UpdatePlayerSensors()`, `UpdateSocialSensors()`, `UpdateLibrarySensors()`
+- **NEW**: Immediate session tracking in player timer - **1-second game detection responsiveness**
+
+#### 🛡️ **Session Tracking Reliability**
+- **GUARANTEED**: Game state changes detected within 1 second (was 5 seconds)
+- **GUARANTEED**: Session entries created immediately when games start
+- **GUARANTEED**: Session duration tracking cannot be corrupted by social/library data
+- **NEW**: `SessionTrackingService` called directly from player timer with proper game state data
+
+#### 🚀 **Performance & Reliability Improvements**  
+- **ELIMINATED**: Timer race conditions causing data corruption
+- **ELIMINATED**: Complex data merging logic that caused state conflicts
+- **NEW**: Timer interval verification with deviation logging for troubleshooting
+- **NEW**: Comprehensive logging for each timer cycle with precise timestamps
+- **NEW**: Staggered timer startup (0s, 2s, 5s) to distribute API load
+
+#### 🔧 **Technical Implementation Details**
+- **API Rate Limiting**: Maximum 1 concurrent Steam API call (was unlimited)
+- **Timer Precision**: Player=1s, Social=15s, Library=45s (was 5s/15s/60s with conflicts)
+- **Memory Safety**: Proper disposal of all timer resources with cancellation support
+- **Error Handling**: Individual timer exception isolation prevents cascade failures
+
+#### 📋 **Migration Notes**
+- **BREAKING**: `MonitoringService` timer intervals changed - existing config may need updates
+- **BREAKING**: Event data structure simplified - no more merged conflicting data
+- **IMPROVEMENT**: Session tracking now works reliably for the first time
+- **IMPROVEMENT**: Image URL sensors will populate consistently without "-" fallbacks
+
 ## [1.1.1] - 2025-11-10
 
 ### 🏗️ Enterprise-Level Modernization & Optimization

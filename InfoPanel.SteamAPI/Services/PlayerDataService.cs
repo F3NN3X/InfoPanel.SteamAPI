@@ -104,16 +104,22 @@ namespace InfoPanel.SteamAPI.Services
                     }
                     
                     // Current game state (CRITICAL for responsiveness)
+                    _logger?.LogDebug($"[PlayerDataService] Checking game state - GameExtraInfo: '{player.GameExtraInfo}', GameId: '{player.GameId}', GameServerIp: '{player.GameServerIp}'");
+                    Console.WriteLine($"[PlayerDataService] Raw Steam API game fields - GameExtraInfo: '{player.GameExtraInfo}', GameId: '{player.GameId}', GameServerIp: '{player.GameServerIp}'");
+                    
                     if (!string.IsNullOrEmpty(player.GameExtraInfo))
                     {
                         playerData.CurrentGameName = player.GameExtraInfo;
                         playerData.CurrentGameServerIp = player.GameServerIp;
                         playerData.CurrentGameExtraInfo = player.GameExtraInfo;
                         
+                        Console.WriteLine($"[PlayerDataService] GAME DETECTED! Setting CurrentGameName='{playerData.CurrentGameName}'");
+                        
                         // Parse GameId as int if possible
                         if (int.TryParse(player.GameId, out int gameId))
                         {
                             playerData.CurrentGameAppId = gameId;
+                            Console.WriteLine($"[PlayerDataService] GAME APP ID SET! CurrentGameAppId={playerData.CurrentGameAppId}");
                             
                             // Get game banner URL
                             try
@@ -143,6 +149,7 @@ namespace InfoPanel.SteamAPI.Services
                         playerData.CurrentGameExtraInfo = null;
                         playerData.CurrentGameBannerUrl = null;
                         _logger?.LogDebug("[PlayerDataService] Player not in any game");
+                        Console.WriteLine("[PlayerDataService] NO GAME DETECTED - Steam API shows no game fields");
                     }
                     
                     _logger?.LogInfo($"[PlayerDataService] Player data collected - {playerData.PlayerName}, Online: {playerData.IsOnline()}, Game: {playerData.CurrentGameName ?? "None"}");
