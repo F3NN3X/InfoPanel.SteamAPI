@@ -76,6 +76,7 @@ namespace InfoPanel.SteamAPI.Services
         
         private readonly ConfigurationService _configService;
         private readonly FileLoggingService? _logger;
+        private readonly SensorManagementService? _sensorService;
         
         // Multi-timer architecture - each timer owns specific data types
         private readonly System.Threading.Timer _playerTimer;   // 1 second - Game state, sessions, profile
@@ -112,9 +113,10 @@ namespace InfoPanel.SteamAPI.Services
 
         #region Constructor
         
-        public MonitoringService(ConfigurationService configService, FileLoggingService? logger = null)
+        public MonitoringService(ConfigurationService configService, SensorManagementService? sensorService = null, FileLoggingService? logger = null)
         {
             _configService = configService ?? throw new ArgumentNullException(nameof(configService));
+            _sensorService = sensorService;
             _logger = logger;
             
             // Initialize multi-timer architecture (but don't start them yet)
@@ -617,8 +619,23 @@ namespace InfoPanel.SteamAPI.Services
         {
             try
             {
-                // NO DataUpdated event - social data updates handled internally
-                // Social timer only logs progress, does not interfere with main plugin sensors
+                // Create a MINIMAL SteamData object with ONLY social fields populated
+                // This prevents overwriting player data while still updating friend sensors
+                var socialSteamData = new SteamData
+                {
+                    // ONLY populate social/friends fields - leave player fields as null/default
+                    TotalFriendsCount = socialData.TotalFriends,
+                    FriendsOnline = socialData.FriendsOnline,
+                    FriendsInGame = socialData.FriendsInGame,
+                    FriendsPopularGame = socialData.FriendsPopularGame,
+                    
+                    // Status for debugging - does NOT overwrite main status
+                    Details = $"Social update: {socialData.FriendsOnline} friends online, {socialData.FriendsInGame} in game",
+                    Timestamp = DateTime.Now
+                };
+                
+                // Fire TARGETED DataUpdated event with only social data
+                DataUpdated?.Invoke(this, new DataUpdatedEventArgs(socialSteamData));
                 
                 _logger?.LogDebug($"Social sensors updated - {socialData.FriendsOnline} friends online, {socialData.FriendsInGame} in game");
             }
@@ -643,8 +660,25 @@ namespace InfoPanel.SteamAPI.Services
                     return;
                 }
                 
-                // NO DataUpdated event - library data updates handled internally
-                // Library timer only logs progress, does not interfere with main plugin sensors
+                // Create a MINIMAL SteamData object with ONLY library fields populated
+                // This prevents overwriting player data while still updating library sensors
+                var librarySteamData = new SteamData
+                {
+                    // ONLY populate library fields - leave player fields as null/default
+                    TotalGamesOwned = libraryData.TotalGamesOwned,
+                    TotalLibraryPlaytimeHours = libraryData.TotalLibraryPlaytimeHours,
+                    RecentPlaytimeHours = libraryData.RecentPlaytimeHours,
+                    RecentGamesCount = libraryData.RecentGamesCount,
+                    MostPlayedGameName = libraryData.MostPlayedGameName,
+                    MostPlayedGameHours = libraryData.MostPlayedGameHours,
+                    
+                    // Status for debugging - does NOT overwrite main status  
+                    Details = $"Library update: {libraryData.TotalGamesOwned} games, {libraryData.TotalLibraryPlaytimeHours:F1}h total",
+                    Timestamp = DateTime.Now
+                };
+                
+                // Fire TARGETED DataUpdated event with only library data
+                DataUpdated?.Invoke(this, new DataUpdatedEventArgs(librarySteamData));
                 
                 _logger?.LogDebug($"Library sensors updated - {libraryData.TotalGamesOwned} games, {libraryData.TotalLibraryPlaytimeHours:F1} hours");
             }

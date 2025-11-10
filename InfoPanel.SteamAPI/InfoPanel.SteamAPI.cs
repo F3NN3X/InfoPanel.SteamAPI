@@ -285,7 +285,7 @@ namespace InfoPanel.SteamAPI
                 _configService = new ConfigurationService(_configFilePath);
                 _loggingService = new FileLoggingService(_configService);
                 _sensorService = new SensorManagementService(_configService, _loggingService);
-                _monitoringService = new MonitoringService(_configService, _loggingService);
+                _monitoringService = new MonitoringService(_configService, _sensorService, _loggingService);
                 
                 // Log initialization
                 _loggingService.LogInfo("=== SteamAPI Plugin Initialization Started ===");
@@ -458,92 +458,123 @@ namespace InfoPanel.SteamAPI
                 // Debug logging for image URLs in event data
                 _loggingService?.LogDebug($"[OnDataUpdated] Event Data - ProfileImageUrl: {e.Data?.ProfileImageUrl}, CurrentGameBannerUrl: {e.Data?.CurrentGameBannerUrl}");
                 
-                // Update Steam sensors with data from monitoring service
+                // Smart sensor updates - only update sensors with relevant data
                 if (_sensorService != null && e.Data != null)
                 {
-                    _loggingService?.LogDebug("Updating basic Steam sensors...");
-                    _sensorService.UpdateSteamSensors(
-                        _playerNameSensor,
-                        _onlineStatusSensor,
-                        _steamLevelSensor,
-                        _currentGameSensor,
-                        _currentGamePlaytimeSensor,
-                        _totalGamesSensor,
-                        _totalPlaytimeSensor,
-                        _recentPlaytimeSensor,
-                        _statusSensor,
-                        _detailsSensor,
-                        _profileImageUrlSensor,
-                        _currentGameBannerUrlSensor,
-                        e.Data
-                    );
+                    // Detect what type of update this is based on populated fields
+                    var hasPlayerData = !string.IsNullOrEmpty(e.Data.PlayerName) || 
+                                       e.Data.SteamLevel > 0 || 
+                                       !string.IsNullOrEmpty(e.Data.ProfileImageUrl);
                     
-                    _loggingService?.LogDebug("Updating enhanced gaming sensors...");
-                    // Update Enhanced Gaming sensors
-                    _sensorService.UpdateEnhancedGamingSensors(
-                        // Recent Gaming Activity
-                        _recentGamesCountSensor,
-                        _mostPlayedRecentSensor,
-                        _recentSessionsSensor,
-                        // Session Time Tracking
-                        _currentSessionTimeSensor,
-                        _sessionStartTimeSensor,
-                        _averageSessionTimeSensor,
-                        // Friends Online Monitoring
-                        _friendsOnlineSensor,
-                        _friendsInGameSensor,
-                        // Achievement Tracking
-                        _currentGameAchievementsSensor,
-                        _currentGameAchievementsUnlockedSensor,
-                        _currentGameAchievementsTotalSensor,
-                        _latestAchievementSensor,
-                        e.Data
-                    );
+                    var hasSocialData = e.Data.TotalFriendsCount > 0 || 
+                                       e.Data.FriendsOnline > 0 || 
+                                       e.Data.FriendsInGame > 0;
                     
-                    _loggingService?.LogDebug("Updating advanced features sensors...");
-                    // Update Advanced Features sensors
-                    _sensorService.UpdateAdvancedFeaturesSensors(
-                        // Detailed Game-Specific Statistics
-                        _primaryGameStatsSensor,
-                        _secondaryGameStatsSensor,
-                        _tertiaryGameStatsSensor,
-                        // Multiple Game Monitoring
-                        _monitoredGamesCountSensor,
-                        _monitoredGamesTotalHoursSensor,
-                        // Removed artificial achievement completion tracking sensors
-                        // These depend on data not available via Steam Web API
-                        // News and Update Monitoring
-                        _latestGameNewsSensor,
-                        _unreadNewsCountSensor,
-                        _mostActiveNewsGameSensor,
-                        e.Data
-                    );
+                    var hasLibraryData = e.Data.TotalGamesOwned > 0 || 
+                                        e.Data.TotalLibraryPlaytimeHours > 0 || 
+                                        e.Data.RecentGamesCount > 0;
                     
-                    _loggingService?.LogDebug("Updating social & community features sensors...");
-                    // Update Social & Community Features sensors
-                    _sensorService.UpdateSocialFeaturesSensors(
-                        // Friends Activity sensors
-                        _totalFriendsCountSensor,
-                        _friendActivityStatusSensor,
-                        // Community Badge sensors
-                        _totalBadgesEarnedSensor,
-                        _totalBadgeXPSensor,
-                        _latestBadgeSensor,
-                        // Global Statistics sensors - removed GlobalUserCategory as it's not real Steam API data
-                        e.Data
-                    );
+                    // Only update player/basic sensors if we have player data
+                    if (hasPlayerData)
+                    {
+                        _loggingService?.LogDebug("Updating basic Steam sensors...");
+                        _sensorService.UpdateSteamSensors(
+                            _playerNameSensor,
+                            _onlineStatusSensor,
+                            _steamLevelSensor,
+                            _currentGameSensor,
+                            _currentGamePlaytimeSensor,
+                            _totalGamesSensor,
+                            _totalPlaytimeSensor,
+                            _recentPlaytimeSensor,
+                            _statusSensor,
+                            _detailsSensor,
+                            _profileImageUrlSensor,
+                            _currentGameBannerUrlSensor,
+                            e.Data
+                        );
+                        
+                        _loggingService?.LogDebug("Updating enhanced gaming sensors...");
+                        // Update Enhanced Gaming sensors
+                        _sensorService.UpdateEnhancedGamingSensors(
+                            // Recent Gaming Activity
+                            _recentGamesCountSensor,
+                            _mostPlayedRecentSensor,
+                            _recentSessionsSensor,
+                            // Session Time Tracking
+                            _currentSessionTimeSensor,
+                            _sessionStartTimeSensor,
+                            _averageSessionTimeSensor,
+                            // Friends Online Monitoring
+                            _friendsOnlineSensor,
+                            _friendsInGameSensor,
+                            // Achievement Tracking
+                            _currentGameAchievementsSensor,
+                            _currentGameAchievementsUnlockedSensor,
+                            _currentGameAchievementsTotalSensor,
+                            _latestAchievementSensor,
+                            e.Data
+                        );
+                    }
                     
-                    // Update Recent Games Table
-                    _loggingService?.LogDebug("Updating recent games table...");
-                    _recentGamesTable.Value = BuildRecentGamesTable(e.Data);
+                    // Only update library sensors if we have library data
+                    if (hasLibraryData)
+                    {
+                        _loggingService?.LogDebug("Updating advanced features sensors...");
+                        // Update Advanced Features sensors
+                        _sensorService.UpdateAdvancedFeaturesSensors(
+                            // Detailed Game-Specific Statistics
+                            _primaryGameStatsSensor,
+                            _secondaryGameStatsSensor,
+                            _tertiaryGameStatsSensor,
+                            // Multiple Game Monitoring
+                            _monitoredGamesCountSensor,
+                            _monitoredGamesTotalHoursSensor,
+                            // Removed artificial achievement completion tracking sensors
+                            // These depend on data not available via Steam Web API
+                            // News and Update Monitoring
+                            _latestGameNewsSensor,
+                            _unreadNewsCountSensor,
+                            _mostActiveNewsGameSensor,
+                            e.Data
+                        );
+                    }
                     
-                    // Update Game Statistics Table
-                    _loggingService?.LogDebug("Updating game statistics table...");
-                    _gameStatsTable.Value = BuildGameStatisticsTable(e.Data);
+                    // Only update social sensors if we have social data
+                    if (hasSocialData)
+                    {
+                        _loggingService?.LogDebug("Updating social & community features sensors...");
+                        // Update Social & Community Features sensors
+                        _sensorService.UpdateSocialFeaturesSensors(
+                            // Friends Activity sensors
+                            _totalFriendsCountSensor,
+                            _friendActivityStatusSensor,
+                            // Community Badge sensors
+                            _totalBadgesEarnedSensor,
+                            _totalBadgeXPSensor,
+                            _latestBadgeSensor,
+                            e.Data
+                        );
+                    }
                     
-                    // Update Friends Activity Table
-                    _loggingService?.LogDebug("Updating friends activity table...");
-                    _friendsActivityTable.Value = BuildFriendsActivityTable(e.Data);
+                    // Update tables with appropriate data
+                    if (hasPlayerData || hasLibraryData)
+                    {
+                        // Update Recent Games Table
+                        _loggingService?.LogDebug("Updating recent games table...");
+                        _recentGamesTable.Value = BuildRecentGamesTable(e.Data);
+                        
+                        // Update Game Statistics Table
+                        _loggingService?.LogDebug("Updating game statistics table...");
+                        _gameStatsTable.Value = BuildGameStatisticsTable(e.Data);
+                    }
+                    
+                    if (hasSocialData)
+                    {
+                        // Update Friends Activity Table
+                        _loggingService?.LogDebug("Updating friends activity table...");
+                        _friendsActivityTable.Value = BuildFriendsActivityTable(e.Data);
+                    }
                     
                     _loggingService?.LogDebug("Sensors updated successfully");
                 }
