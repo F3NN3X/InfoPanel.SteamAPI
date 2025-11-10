@@ -175,7 +175,6 @@ namespace InfoPanel.SteamAPI
         private readonly PluginSensor _steamLevelSensor = new("steam-level", "Steam Level", 0, "");
         private readonly PluginText _statusSensor = new("status", "Plugin Status", "Initializing...");
         private readonly PluginText _detailsSensor = new("details", "Details", "Loading Steam data...");
-        private readonly PluginText _globalUserCategorySensor = new("global-user-category", "User Category", "Unknown");
         
         // Current Game and Session Tracking
         private readonly PluginText _currentGameSensor = new("current-game", "Current Game", "Not Playing");
@@ -304,7 +303,6 @@ namespace InfoPanel.SteamAPI
                 profileContainer.Entries.Add(_steamLevelSensor);
                 profileContainer.Entries.Add(_statusSensor);
                 profileContainer.Entries.Add(_detailsSensor);
-                profileContainer.Entries.Add(_globalUserCategorySensor);
                 _loggingService.LogInfo($"Created User Profile & Status container with {profileContainer.Entries.Count} sensors");
                 containers.Add(profileContainer);
                 
@@ -538,8 +536,7 @@ namespace InfoPanel.SteamAPI
                         _totalBadgeXPSensor,
                         _latestBadgeSensor,
                         _badgeCompletionRateSensor,
-                        // Global Statistics sensors
-                        _globalUserCategorySensor,
+                        // Global Statistics sensors - removed GlobalUserCategory as it's not real Steam API data
                         e.Data
                     );
                     
@@ -596,7 +593,7 @@ namespace InfoPanel.SteamAPI
                 }
                 else
                 {
-                    _loggingService?.LogDebug("No recent games data available for table");
+                    _loggingService?.LogDebug($"No recent games data available for table. Data null: {data == null}, RecentGames null: {data?.RecentGames == null}, RecentGames count: {data?.RecentGames?.Count ?? -1}");
                 }
             }
             catch (Exception ex)

@@ -421,6 +421,7 @@ namespace InfoPanel.SteamAPI.Services
                             steamData.RecentPlaytimeHours = libraryData.RecentPlaytimeHours;
                             steamData.RecentGamesCount = libraryData.RecentGamesCount;
                             steamData.MostPlayedRecentGame = libraryData.MostPlayedRecentGame;  // Fix: Added missing recent game mapping
+                            steamData.RecentGames = libraryData.RecentGames;                    // Fix: Added missing recent games list for table population
                         }
                         
                         if (gameStatsData != null)
@@ -499,6 +500,7 @@ namespace InfoPanel.SteamAPI.Services
                     RecentPlaytimeHours = newData.RecentPlaytimeHours,
                     RecentGamesCount = newData.RecentGamesCount,
                     MostPlayedRecentGame = newData.MostPlayedRecentGame,
+                    RecentGames = newData.RecentGames,                           // Fix: Added recent games list
                     TotalAchievements = newData.TotalAchievements,
                     PerfectGames = newData.PerfectGames,
                     AverageGameCompletion = newData.AverageGameCompletion,
@@ -537,6 +539,7 @@ namespace InfoPanel.SteamAPI.Services
                 RecentPlaytimeHours = newData.RecentPlaytimeHours > 0 ? newData.RecentPlaytimeHours : _currentAggregatedState.RecentPlaytimeHours,
                 RecentGamesCount = newData.RecentGamesCount > 0 ? newData.RecentGamesCount : _currentAggregatedState.RecentGamesCount,
                 MostPlayedRecentGame = !string.IsNullOrEmpty(newData.MostPlayedRecentGame) ? newData.MostPlayedRecentGame : _currentAggregatedState.MostPlayedRecentGame,
+                RecentGames = newData.RecentGames?.Count > 0 ? newData.RecentGames : _currentAggregatedState.RecentGames,
                 
                 // Achievement data - update if new data provides achievement info
                 TotalAchievements = newData.TotalAchievements > 0 ? newData.TotalAchievements : _currentAggregatedState.TotalAchievements,
@@ -633,6 +636,7 @@ namespace InfoPanel.SteamAPI.Services
                 RecentPlaytimeHours = libraryData.RecentPlaytimeHours,
                 RecentGamesCount = libraryData.RecentGamesCount,
                 MostPlayedRecentGame = libraryData.MostPlayedRecentGame,   // Fix: Added missing recent game mapping
+                RecentGames = libraryData.RecentGames,                     // Fix: Added missing recent games list for table population
                 
                 Details = $"Library: {libraryData.TotalGamesOwned} games, {libraryData.TotalLibraryPlaytimeHours:F1}h total"
             };

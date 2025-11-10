@@ -25,15 +25,6 @@ namespace InfoPanel.SteamAPI.Services
         public const int ENTHUSIAST_PERFECT_GAMES_THRESHOLD = 2;
         public const int HUNTER_TOTAL_ACHIEVEMENTS_THRESHOLD = 100;
         
-        // Gaming dedication thresholds
-        public const int HARDCORE_STREAK_THRESHOLD = 30;
-        public const double HARDCORE_MONTHLY_HOURS_THRESHOLD = 80.0;
-        public const int DEDICATED_STREAK_THRESHOLD = 14;
-        public const double DEDICATED_MONTHLY_HOURS_THRESHOLD = 40.0;
-        public const int REGULAR_STREAK_THRESHOLD = 7;
-        public const double REGULAR_MONTHLY_HOURS_THRESHOLD = 20.0;
-        public const double CASUAL_MONTHLY_HOURS_THRESHOLD = 5.0;
-        
         // Default values
         public const int DEFAULT_APP_ID = 0;
         public const int DEFAULT_ACHIEVEMENT_COUNT = 0;
@@ -244,22 +235,18 @@ namespace InfoPanel.SteamAPI.Services
             {
                 _logger?.LogDebug("[GameStatsService] Collecting advanced gaming metrics...");
                 
-                // TODO: Implement real advanced metrics calculation
-                // This would analyze complex gaming patterns and statistics
-                
+                // Calculate basic gaming metrics - placeholder until real metrics are implemented
                 gameStatsData.GlobalPlaytimePercentile = GameStatsConstants.DEFAULT_PERCENTAGE;
-                gameStatsData.GlobalUserCategory = GameStatsConstants.UNKNOWN_CATEGORY;
                 gameStatsData.GamingStreakDays = GameStatsConstants.DEFAULT_STREAK_DAYS;
                 gameStatsData.MonthlyPlaytimeHours = GameStatsConstants.DEFAULT_PLAYTIME;
                 
-                _logger?.LogInfo($"[GameStatsService] Advanced metrics: {gameStatsData.GlobalPlaytimePercentile}% percentile, {gameStatsData.GlobalUserCategory} category");
+                _logger?.LogInfo($"[GameStatsService] Advanced metrics: {gameStatsData.GlobalPlaytimePercentile}% percentile");
                 return Task.CompletedTask;
             }
             catch (Exception ex)
             {
                 _logger?.LogError("[GameStatsService] Error collecting advanced gaming metrics", ex);
                 gameStatsData.GlobalPlaytimePercentile = GameStatsConstants.DEFAULT_PERCENTAGE;
-                gameStatsData.GlobalUserCategory = GameStatsConstants.UNKNOWN_CATEGORY;
                 gameStatsData.GamingStreakDays = GameStatsConstants.DEFAULT_STREAK_DAYS;
                 gameStatsData.MonthlyPlaytimeHours = GameStatsConstants.DEFAULT_PLAYTIME;
                 return Task.CompletedTask;
@@ -394,11 +381,6 @@ namespace InfoPanel.SteamAPI.Services
         public double GlobalPlaytimePercentile { get; set; }
         
         /// <summary>
-        /// Player's gaming category (Casual, Enthusiast, Hardcore, etc.)
-        /// </summary>
-        public string? GlobalUserCategory { get; set; }
-        
-        /// <summary>
         /// Current consecutive gaming streak in days
         /// </summary>
         public int GamingStreakDays { get; set; }
@@ -439,19 +421,6 @@ namespace InfoPanel.SteamAPI.Services
             if (PerfectGames >= GameStatsConstants.ENTHUSIAST_PERFECT_GAMES_THRESHOLD) return "Enthusiast";
             if (TotalAchievements >= GameStatsConstants.HUNTER_TOTAL_ACHIEVEMENTS_THRESHOLD) return "Hunter";
             return "Beginner";
-        }
-        
-        /// <summary>
-        /// Gets gaming dedication level based on streak and monthly hours
-        /// </summary>
-        public string GetGamingDedicationLevel()
-        {
-            if (HasError) return GameStatsConstants.UNKNOWN_CATEGORY;
-            if (GamingStreakDays >= GameStatsConstants.HARDCORE_STREAK_THRESHOLD && MonthlyPlaytimeHours >= GameStatsConstants.HARDCORE_MONTHLY_HOURS_THRESHOLD) return "Hardcore";
-            if (GamingStreakDays >= GameStatsConstants.DEDICATED_STREAK_THRESHOLD && MonthlyPlaytimeHours >= GameStatsConstants.DEDICATED_MONTHLY_HOURS_THRESHOLD) return "Dedicated";
-            if (GamingStreakDays >= GameStatsConstants.REGULAR_STREAK_THRESHOLD || MonthlyPlaytimeHours >= GameStatsConstants.REGULAR_MONTHLY_HOURS_THRESHOLD) return "Regular";
-            if (MonthlyPlaytimeHours >= GameStatsConstants.CASUAL_MONTHLY_HOURS_THRESHOLD) return "Casual";
-            return "Occasional";
         }
         
         #endregion

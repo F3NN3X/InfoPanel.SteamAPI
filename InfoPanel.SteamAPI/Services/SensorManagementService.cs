@@ -774,8 +774,6 @@ namespace InfoPanel.SteamAPI.Services
             PluginSensor totalBadgeXPSensor,
             PluginText latestBadgeSensor,
             PluginSensor badgeCompletionRateSensor,
-            // Global Statistics sensors
-            PluginText globalUserCategorySensor,
             SteamData data)
         {
             if (data == null)
@@ -784,7 +782,7 @@ namespace InfoPanel.SteamAPI.Services
                 SetSocialFeaturesSensorsToError(totalFriendsCountSensor, recentlyActiveFriendsCountSensor, friendActivityStatusSensor,
                     mostActiveFriendSensor, trendingFriendGameSensor,
                     totalBadgesEarnedSensor, totalBadgeXPSensor, latestBadgeSensor, badgeCompletionRateSensor,
-                    globalUserCategorySensor, "No data available");
+                    "No data available");
                 return;
             }
 
@@ -794,7 +792,7 @@ namespace InfoPanel.SteamAPI.Services
                 SetSocialFeaturesSensorsToError(totalFriendsCountSensor, recentlyActiveFriendsCountSensor, friendActivityStatusSensor,
                     mostActiveFriendSensor, trendingFriendGameSensor,
                     totalBadgesEarnedSensor, totalBadgeXPSensor, latestBadgeSensor, badgeCompletionRateSensor,
-                    globalUserCategorySensor, data.ErrorMessage ?? "Unknown error");
+                    data.ErrorMessage ?? "Unknown error");
                 return;
             }
 
@@ -829,9 +827,6 @@ namespace InfoPanel.SteamAPI.Services
                     var badgeCompletionRate = data.TotalBadgesEarned > 0 ? Math.Min(100.0, data.TotalBadgesEarned * SensorManagementConstants.BADGE_COMPLETION_RATE_MULTIPLIER) : 0.0;
                     badgeCompletionRateSensor.Value = (float)Math.Round(badgeCompletionRate, 1);
 
-                    // Update Global Statistics sensors
-                    globalUserCategorySensor.Value = !string.IsNullOrEmpty(data.GlobalUserCategory) ? data.GlobalUserCategory : "Unknown";
-
                     _logger?.LogDebug("Updated Social & Community Features sensors successfully");
                     _logger?.LogInfo($"Social Features - Friends: {data.TotalFriendsCount} ({data.RecentlyActiveFriends} active), " +
                                    $"Badges: {data.TotalBadgesEarned} ({data.TotalBadgeXP} XP), " +
@@ -844,7 +839,7 @@ namespace InfoPanel.SteamAPI.Services
                     SetSocialFeaturesSensorsToError(totalFriendsCountSensor, recentlyActiveFriendsCountSensor, friendActivityStatusSensor,
                         mostActiveFriendSensor, trendingFriendGameSensor,
                         totalBadgesEarnedSensor, totalBadgeXPSensor, latestBadgeSensor, badgeCompletionRateSensor,
-                        globalUserCategorySensor, ex.Message);
+                        ex.Message);
                 }
             }
         }
@@ -862,7 +857,6 @@ namespace InfoPanel.SteamAPI.Services
             PluginSensor totalBadgeXPSensor,
             PluginText latestBadgeSensor,
             PluginSensor badgeCompletionRateSensor,
-            PluginText globalUserCategorySensor,
             string errorMessage)
         {
             // Friends Activity error values
@@ -879,9 +873,6 @@ namespace InfoPanel.SteamAPI.Services
             totalBadgeXPSensor.Value = 0f;
             latestBadgeSensor.Value = "Error";
             badgeCompletionRateSensor.Value = 0f;
-            
-            // Global Statistics error values
-            globalUserCategorySensor.Value = "Error";
             
             _logger?.LogError($"Set Social & Community Features sensors to error state: {errorMessage}");
         }

@@ -423,11 +423,6 @@ namespace InfoPanel.SteamAPI.Models
         /// </summary>
         public double GlobalAchievementPercentile { get; set; }
         
-        /// <summary>
-        /// Estimated Steam user category (Casual, Regular, Hardcore, Elite)
-        /// </summary>
-        public string? GlobalUserCategory { get; set; }
-        
         #endregion
 
         #region Constructors
