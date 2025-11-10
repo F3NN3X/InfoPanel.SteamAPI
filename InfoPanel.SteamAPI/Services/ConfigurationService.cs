@@ -8,6 +8,72 @@ using IniParser.Model;
 namespace InfoPanel.SteamAPI.Services
 {
     /// <summary>
+    /// Constants for configuration management and default values
+    /// </summary>
+    public static class ConfigurationConstants
+    {
+        #region Section Names
+        public const string DEBUG_SETTINGS_SECTION = "Debug Settings";
+        public const string MONITORING_SETTINGS_SECTION = "Monitoring Settings";
+        public const string DISPLAY_SETTINGS_SECTION = "Display Settings";
+        public const string STEAM_SETTINGS_SECTION = "Steam Settings";
+        public const string TOKEN_MANAGEMENT_SECTION = "Token Management";
+        public const string ADVANCED_FEATURES_SECTION = "Advanced Features";
+        public const string FRIENDS_ACTIVITY_SECTION = "Friends Activity Settings";
+        #endregion
+        
+        #region Update Intervals (seconds)
+        public const int DEFAULT_UPDATE_INTERVAL = 15;
+        public const int DEFAULT_FAST_UPDATE_INTERVAL = 5;
+        public const int DEFAULT_MEDIUM_UPDATE_INTERVAL = 15;
+        public const int DEFAULT_SLOW_UPDATE_INTERVAL = 60;
+        public const int MINIMUM_UPDATE_INTERVAL = 10;
+        #endregion
+        
+        #region Monitoring Settings
+        public const int DEFAULT_MONITORING_INTERVAL_MS = 1000;
+        public const int DEFAULT_CONNECTION_TIMEOUT_MS = 5000;
+        #endregion
+        
+        #region Steam ID Validation
+        public const int STEAM_ID64_LENGTH = 17;
+        public const string STEAM_ID64_PREFIX = "7656119";
+        #endregion
+        
+        #region Default Limits
+        public const int DEFAULT_MAX_RECENT_GAMES = 5;
+        public const int DEFAULT_MAX_FRIENDS_DISPLAY = 0; // 0 = unlimited
+        public const int DEFAULT_MAX_FRIEND_NAME_LENGTH = 20;
+        public const int DEFAULT_MAX_MONITORED_ACHIEVEMENT_GAMES = 5;
+        public const int DEFAULT_TOKEN_REFRESH_HOURS = 12;
+        #endregion
+        
+        #region Default Values
+        public const int DEFAULT_INT_VALUE = 0;
+        public const double DEFAULT_DOUBLE_VALUE = 0.0;
+        public const bool DEFAULT_BOOL_VALUE = false;
+        public const string DEFAULT_STRING_VALUE = "";
+        #endregion
+        
+        #region Default Filter/Display Settings
+        public const string DEFAULT_FRIENDS_FILTER = "All";
+        public const string DEFAULT_FRIENDS_SORT_BY = "LastOnline";
+        public const string DEFAULT_FRIENDS_COLUMNS = "Friend,Status,Playing,LastOnline";
+        public const string DEFAULT_LAST_SEEN_FORMAT = "Smart";
+        public const string DEFAULT_FRIEND_NAME_DISPLAY = "DisplayName";
+        #endregion
+        
+        #region Placeholder Values
+        public const string API_KEY_PLACEHOLDER = "<your-steam-api-key-here>";
+        public const string STEAM_ID_PLACEHOLDER = "<your-steam-id64-here>";
+        #endregion
+        
+        #region Parser Configuration
+        public const string COMMENT_STRING = "#";
+        #endregion
+    }
+
+    /// <summary>
     /// Manages plugin configuration settings using INI file format
     /// Follows InfoPanel's standard pattern for configuration management
     /// </summary>
@@ -34,7 +100,7 @@ namespace InfoPanel.SteamAPI.Services
             _parser = new FileIniDataParser();
             
             // Configure parser to handle # comments (not just ; comments)
-            _parser.Parser.Configuration.CommentString = "#";
+            _parser.Parser.Configuration.CommentString = ConfigurationConstants.COMMENT_STRING;
             
             Console.WriteLine("[ConfigurationService] About to call LoadConfiguration()");
             LoadConfiguration();
@@ -108,25 +174,25 @@ namespace InfoPanel.SteamAPI.Services
                 _config = new IniData();
                 
                 // Add minimal required sections to prevent crashes
-                _config["Debug Settings"]["EnableDebugLogging"] = "false";
-                _config["Steam Settings"]["ApiKey"] = "<your-steam-api-key-here>";
-                _config["Steam Settings"]["SteamId64"] = "<your-steam-id64-here>";
-                _config["Steam Settings"]["UpdateIntervalSeconds"] = "15";
-                _config["Steam Settings"]["FastUpdateIntervalSeconds"] = "5";
-                _config["Steam Settings"]["MediumUpdateIntervalSeconds"] = "15";
-                _config["Steam Settings"]["SlowUpdateIntervalSeconds"] = "60";
+                _config[ConfigurationConstants.DEBUG_SETTINGS_SECTION]["EnableDebugLogging"] = ConfigurationConstants.DEFAULT_BOOL_VALUE.ToString().ToLower();
+                _config[ConfigurationConstants.STEAM_SETTINGS_SECTION]["ApiKey"] = ConfigurationConstants.API_KEY_PLACEHOLDER;
+                _config[ConfigurationConstants.STEAM_SETTINGS_SECTION]["SteamId64"] = ConfigurationConstants.STEAM_ID_PLACEHOLDER;
+                _config[ConfigurationConstants.STEAM_SETTINGS_SECTION]["UpdateIntervalSeconds"] = ConfigurationConstants.DEFAULT_UPDATE_INTERVAL.ToString();
+                _config[ConfigurationConstants.STEAM_SETTINGS_SECTION]["FastUpdateIntervalSeconds"] = ConfigurationConstants.DEFAULT_FAST_UPDATE_INTERVAL.ToString();
+                _config[ConfigurationConstants.STEAM_SETTINGS_SECTION]["MediumUpdateIntervalSeconds"] = ConfigurationConstants.DEFAULT_MEDIUM_UPDATE_INTERVAL.ToString();
+                _config[ConfigurationConstants.STEAM_SETTINGS_SECTION]["SlowUpdateIntervalSeconds"] = ConfigurationConstants.DEFAULT_SLOW_UPDATE_INTERVAL.ToString();
                 
                 // Add Friends Activity Settings with defaults
-                _config["Friends Activity Settings"]["ShowAllFriends"] = "true";
-                _config["Friends Activity Settings"]["MaxFriendsToDisplay"] = "0";
-                _config["Friends Activity Settings"]["FriendsFilter"] = "All";
-                _config["Friends Activity Settings"]["FriendsSortBy"] = "LastOnline";
-                _config["Friends Activity Settings"]["SortDescending"] = "true";
-                _config["Friends Activity Settings"]["FriendsTableColumns"] = "Friend,Status,Playing,LastOnline";
-                _config["Friends Activity Settings"]["LastSeenFormat"] = "Smart";
-                _config["Friends Activity Settings"]["HiddenStatuses"] = "";
-                _config["Friends Activity Settings"]["FriendNameDisplay"] = "DisplayName";
-                _config["Friends Activity Settings"]["MaxFriendNameLength"] = "20";
+                _config[ConfigurationConstants.FRIENDS_ACTIVITY_SECTION]["ShowAllFriends"] = "true";
+                _config[ConfigurationConstants.FRIENDS_ACTIVITY_SECTION]["MaxFriendsToDisplay"] = ConfigurationConstants.DEFAULT_MAX_FRIENDS_DISPLAY.ToString();
+                _config[ConfigurationConstants.FRIENDS_ACTIVITY_SECTION]["FriendsFilter"] = ConfigurationConstants.DEFAULT_FRIENDS_FILTER;
+                _config[ConfigurationConstants.FRIENDS_ACTIVITY_SECTION]["FriendsSortBy"] = ConfigurationConstants.DEFAULT_FRIENDS_SORT_BY;
+                _config[ConfigurationConstants.FRIENDS_ACTIVITY_SECTION]["SortDescending"] = "true";
+                _config[ConfigurationConstants.FRIENDS_ACTIVITY_SECTION]["FriendsTableColumns"] = ConfigurationConstants.DEFAULT_FRIENDS_COLUMNS;
+                _config[ConfigurationConstants.FRIENDS_ACTIVITY_SECTION]["LastSeenFormat"] = ConfigurationConstants.DEFAULT_LAST_SEEN_FORMAT;
+                _config[ConfigurationConstants.FRIENDS_ACTIVITY_SECTION]["HiddenStatuses"] = ConfigurationConstants.DEFAULT_STRING_VALUE;
+                _config[ConfigurationConstants.FRIENDS_ACTIVITY_SECTION]["FriendNameDisplay"] = ConfigurationConstants.DEFAULT_FRIEND_NAME_DISPLAY;
+                _config[ConfigurationConstants.FRIENDS_ACTIVITY_SECTION]["MaxFriendNameLength"] = ConfigurationConstants.DEFAULT_MAX_FRIEND_NAME_LENGTH.ToString();
                 
                 Debug.WriteLine("[ConfigurationService] Minimal config created. Original file preserved for manual recovery.");
             }
@@ -150,9 +216,9 @@ namespace InfoPanel.SteamAPI.Services
                 _config = new IniData();
                 
                 // Add minimal required sections to prevent crashes
-                _config["Debug Settings"]["EnableDebugLogging"] = "false";
-                _config["Steam Settings"]["ApiKey"] = "<your-steam-api-key-here>";
-                _config["Steam Settings"]["SteamId64"] = "<your-steam-id64-here>";
+                _config[ConfigurationConstants.DEBUG_SETTINGS_SECTION]["EnableDebugLogging"] = ConfigurationConstants.DEFAULT_BOOL_VALUE.ToString().ToLower();
+                _config[ConfigurationConstants.STEAM_SETTINGS_SECTION]["ApiKey"] = ConfigurationConstants.API_KEY_PLACEHOLDER;
+                _config[ConfigurationConstants.STEAM_SETTINGS_SECTION]["SteamId64"] = ConfigurationConstants.STEAM_ID_PLACEHOLDER;
                 
                 Debug.WriteLine("[ConfigurationService] Created minimal in-memory config as fallback. Original file preserved.");
                 return;
@@ -163,42 +229,42 @@ namespace InfoPanel.SteamAPI.Services
                 _config = new IniData();
                 
                 // Debug Settings
-                _config["Debug Settings"]["EnableDebugLogging"] = "false";
+                _config[ConfigurationConstants.DEBUG_SETTINGS_SECTION]["EnableDebugLogging"] = ConfigurationConstants.DEFAULT_BOOL_VALUE.ToString().ToLower();
                 
                 // Monitoring Settings
-                _config["Monitoring Settings"]["MonitoringIntervalMs"] = "1000";
-                _config["Monitoring Settings"]["EnableAutoReconnect"] = "true";
-                _config["Monitoring Settings"]["ConnectionTimeoutMs"] = "5000";
+                _config[ConfigurationConstants.MONITORING_SETTINGS_SECTION]["MonitoringIntervalMs"] = ConfigurationConstants.DEFAULT_MONITORING_INTERVAL_MS.ToString();
+                _config[ConfigurationConstants.MONITORING_SETTINGS_SECTION]["EnableAutoReconnect"] = "true";
+                _config[ConfigurationConstants.MONITORING_SETTINGS_SECTION]["ConnectionTimeoutMs"] = ConfigurationConstants.DEFAULT_CONNECTION_TIMEOUT_MS.ToString();
                 
                 // Display Settings
-                _config["Display Settings"]["ShowStatusMessages"] = "true";
-                _config["Display Settings"]["ShowDetailedMetrics"] = "true";
-                _config["Display Settings"]["UseMetricSystem"] = "true";
+                _config[ConfigurationConstants.DISPLAY_SETTINGS_SECTION]["ShowStatusMessages"] = "true";
+                _config[ConfigurationConstants.DISPLAY_SETTINGS_SECTION]["ShowDetailedMetrics"] = "true";
+                _config[ConfigurationConstants.DISPLAY_SETTINGS_SECTION]["UseMetricSystem"] = "true";
                 
                 // Steam Settings
-                _config["Steam Settings"]["ApiKey"] = "<your-steam-api-key-here>";
-                _config["Steam Settings"]["SteamId64"] = "<your-steam-id64-here>";
-                _config["Steam Settings"]["UpdateIntervalSeconds"] = "15";
-                _config["Steam Settings"]["FastUpdateIntervalSeconds"] = "5";
-                _config["Steam Settings"]["MediumUpdateIntervalSeconds"] = "15";
-                _config["Steam Settings"]["SlowUpdateIntervalSeconds"] = "60";
-                _config["Steam Settings"]["EnableProfileMonitoring"] = "true";
-                _config["Steam Settings"]["EnableLibraryMonitoring"] = "true";
-                _config["Steam Settings"]["EnableCurrentGameMonitoring"] = "true";
-                _config["Steam Settings"]["EnableAchievementMonitoring"] = "false";
-                _config["Steam Settings"]["MaxRecentGames"] = "5";
+                _config[ConfigurationConstants.STEAM_SETTINGS_SECTION]["ApiKey"] = ConfigurationConstants.API_KEY_PLACEHOLDER;
+                _config[ConfigurationConstants.STEAM_SETTINGS_SECTION]["SteamId64"] = ConfigurationConstants.STEAM_ID_PLACEHOLDER;
+                _config[ConfigurationConstants.STEAM_SETTINGS_SECTION]["UpdateIntervalSeconds"] = ConfigurationConstants.DEFAULT_UPDATE_INTERVAL.ToString();
+                _config[ConfigurationConstants.STEAM_SETTINGS_SECTION]["FastUpdateIntervalSeconds"] = ConfigurationConstants.DEFAULT_FAST_UPDATE_INTERVAL.ToString();
+                _config[ConfigurationConstants.STEAM_SETTINGS_SECTION]["MediumUpdateIntervalSeconds"] = ConfigurationConstants.DEFAULT_MEDIUM_UPDATE_INTERVAL.ToString();
+                _config[ConfigurationConstants.STEAM_SETTINGS_SECTION]["SlowUpdateIntervalSeconds"] = ConfigurationConstants.DEFAULT_SLOW_UPDATE_INTERVAL.ToString();
+                _config[ConfigurationConstants.STEAM_SETTINGS_SECTION]["EnableProfileMonitoring"] = "true";
+                _config[ConfigurationConstants.STEAM_SETTINGS_SECTION]["EnableLibraryMonitoring"] = "true";
+                _config[ConfigurationConstants.STEAM_SETTINGS_SECTION]["EnableCurrentGameMonitoring"] = "true";
+                _config[ConfigurationConstants.STEAM_SETTINGS_SECTION]["EnableAchievementMonitoring"] = ConfigurationConstants.DEFAULT_BOOL_VALUE.ToString().ToLower();
+                _config[ConfigurationConstants.STEAM_SETTINGS_SECTION]["MaxRecentGames"] = ConfigurationConstants.DEFAULT_MAX_RECENT_GAMES.ToString();
                 
                 // Friends Activity Settings
-                _config["Friends Activity Settings"]["ShowAllFriends"] = "true";
-                _config["Friends Activity Settings"]["MaxFriendsToDisplay"] = "0";
-                _config["Friends Activity Settings"]["FriendsFilter"] = "All";
-                _config["Friends Activity Settings"]["FriendsSortBy"] = "LastOnline";
-                _config["Friends Activity Settings"]["SortDescending"] = "true";
-                _config["Friends Activity Settings"]["FriendsTableColumns"] = "Friend,Status,Playing,LastOnline";
-                _config["Friends Activity Settings"]["LastSeenFormat"] = "Smart";
-                _config["Friends Activity Settings"]["HiddenStatuses"] = "";
-                _config["Friends Activity Settings"]["FriendNameDisplay"] = "DisplayName";
-                _config["Friends Activity Settings"]["MaxFriendNameLength"] = "20";
+                _config[ConfigurationConstants.FRIENDS_ACTIVITY_SECTION]["ShowAllFriends"] = "true";
+                _config[ConfigurationConstants.FRIENDS_ACTIVITY_SECTION]["MaxFriendsToDisplay"] = ConfigurationConstants.DEFAULT_MAX_FRIENDS_DISPLAY.ToString();
+                _config[ConfigurationConstants.FRIENDS_ACTIVITY_SECTION]["FriendsFilter"] = ConfigurationConstants.DEFAULT_FRIENDS_FILTER;
+                _config[ConfigurationConstants.FRIENDS_ACTIVITY_SECTION]["FriendsSortBy"] = ConfigurationConstants.DEFAULT_FRIENDS_SORT_BY;
+                _config[ConfigurationConstants.FRIENDS_ACTIVITY_SECTION]["SortDescending"] = "true";
+                _config[ConfigurationConstants.FRIENDS_ACTIVITY_SECTION]["FriendsTableColumns"] = ConfigurationConstants.DEFAULT_FRIENDS_COLUMNS;
+                _config[ConfigurationConstants.FRIENDS_ACTIVITY_SECTION]["LastSeenFormat"] = ConfigurationConstants.DEFAULT_LAST_SEEN_FORMAT;
+                _config[ConfigurationConstants.FRIENDS_ACTIVITY_SECTION]["HiddenStatuses"] = ConfigurationConstants.DEFAULT_STRING_VALUE;
+                _config[ConfigurationConstants.FRIENDS_ACTIVITY_SECTION]["FriendNameDisplay"] = ConfigurationConstants.DEFAULT_FRIEND_NAME_DISPLAY;
+                _config[ConfigurationConstants.FRIENDS_ACTIVITY_SECTION]["MaxFriendNameLength"] = ConfigurationConstants.DEFAULT_MAX_FRIEND_NAME_LENGTH.ToString();
                 
                 // Only write to file if the file doesn't exist (new installation)
                 _parser.WriteFile(_configFilePath, _config);
@@ -291,7 +357,7 @@ namespace InfoPanel.SteamAPI.Services
         /// <summary>
         /// Gets a string setting value
         /// </summary>
-        public string GetSetting(string section, string key, string defaultValue = "")
+        public string GetSetting(string section, string key, string defaultValue = ConfigurationConstants.DEFAULT_STRING_VALUE)
         {
             try
             {
@@ -320,7 +386,7 @@ namespace InfoPanel.SteamAPI.Services
         /// <summary>
         /// Gets an integer setting value with validation
         /// </summary>
-        public int GetIntSetting(string section, string key, int defaultValue = 0)
+        public int GetIntSetting(string section, string key, int defaultValue = ConfigurationConstants.DEFAULT_INT_VALUE)
         {
             var value = GetSetting(section, key);
             return int.TryParse(value, out var result) ? result : defaultValue;
@@ -329,7 +395,7 @@ namespace InfoPanel.SteamAPI.Services
         /// <summary>
         /// Gets a double setting value
         /// </summary>
-        public double GetDoubleSetting(string section, string key, double defaultValue = 0.0)
+        public double GetDoubleSetting(string section, string key, double defaultValue = ConfigurationConstants.DEFAULT_DOUBLE_VALUE)
         {
             var value = GetSetting(section, key);
             return double.TryParse(value, out var result) ? result : defaultValue;
@@ -384,37 +450,37 @@ namespace InfoPanel.SteamAPI.Services
         /// Gets the monitoring interval in milliseconds
         /// </summary>
         public int MonitoringIntervalMs => 
-            GetIntSetting("Monitoring Settings", "MonitoringIntervalMs", 1000);
+            GetIntSetting(ConfigurationConstants.MONITORING_SETTINGS_SECTION, "MonitoringIntervalMs", ConfigurationConstants.DEFAULT_MONITORING_INTERVAL_MS);
         
         /// <summary>
         /// Gets whether auto-reconnect is enabled
         /// </summary>
         public bool EnableAutoReconnect => 
-            GetBoolSetting("Monitoring Settings", "EnableAutoReconnect", true);
+            GetBoolSetting(ConfigurationConstants.MONITORING_SETTINGS_SECTION, "EnableAutoReconnect", true);
         
         /// <summary>
         /// Gets the connection timeout in milliseconds
         /// </summary>
         public int ConnectionTimeoutMs => 
-            GetIntSetting("Monitoring Settings", "ConnectionTimeoutMs", 5000);
+            GetIntSetting(ConfigurationConstants.MONITORING_SETTINGS_SECTION, "ConnectionTimeoutMs", ConfigurationConstants.DEFAULT_CONNECTION_TIMEOUT_MS);
         
         /// <summary>
         /// Gets whether to show status messages
         /// </summary>
         public bool ShowStatusMessages => 
-            GetBoolSetting("Display Settings", "ShowStatusMessages", true);
+            GetBoolSetting(ConfigurationConstants.DISPLAY_SETTINGS_SECTION, "ShowStatusMessages", true);
         
         /// <summary>
         /// Gets whether to show detailed metrics
         /// </summary>
         public bool ShowDetailedMetrics => 
-            GetBoolSetting("Display Settings", "ShowDetailedMetrics", true);
+            GetBoolSetting(ConfigurationConstants.DISPLAY_SETTINGS_SECTION, "ShowDetailedMetrics", true);
         
         /// <summary>
         /// Gets whether to use metric system for units
         /// </summary>
         public bool UseMetricSystem => 
-            GetBoolSetting("Display Settings", "UseMetricSystem", true);
+            GetBoolSetting(ConfigurationConstants.DISPLAY_SETTINGS_SECTION, "UseMetricSystem", true);
         
         #endregion
 
@@ -424,13 +490,13 @@ namespace InfoPanel.SteamAPI.Services
         /// Gets the Steam Web API key
         /// </summary>
         public string SteamApiKey => 
-            GetSetting("Steam Settings", "ApiKey", "");
+            GetSetting(ConfigurationConstants.STEAM_SETTINGS_SECTION, "ApiKey", ConfigurationConstants.DEFAULT_STRING_VALUE);
         
         /// <summary>
         /// Gets the Steam ID64 to monitor (64-bit format, 17 digits starting with 7656119)
         /// </summary>
         public string SteamId64 => 
-            GetSetting("Steam Settings", "SteamId64", "");
+            GetSetting(ConfigurationConstants.STEAM_SETTINGS_SECTION, "SteamId64", ConfigurationConstants.DEFAULT_STRING_VALUE);
         
         /// <summary>
         /// Gets the Steam ID (backward compatibility - returns SteamId64)
@@ -446,9 +512,9 @@ namespace InfoPanel.SteamAPI.Services
                 return false;
                 
             // SteamID64 should be exactly 17 digits and start with 7656119
-            return steamId64.Length == 17 && 
+            return steamId64.Length == ConfigurationConstants.STEAM_ID64_LENGTH && 
                    steamId64.All(char.IsDigit) && 
-                   steamId64.StartsWith("7656119");
+                   steamId64.StartsWith(ConfigurationConstants.STEAM_ID64_PREFIX);
         }
         
         /// <summary>
@@ -460,55 +526,55 @@ namespace InfoPanel.SteamAPI.Services
         /// Gets the update interval for Steam data in seconds
         /// </summary>
         public int UpdateIntervalSeconds => 
-            GetIntSetting("Steam Settings", "UpdateIntervalSeconds", 15);
+            GetIntSetting(ConfigurationConstants.STEAM_SETTINGS_SECTION, "UpdateIntervalSeconds", ConfigurationConstants.DEFAULT_UPDATE_INTERVAL);
             
         /// <summary>
         /// Gets the fast update interval for critical real-time data (game state, session time) in seconds
         /// </summary>
         public int FastUpdateIntervalSeconds => 
-            GetIntSetting("Steam Settings", "FastUpdateIntervalSeconds", 5);
+            GetIntSetting(ConfigurationConstants.STEAM_SETTINGS_SECTION, "FastUpdateIntervalSeconds", ConfigurationConstants.DEFAULT_FAST_UPDATE_INTERVAL);
             
         /// <summary>
         /// Gets the medium update interval for social data (friends status) in seconds  
         /// </summary>
         public int MediumUpdateIntervalSeconds => 
-            GetIntSetting("Steam Settings", "MediumUpdateIntervalSeconds", 15);
+            GetIntSetting(ConfigurationConstants.STEAM_SETTINGS_SECTION, "MediumUpdateIntervalSeconds", ConfigurationConstants.DEFAULT_MEDIUM_UPDATE_INTERVAL);
             
         /// <summary>
         /// Gets the slow update interval for static data (library stats, achievements) in seconds
         /// </summary>
         public int SlowUpdateIntervalSeconds => 
-            GetIntSetting("Steam Settings", "SlowUpdateIntervalSeconds", 60);
+            GetIntSetting(ConfigurationConstants.STEAM_SETTINGS_SECTION, "SlowUpdateIntervalSeconds", ConfigurationConstants.DEFAULT_SLOW_UPDATE_INTERVAL);
         
         /// <summary>
         /// Gets whether profile monitoring is enabled
         /// </summary>
         public bool EnableProfileMonitoring => 
-            GetBoolSetting("Steam Settings", "EnableProfileMonitoring", true);
+            GetBoolSetting(ConfigurationConstants.STEAM_SETTINGS_SECTION, "EnableProfileMonitoring", true);
         
         /// <summary>
         /// Gets whether library monitoring is enabled
         /// </summary>
         public bool EnableLibraryMonitoring => 
-            GetBoolSetting("Steam Settings", "EnableLibraryMonitoring", true);
+            GetBoolSetting(ConfigurationConstants.STEAM_SETTINGS_SECTION, "EnableLibraryMonitoring", true);
         
         /// <summary>
         /// Gets whether current game monitoring is enabled
         /// </summary>
         public bool EnableCurrentGameMonitoring => 
-            GetBoolSetting("Steam Settings", "EnableCurrentGameMonitoring", true);
+            GetBoolSetting(ConfigurationConstants.STEAM_SETTINGS_SECTION, "EnableCurrentGameMonitoring", true);
         
         /// <summary>
         /// Gets whether achievement monitoring is enabled
         /// </summary>
         public bool EnableAchievementMonitoring => 
-            GetBoolSetting("Steam Settings", "EnableAchievementMonitoring", false);
+            GetBoolSetting(ConfigurationConstants.STEAM_SETTINGS_SECTION, "EnableAchievementMonitoring", ConfigurationConstants.DEFAULT_BOOL_VALUE);
         
         /// <summary>
         /// Gets the maximum number of recent games to track
         /// </summary>
         public int MaxRecentGames => 
-            GetIntSetting("Steam Settings", "MaxRecentGames", 5);
+            GetIntSetting(ConfigurationConstants.STEAM_SETTINGS_SECTION, "MaxRecentGames", ConfigurationConstants.DEFAULT_MAX_RECENT_GAMES);
         
         #endregion
 
