@@ -68,7 +68,7 @@ namespace InfoPanel.SteamAPI.Services
         {
             try
             {
-                _logger?.LogDebug("[SocialDataService] Starting social data collection...");
+                _enhancedLogger?.LogDebug("SocialDataService.CollectSocialDataAsync", "Starting social data collection");
                 var socialData = new SocialData();
 
                 // 1. Collect friends data
@@ -81,12 +81,18 @@ namespace InfoPanel.SteamAPI.Services
                 socialData.Status = "Social data updated";
                 socialData.Timestamp = DateTime.Now;
                 
-                _logger?.LogDebug($"[SocialDataService] Social data collection completed - Friends: {socialData.FriendsOnline}, In Game: {socialData.FriendsInGame}");
+                _enhancedLogger?.LogDebug("SocialDataService.CollectSocialDataAsync", "Social data collection completed", new {
+                    TotalFriends = socialData.TotalFriends,
+                    FriendsOnline = socialData.FriendsOnline,
+                    FriendsInGame = socialData.FriendsInGame,
+                    PopularGame = socialData.FriendsPopularGame,
+                    SocialActivityLevel = socialData.GetSocialActivityLevel()
+                });
                 return socialData;
             }
             catch (Exception ex)
             {
-                _logger?.LogError("[SocialDataService] Error collecting social data", ex);
+                _enhancedLogger?.LogError("SocialDataService.CollectSocialDataAsync", "Error collecting social data", ex);
                 return new SocialData
                 {
                     HasError = true,
@@ -126,7 +132,7 @@ namespace InfoPanel.SteamAPI.Services
         {
             try
             {
-                _logger?.LogDebug("[SocialDataService] Collecting friends data...");
+                _enhancedLogger?.LogDebug("SocialDataService.CollectFriendsDataAsync", "Collecting friends data");
                 
                 // Get friends list from Steam API
                 var friendsResponse = await _steamApiService.GetFriendsListAsync();
@@ -142,7 +148,9 @@ namespace InfoPanel.SteamAPI.Services
                     var friendsActivity = new List<FriendActivity>();
                     var gamesPlayedByFriends = new Dictionary<string, int>();
                     
-                    _logger?.LogDebug($"[SocialDataService] Checking status for {friends.Count} friends using batch API...");
+                    _enhancedLogger?.LogDebug("SocialDataService.CollectFriendsDataAsync", "Checking friend status using batch API", new {
+                        FriendCount = friends.Count
+                    });
                     
                     // Collect all friend Steam IDs
                     var friendSteamIds = friends.Select(f => f.SteamId).ToList();
@@ -182,11 +190,15 @@ namespace InfoPanel.SteamAPI.Services
                             }
                         }
                         
-                        _logger?.LogDebug($"[SocialDataService] Batch API result: {onlineCount} friends online, {inGameCount} in games");
+                        _enhancedLogger?.LogDebug("SocialDataService.CollectFriendsDataAsync", "Batch API result processed", new {
+                            FriendsOnline = onlineCount,
+                            FriendsInGame = inGameCount,
+                            PlayersReturned = players.Count
+                        });
                     }
                     else
                     {
-                        _logger?.LogWarning("[SocialDataService] No player data returned from batch API call");
+                        _enhancedLogger?.LogWarning("SocialDataService.CollectFriendsDataAsync", "No player data returned from batch API call");
                     }
                     
                     // Set real data instead of estimates
@@ -199,11 +211,20 @@ namespace InfoPanel.SteamAPI.Services
                         ? gamesPlayedByFriends.OrderByDescending(kvp => kvp.Value).First().Key
                         : SocialConstants.NO_POPULAR_GAME;
                     
-                    _logger?.LogInfo($"[SocialDataService] Friends data - Total: {socialData.TotalFriends}, Online: {socialData.FriendsOnline}, In Game: {socialData.FriendsInGame}, Popular Game: {socialData.FriendsPopularGame}");
+                    _enhancedLogger?.LogInfo("SocialDataService.CollectFriendsDataAsync", "Friends data collected", new {
+                        TotalFriends = socialData.TotalFriends,
+                        FriendsOnline = socialData.FriendsOnline,
+                        FriendsInGame = socialData.FriendsInGame,
+                        PopularGame = socialData.FriendsPopularGame,
+                        GamesBeingPlayed = gamesPlayedByFriends.Count,
+                        TopGame = gamesPlayedByFriends.Count > 0 
+                            ? $"{socialData.FriendsPopularGame} ({gamesPlayedByFriends[socialData.FriendsPopularGame]} players)" 
+                            : "None"
+                    });
                 }
                 else
                 {
-                    _logger?.LogDebug("[SocialDataService] No friends data received from Steam API");
+                    _enhancedLogger?.LogDebug("SocialDataService.CollectFriendsDataAsync", "No friends data received from Steam API");
                     socialData.TotalFriends = 0;
                     socialData.FriendsOnline = 0;
                     socialData.FriendsInGame = 0;
@@ -213,7 +234,7 @@ namespace InfoPanel.SteamAPI.Services
             }
             catch (Exception ex)
             {
-                _logger?.LogError("[SocialDataService] Error collecting friends data", ex);
+                _enhancedLogger?.LogError("SocialDataService.CollectFriendsDataAsync", "Error collecting friends data", ex);
                 socialData.TotalFriends = 0;
                 socialData.FriendsOnline = 0;
                 socialData.FriendsInGame = 0;
@@ -229,7 +250,7 @@ namespace InfoPanel.SteamAPI.Services
         {
             try
             {
-                _logger?.LogDebug("[SocialDataService] Collecting community data...");
+                _enhancedLogger?.LogDebug("SocialDataService.CollectCommunityDataAsync", "Collecting community data (placeholder)");
                 
                 // Placeholder for community features like:
                 // - Steam groups
@@ -241,12 +262,17 @@ namespace InfoPanel.SteamAPI.Services
                 socialData.CommunityGroups = 0;
                 socialData.WorkshopItems = 0;
                 
-                _logger?.LogDebug("[SocialDataService] Community data collection completed (placeholder)");
+                _enhancedLogger?.LogDebug("SocialDataService.CollectCommunityDataAsync", "Community data collection completed", new {
+                    CommunityBadges = socialData.CommunityBadges,
+                    CommunityGroups = socialData.CommunityGroups,
+                    WorkshopItems = socialData.WorkshopItems,
+                    EngagementLevel = socialData.GetCommunityEngagement()
+                });
                 return Task.CompletedTask;
             }
             catch (Exception ex)
             {
-                _logger?.LogError("[SocialDataService] Error collecting community data", ex);
+                _enhancedLogger?.LogError("SocialDataService.CollectCommunityDataAsync", "Error collecting community data", ex);
                 socialData.CommunityBadges = 0;
                 socialData.CommunityGroups = 0;
                 socialData.WorkshopItems = 0;
