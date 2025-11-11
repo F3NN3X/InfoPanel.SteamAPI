@@ -465,6 +465,9 @@ namespace InfoPanel.SteamAPI.Services
                 _flushTimer?.Dispose();
                 FlushLogs(null); // Final flush
                 
+                // Small delay to ensure file handles are fully released
+                System.Threading.Thread.Sleep(100);
+                
                 // Archive the log file with timestamp
                 ArchiveLogFileOnClose();
             }
@@ -486,6 +489,8 @@ namespace InfoPanel.SteamAPI.Services
         {
             try
             {
+                Console.WriteLine($"[EnhancedLoggingService] Attempting to archive log file: {_logFilePath}");
+                
                 lock (_fileLock)
                 {
                     if (File.Exists(_logFilePath))
@@ -496,10 +501,14 @@ namespace InfoPanel.SteamAPI.Services
                         
                         // Create archive filename with timestamp
                         var timestamp = DateTime.Now.ToString("yyyyMMdd-HHmmss");
-                        var archivedPath = Path.Combine(directory, $"debug-{timestamp}{extension}");
+                        var archivedPath = Path.Combine(directory ?? "", $"debug-{timestamp}{extension}");
+                        
+                        Console.WriteLine($"[EnhancedLoggingService] Moving {_logFilePath} to {archivedPath}");
                         
                         // Move current log file to archived name
                         File.Move(_logFilePath, archivedPath);
+                        
+                        Console.WriteLine($"[EnhancedLoggingService] Successfully archived log file");
                         
                         // Also rename any rotated files from this session (with matching timestamp pattern)
                         ArchiveRotatedFiles(directory, fileNameWithoutExt, extension, timestamp);
@@ -507,12 +516,17 @@ namespace InfoPanel.SteamAPI.Services
                         // Clean up old archived debug files
                         CleanupDebugArchives(directory, extension);
                     }
+                    else
+                    {
+                        Console.WriteLine($"[EnhancedLoggingService] Log file does not exist: {_logFilePath}");
+                    }
                 }
             }
             catch (Exception ex)
             {
                 // Log to console if archiving fails
                 Console.WriteLine($"[EnhancedLoggingService] Failed to archive log file: {ex.Message}");
+                Console.WriteLine($"[EnhancedLoggingService] Stack trace: {ex.StackTrace}");
             }
         }
         
