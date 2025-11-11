@@ -132,7 +132,7 @@ namespace InfoPanel.SteamAPI.Services
                     
                     // Update image URL sensors
                     _enhancedLogger?.LogDebug("SensorManagementService.UpdateSteamSensors", "Updating image URL sensors");
-                    UpdateImageUrlSensors(profileImageUrlSensor, currentGameBannerUrlSensor, data);
+                    UpdateImageUrlSensors(profileImageUrlSensor, currentGameBannerUrlSensor, gameStatusTextSensor, data);
                     
                     // Update current game sensors
                     _enhancedLogger?.LogDebug("SensorManagementService.UpdateSteamSensors", "Updating current game sensors");
@@ -283,25 +283,59 @@ namespace InfoPanel.SteamAPI.Services
         }
         
         /// <summary>
-        /// Updates image URL sensors with profile image and game banner URLs
+        /// Updates image URL sensors with profile image and game banner URLs.
+        /// Preserves last played game banner when no game is currently active.
         /// </summary>
         private void UpdateImageUrlSensors(
             PluginText profileImageUrlSensor,
             PluginText currentGameBannerUrlSensor,
+            PluginText gameStatusTextSensor,
             SteamData data)
         {
             // Update profile image URL
             var profileImageUrl = data.ProfileImageUrl ?? "-";
             profileImageUrlSensor.Value = profileImageUrl;
             
-            // Update current game banner URL
-            var gameBannerUrl = data.CurrentGameBannerUrl ?? "-";
-            currentGameBannerUrlSensor.Value = gameBannerUrl;
+            // Determine if user is currently playing a game
+            bool isCurrentlyPlaying = !string.IsNullOrEmpty(data.CurrentGameName) && 
+                                      data.CurrentGameName != "Not Playing" &&
+                                      !string.IsNullOrEmpty(data.CurrentGameBannerUrl);
+            
+            if (isCurrentlyPlaying)
+            {
+                // User is actively playing - show current game banner and "Currently Playing" text
+                currentGameBannerUrlSensor.Value = data.CurrentGameBannerUrl ?? "-";
+                gameStatusTextSensor.Value = _configService.CurrentlyPlayingText;
+                
+                _enhancedLogger?.LogDebug("SensorManagementService.UpdateImageUrlSensors", 
+                    "User is playing - showing current game", new
+                {
+                    GameName = data.CurrentGameName,
+                    BannerUrl = data.CurrentGameBannerUrl,
+                    StatusText = _configService.CurrentlyPlayingText
+                });
+            }
+            else
+            {
+                // User is not playing - preserve last played game banner and show "Last Played Game" text
+                var lastPlayedBannerUrl = data.LastPlayedGameBannerUrl ?? "-";
+                currentGameBannerUrlSensor.Value = lastPlayedBannerUrl;
+                gameStatusTextSensor.Value = _configService.LastPlayedGameText;
+                
+                _enhancedLogger?.LogDebug("SensorManagementService.UpdateImageUrlSensors", 
+                    "User not playing - showing last played game", new
+                {
+                    LastPlayedGameName = data.LastPlayedGameName,
+                    LastPlayedBannerUrl = lastPlayedBannerUrl,
+                    StatusText = _configService.LastPlayedGameText
+                });
+            }
             
             _enhancedLogger?.LogDebug("SensorManagementService.UpdateImageUrlSensors", "Image URL sensors updated", new
             {
                 ProfileImageUrl = profileImageUrl,
-                GameBannerUrl = gameBannerUrl
+                GameBannerUrl = currentGameBannerUrlSensor.Value,
+                IsCurrentlyPlaying = isCurrentlyPlaying
             });
         }
         
