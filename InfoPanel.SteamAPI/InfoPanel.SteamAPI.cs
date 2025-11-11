@@ -296,12 +296,15 @@ namespace InfoPanel.SteamAPI
                 _sensorService = new SensorManagementService(_configService, _loggingService, _enhancedLoggingService);
                 _monitoringService = new MonitoringService(_configService, _sensorService, _loggingService, _enhancedLoggingService);
                 
+                // Get version from assembly
+                var assemblyVersion = assembly.GetName().Version?.ToString() ?? "Unknown";
+                
                 // Log initialization with enhanced logging
                 _enhancedLoggingService.LogInfo("PLUGIN", "SteamAPI Plugin Initialization Started", new
                 {
                     ConfigFilePath = _configFilePath,
                     EnhancedLogPath = enhancedLogPath,
-                    Version = "1.2.0"
+                    Version = assemblyVersion
                 });
                 _loggingService.LogInfo("=== SteamAPI Plugin Initialization Started ===");
                 _loggingService.LogInfo($"Config file path: {_configFilePath}");
