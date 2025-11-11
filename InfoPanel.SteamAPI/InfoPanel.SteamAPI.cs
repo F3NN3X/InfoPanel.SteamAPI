@@ -179,6 +179,7 @@ namespace InfoPanel.SteamAPI
         // User Profile and Game Images
         private readonly PluginText _profileImageUrlSensor = new("profile_image_url", "Profile Image URL", "-");
         private readonly PluginText _currentGameBannerUrlSensor = new("current_game_banner_url", "Current Game Banner URL", "-");
+        private readonly PluginText _gameStatusTextSensor = new("game-status-text", "Game Status", "Not Playing");
         
         // Current Game and Session Tracking
         private readonly PluginText _currentGameSensor = new("current-game", "Current Game", "Not Playing");
@@ -320,6 +321,7 @@ namespace InfoPanel.SteamAPI
                 profileContainer.Entries.Add(_steamLevelSensor);
                 profileContainer.Entries.Add(_profileImageUrlSensor);
                 profileContainer.Entries.Add(_currentGameBannerUrlSensor);
+                profileContainer.Entries.Add(_gameStatusTextSensor);
                 profileContainer.Entries.Add(_statusSensor);
                 profileContainer.Entries.Add(_detailsSensor);
                 _loggingService.LogInfo($"Created User Profile & Status container with {profileContainer.Entries.Count} sensors");
@@ -512,6 +514,7 @@ namespace InfoPanel.SteamAPI
                             _detailsSensor,
                             _profileImageUrlSensor,
                             _currentGameBannerUrlSensor,
+                            _gameStatusTextSensor,
                             e.Data
                         );
                         

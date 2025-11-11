@@ -251,6 +251,8 @@ namespace InfoPanel.SteamAPI.Services
                 _config[ConfigurationConstants.DISPLAY_SETTINGS_SECTION]["ShowStatusMessages"] = "true";
                 _config[ConfigurationConstants.DISPLAY_SETTINGS_SECTION]["ShowDetailedMetrics"] = "true";
                 _config[ConfigurationConstants.DISPLAY_SETTINGS_SECTION]["UseMetricSystem"] = "true";
+                _config[ConfigurationConstants.DISPLAY_SETTINGS_SECTION]["CurrentlyPlayingText"] = "Currently Playing";
+                _config[ConfigurationConstants.DISPLAY_SETTINGS_SECTION]["LastPlayedGameText"] = "Last Played Game";
                 
                 // Steam Settings
                 _config[ConfigurationConstants.STEAM_SETTINGS_SECTION]["ApiKey"] = ConfigurationConstants.API_KEY_PLACEHOLDER;
@@ -666,6 +668,26 @@ namespace InfoPanel.SteamAPI.Services
         /// </summary>
         public int MaxFriendNameLength => 
             GetIntSetting("Friends Activity Settings", "MaxFriendNameLength", 20);
+        
+        #endregion
+
+        #region Display Customization Properties
+        
+        /// <summary>
+        /// Gets the text to display when user is currently playing a game
+        /// Can be customized for different languages or preferences
+        /// Default: "Currently Playing"
+        /// </summary>
+        public string CurrentlyPlayingText => 
+            GetSetting("Display Settings", "CurrentlyPlayingText", "Currently Playing");
+        
+        /// <summary>
+        /// Gets the text to display when showing the last played game (user not currently playing)
+        /// Can be customized for different languages or preferences
+        /// Default: "Last Played Game"
+        /// </summary>
+        public string LastPlayedGameText => 
+            GetSetting("Display Settings", "LastPlayedGameText", "Last Played Game");
         
         #endregion
 
