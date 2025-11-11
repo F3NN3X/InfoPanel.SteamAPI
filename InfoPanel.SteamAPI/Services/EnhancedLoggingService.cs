@@ -464,6 +464,9 @@ namespace InfoPanel.SteamAPI.Services
                 LogInfo("EnhancedLoggingService", "Shutting down enhanced logging service");
                 _flushTimer?.Dispose();
                 FlushLogs(null); // Final flush
+                
+                // Archive the log file with timestamp
+                ArchiveLogFileOnClose();
             }
             catch
             {
@@ -472,6 +475,108 @@ namespace InfoPanel.SteamAPI.Services
             finally
             {
                 _disposed = true;
+            }
+        }
+        
+        /// <summary>
+        /// Archives the current log file with a timestamp and deletes the original,
+        /// ensuring a fresh start for the next plugin run. Also archives any rotated files.
+        /// </summary>
+        private void ArchiveLogFileOnClose()
+        {
+            try
+            {
+                lock (_fileLock)
+                {
+                    if (File.Exists(_logFilePath))
+                    {
+                        var directory = Path.GetDirectoryName(_logFilePath);
+                        var fileNameWithoutExt = Path.GetFileNameWithoutExtension(_logFilePath);
+                        var extension = Path.GetExtension(_logFilePath);
+                        
+                        // Create archive filename with timestamp
+                        var timestamp = DateTime.Now.ToString("yyyyMMdd-HHmmss");
+                        var archivedPath = Path.Combine(directory, $"debug-{timestamp}{extension}");
+                        
+                        // Move current log file to archived name
+                        File.Move(_logFilePath, archivedPath);
+                        
+                        // Also rename any rotated files from this session (with matching timestamp pattern)
+                        ArchiveRotatedFiles(directory, fileNameWithoutExt, extension, timestamp);
+                        
+                        // Clean up old archived debug files
+                        CleanupDebugArchives(directory, extension);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                // Log to console if archiving fails
+                Console.WriteLine($"[EnhancedLoggingService] Failed to archive log file: {ex.Message}");
+            }
+        }
+        
+        /// <summary>
+        /// Archives any rotated log files from the current session
+        /// </summary>
+        private void ArchiveRotatedFiles(string directory, string baseFileName, string extension, string sessionTimestamp)
+        {
+            try
+            {
+                // Find rotated files (e.g., InfoPanel.SteamAPI.dll_enhanced-20250111-184523.json)
+                var rotatedPattern = $"{baseFileName}-*{extension}";
+                var rotatedFiles = Directory.GetFiles(directory, rotatedPattern);
+                
+                foreach (var rotatedFile in rotatedFiles)
+                {
+                    var rotatedFileName = Path.GetFileNameWithoutExtension(rotatedFile);
+                    
+                    // Skip if already renamed to debug-* format
+                    if (rotatedFileName.StartsWith("debug-"))
+                        continue;
+                    
+                    // Extract the rotation timestamp from the filename
+                    var parts = rotatedFileName.Split('-');
+                    if (parts.Length >= 2)
+                    {
+                        var rotationTimestamp = string.Join("-", parts.Skip(parts.Length - 2));
+                        var newRotatedPath = Path.Combine(directory, $"debug-{rotationTimestamp}{extension}");
+                        
+                        // Only move if the destination doesn't exist
+                        if (!File.Exists(newRotatedPath))
+                        {
+                            File.Move(rotatedFile, newRotatedPath);
+                        }
+                    }
+                }
+            }
+            catch
+            {
+                // Ignore errors renaming rotated files
+            }
+        }
+        
+        /// <summary>
+        /// Cleans up old debug archive files, keeping only the most recent ones
+        /// </summary>
+        private void CleanupDebugArchives(string directory, string extension)
+        {
+            try
+            {
+                var maxArchived = _configService?.MaxArchivedLogs ?? 5;
+                var pattern = $"debug-*{extension}";
+                var archivedFiles = Directory.GetFiles(directory, pattern)
+                    .OrderByDescending(f => File.GetCreationTime(f))
+                    .Skip(maxArchived);
+
+                foreach (var file in archivedFiles)
+                {
+                    File.Delete(file);
+                }
+            }
+            catch
+            {
+                // Ignore cleanup errors following InfoPanel patterns
             }
         }
     }
