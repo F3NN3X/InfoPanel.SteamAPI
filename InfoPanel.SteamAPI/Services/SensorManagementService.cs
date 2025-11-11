@@ -284,7 +284,7 @@ namespace InfoPanel.SteamAPI.Services
         
         /// <summary>
         /// Updates image URL sensors with profile image and game banner URLs.
-        /// Preserves last played game banner when no game is currently active.
+        /// Preserves current or last played game banner based on game state.
         /// </summary>
         private void UpdateImageUrlSensors(
             PluginText profileImageUrlSensor,
@@ -305,7 +305,7 @@ namespace InfoPanel.SteamAPI.Services
             if (isCurrentlyPlaying)
             {
                 // User is actively playing - show current game banner and "Currently Playing" text
-                // Use banner from data (which is now persisted by PlayerDataService during sessions)
+                // CurrentGameBannerUrl is now persisted by PlayerDataService during active sessions
                 var currentBanner = data.CurrentGameBannerUrl ?? "-";
                 currentGameBannerUrlSensor.Value = currentBanner;
                 gameStatusTextSensor.Value = _configService.CurrentlyPlayingText;
@@ -316,6 +316,7 @@ namespace InfoPanel.SteamAPI.Services
                     GameName = data.CurrentGameName,
                     AppId = data.CurrentGameAppId,
                     BannerUrl = currentBanner,
+                    BannerUrlEmpty = string.IsNullOrEmpty(data.CurrentGameBannerUrl),
                     StatusText = _configService.CurrentlyPlayingText
                 });
             }

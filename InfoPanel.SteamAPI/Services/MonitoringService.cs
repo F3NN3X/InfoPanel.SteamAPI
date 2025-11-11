@@ -339,11 +339,12 @@ namespace InfoPanel.SteamAPI.Services
                         var playerData = await _playerDataService.CollectPlayerDataAsync();
                         UpdatePlayerSensors(playerData);
                         
-                        // IMMEDIATE session tracking on startup
+                        // IMMEDIATE session tracking on startup - include banner URL for persistence
                         _sessionTracker?.UpdateSessionTracking(new SteamData
                         {
                             CurrentGameName = playerData.CurrentGameName,
                             CurrentGameAppId = playerData.CurrentGameAppId,
+                            CurrentGameBannerUrl = playerData.CurrentGameBannerUrl,
                             PlayerName = playerData.PlayerName,
                             Status = "Initial player data loaded"
                         });
@@ -464,11 +465,12 @@ namespace InfoPanel.SteamAPI.Services
                     {
                         var playerData = await _playerDataService.CollectPlayerDataAsync();
                         
-                        // IMMEDIATE session tracking - most critical functionality
+                        // IMMEDIATE session tracking - most critical functionality - include banner URL
                         _sessionTracker?.UpdateSessionTracking(new SteamData
                         {
                             CurrentGameName = playerData.CurrentGameName,
                             CurrentGameAppId = playerData.CurrentGameAppId,
+                            CurrentGameBannerUrl = playerData.CurrentGameBannerUrl,
                             PlayerName = playerData.PlayerName,
                             Status = $"Player cycle {_playerCycleCount}"
                         });
