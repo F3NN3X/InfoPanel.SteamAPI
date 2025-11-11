@@ -92,6 +92,7 @@ namespace InfoPanel.SteamAPI.Services
             PluginText detailsSensor,
             PluginText profileImageUrlSensor,
             PluginText currentGameBannerUrlSensor,
+            PluginText gameStatusTextSensor,
             SteamData data)
         {
             if (data == null) 
@@ -120,7 +121,7 @@ namespace InfoPanel.SteamAPI.Services
                         SetErrorState(playerNameSensor, onlineStatusSensor, steamLevelSensor,
                             currentGameSensor, currentGamePlaytimeSensor, totalGamesSensor,
                             totalPlaytimeSensor, recentPlaytimeSensor, statusSensor, detailsSensor,
-                            profileImageUrlSensor, currentGameBannerUrlSensor,
+                            profileImageUrlSensor, currentGameBannerUrlSensor, gameStatusTextSensor,
                             data.ErrorMessage ?? "Unknown error");
                         return;
                     }
@@ -160,7 +161,7 @@ namespace InfoPanel.SteamAPI.Services
                     SetErrorState(playerNameSensor, onlineStatusSensor, steamLevelSensor,
                         currentGameSensor, currentGamePlaytimeSensor, totalGamesSensor,
                         totalPlaytimeSensor, recentPlaytimeSensor, statusSensor, detailsSensor,
-                        profileImageUrlSensor, currentGameBannerUrlSensor,
+                        profileImageUrlSensor, currentGameBannerUrlSensor, gameStatusTextSensor,
                         ex.Message);
                 }
             }
@@ -383,6 +384,7 @@ namespace InfoPanel.SteamAPI.Services
             PluginText detailsSensor,
             PluginText profileImageUrlSensor,
             PluginText currentGameBannerUrlSensor,
+            PluginText gameStatusTextSensor,
             string errorMessage)
         {
             try
@@ -399,6 +401,7 @@ namespace InfoPanel.SteamAPI.Services
                 detailsSensor.Value = $"Steam data collection failed: {errorMessage}";
                 profileImageUrlSensor.Value = "-";
                 currentGameBannerUrlSensor.Value = "-";
+                gameStatusTextSensor.Value = "Error";
             }
             catch (Exception ex)
             {
