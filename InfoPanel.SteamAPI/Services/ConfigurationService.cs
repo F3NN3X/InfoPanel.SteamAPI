@@ -669,6 +669,26 @@ namespace InfoPanel.SteamAPI.Services
         
         #endregion
 
+        #region Display Customization Properties
+        
+        /// <summary>
+        /// Gets the text to display when user is currently playing a game
+        /// Can be customized for different languages or preferences
+        /// Default: "Currently Playing"
+        /// </summary>
+        public string CurrentlyPlayingText => 
+            GetSetting("Display Settings", "CurrentlyPlayingText", "Currently Playing");
+        
+        /// <summary>
+        /// Gets the text to display when showing the last played game (user not currently playing)
+        /// Can be customized for different languages or preferences
+        /// Default: "Last Played Game"
+        /// </summary>
+        public string LastPlayedGameText => 
+            GetSetting("Display Settings", "LastPlayedGameText", "Last Played Game");
+        
+        #endregion
+
         #region Token Management Properties
         
         /// <summary>
