@@ -80,7 +80,10 @@ namespace InfoPanel.SteamAPI.Services
         {
             try
             {
-                _logger?.LogDebug("[GameStatsService] Starting game stats data collection...");
+                _enhancedLogger?.LogDebug("GameStatsService.CollectGameStatsDataAsync", "Starting game stats data collection", new {
+                    CurrentGame = currentGameName ?? "None",
+                    GameAppId = currentGameAppId
+                });
                 var gameStatsData = new GameStatsData();
 
                 // 1. Collect achievement data for current game
@@ -90,7 +93,7 @@ namespace InfoPanel.SteamAPI.Services
                 }
                 else
                 {
-                    _logger?.LogDebug($"[GameStatsService] {GameStatsConstants.NO_CURRENT_GAME_MESSAGE} - skipping achievement collection");
+                    _enhancedLogger?.LogDebug("GameStatsService.CollectGameStatsDataAsync", "No current game - skipping achievement collection");
                     SetDefaultAchievementValues(gameStatsData);
                 }
 
@@ -107,12 +110,19 @@ namespace InfoPanel.SteamAPI.Services
                 gameStatsData.Status = "Game stats updated";
                 gameStatsData.Timestamp = DateTime.Now;
                 
-                _logger?.LogDebug($"[GameStatsService] Game stats collection completed - Achievements: {gameStatsData.CurrentGameAchievementsUnlocked}/{gameStatsData.CurrentGameAchievementsTotal}");
+                _enhancedLogger?.LogDebug("GameStatsService.CollectGameStatsDataAsync", "Game stats collection completed", new {
+                    CurrentGame = gameStatsData.CurrentGameName ?? "None",
+                    AchievementsUnlocked = gameStatsData.CurrentGameAchievementsUnlocked,
+                    AchievementsTotal = gameStatsData.CurrentGameAchievementsTotal,
+                    CompletionPercentage = gameStatsData.CurrentGameAchievementPercentage,
+                    CompletionLevel = gameStatsData.GetCurrentGameCompletionLevel(),
+                    LatestAchievement = gameStatsData.LatestAchievementName ?? "None"
+                });
                 return gameStatsData;
             }
             catch (Exception ex)
             {
-                _logger?.LogError("[GameStatsService] Error collecting game stats data", ex);
+                _enhancedLogger?.LogError("GameStatsService.CollectGameStatsDataAsync", "Error collecting game stats data", ex);
                 return new GameStatsData
                 {
                     HasError = true,
@@ -136,7 +146,10 @@ namespace InfoPanel.SteamAPI.Services
         {
             try
             {
-                _logger?.LogDebug($"[GameStatsService] Achievement data not available for {gameName} (ID: {appId}) - Steam Achievement API not implemented");
+                _enhancedLogger?.LogDebug("GameStatsService.CollectCurrentGameAchievementsAsync", "Achievement data not available - Steam Achievement API not implemented", new {
+                    GameName = gameName,
+                    AppId = appId
+                });
                 
                 gameStatsData.CurrentGameName = gameName;
                 gameStatsData.CurrentGameAppId = appId;
@@ -149,12 +162,12 @@ namespace InfoPanel.SteamAPI.Services
                 gameStatsData.LatestAchievementDate = null;
                 gameStatsData.LatestAchievementDescription = null;
                 
-                _logger?.LogDebug($"[GameStatsService] Achievement data unavailable - Steam Achievement API not integrated");
+                _enhancedLogger?.LogDebug("GameStatsService.CollectCurrentGameAchievementsAsync", "Achievement data unavailable - Steam Achievement API not integrated");
                 return Task.CompletedTask;
             }
             catch (Exception ex)
             {
-                _logger?.LogError("[GameStatsService] Error collecting current game achievements", ex);
+                _enhancedLogger?.LogError("GameStatsService.CollectCurrentGameAchievementsAsync", "Error collecting current game achievements", ex);
                 SetDefaultAchievementValues(gameStatsData);
                 return Task.CompletedTask;
             }
@@ -167,7 +180,7 @@ namespace InfoPanel.SteamAPI.Services
         /// </summary>
         private Task CollectOverallAchievementStatsAsync(GameStatsData gameStatsData)
         {
-            _logger?.LogDebug("[GameStatsService] Skipping overall achievement statistics - not available via Steam Web API");
+            _enhancedLogger?.LogDebug("GameStatsService.CollectOverallAchievementStatsAsync", "Skipping overall achievement statistics - not available via Steam Web API");
             // Steam Web API doesn't provide aggregated achievement data across all games
             // Would require individual API calls for each owned game which is rate-limited and slow
             return Task.CompletedTask;
@@ -180,7 +193,10 @@ namespace InfoPanel.SteamAPI.Services
         {
             try
             {
-                _logger?.LogDebug("[GameStatsService] Collecting game news...");
+                _enhancedLogger?.LogDebug("GameStatsService.CollectGameNewsAsync", "Collecting game news (placeholder)", new {
+                    AppId = appId,
+                    HasValidAppId = appId > GameStatsConstants.DEFAULT_APP_ID
+                });
                 
                 // TODO: Implement real Steam news API call
                 // This would fetch actual game news from Steam's news API
@@ -198,12 +214,14 @@ namespace InfoPanel.SteamAPI.Services
                     gameStatsData.LatestNewsUrl = null;
                 }
                 
-                _logger?.LogDebug($"[GameStatsService] Game news collected: {gameStatsData.LatestNewsTitle ?? "No news"}");
+                _enhancedLogger?.LogDebug("GameStatsService.CollectGameNewsAsync", "Game news collected", new {
+                    NewsTitle = gameStatsData.LatestNewsTitle ?? "No news"
+                });
                 return Task.CompletedTask;
             }
             catch (Exception ex)
             {
-                _logger?.LogError("[GameStatsService] Error collecting game news", ex);
+                _enhancedLogger?.LogError("GameStatsService.CollectGameNewsAsync", "Error collecting game news", ex);
                 gameStatsData.LatestNewsTitle = GameStatsConstants.ERROR_LOADING_NEWS;
                 gameStatsData.LatestNewsDate = null;
                 gameStatsData.LatestNewsUrl = null;
@@ -218,7 +236,7 @@ namespace InfoPanel.SteamAPI.Services
         /// </summary>
         private Task CollectAdvancedGamingMetricsAsync(GameStatsData gameStatsData)
         {
-            _logger?.LogDebug("[GameStatsService] Skipping advanced gaming metrics - not available via Steam Web API");
+            _enhancedLogger?.LogDebug("GameStatsService.CollectAdvancedGamingMetricsAsync", "Skipping advanced gaming metrics - not available via Steam Web API");
             // Steam Web API doesn't provide global percentile rankings, gaming streaks, or monthly aggregations
             // These would require complex analytics and comparison data not available through standard API calls
             return Task.CompletedTask;
