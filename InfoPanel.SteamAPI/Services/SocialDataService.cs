@@ -201,6 +201,9 @@ namespace InfoPanel.SteamAPI.Services
                         _enhancedLogger?.LogWarning("SocialDataService.CollectFriendsDataAsync", "No player data returned from batch API call");
                     }
                     
+                    // Sort friends activity list based on configuration
+                    friendsActivity = SortFriendsActivity(friendsActivity);
+                    
                     // Set real data instead of estimates
                     socialData.FriendsOnline = onlineCount;
                     socialData.FriendsInGame = inGameCount;
@@ -278,6 +281,45 @@ namespace InfoPanel.SteamAPI.Services
                 socialData.WorkshopItems = 0;
                 return Task.CompletedTask;
             }
+        }
+        
+        /// <summary>
+        /// Sorts friends activity list based on configuration settings
+        /// </summary>
+        private List<FriendActivity> SortFriendsActivity(List<FriendActivity> friends)
+        {
+            if (friends == null || friends.Count == 0)
+                return friends;
+            
+            var sortBy = _configService.FriendsSortBy;
+            
+            _enhancedLogger?.LogDebug("SocialDataService.SortFriendsActivity", "Sorting friends list", new {
+                SortBy = sortBy,
+                FriendsCount = friends.Count
+            });
+            
+            return sortBy switch
+            {
+                "PlayingFirst" => friends
+                    .OrderByDescending(f => f.CurrentGame != "Not in game" ? 1 : 0)  // Playing games first
+                    .ThenBy(f => f.FriendName)  // Then alphabetically by name
+                    .ToList(),
+                    
+                "OnlineFirst" => friends
+                    .OrderByDescending(f => f.Status != "Offline" ? 1 : 0)  // Online status first
+                    .ThenBy(f => f.FriendName)
+                    .ToList(),
+                    
+                "Alphabetical" => friends
+                    .OrderBy(f => f.FriendName)
+                    .ToList(),
+                    
+                "LastSeen" => friends
+                    .OrderByDescending(f => f.LastSeen)  // Most recently seen first
+                    .ToList(),
+                    
+                _ => friends  // No sorting or unknown sort type
+            };
         }
 
         #endregion
