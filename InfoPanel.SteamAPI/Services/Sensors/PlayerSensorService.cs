@@ -192,8 +192,16 @@ namespace InfoPanel.SteamAPI.Services.Sensors
             var playerName = !string.IsNullOrEmpty(playerData.PlayerName) ? playerData.PlayerName : "Unknown Player";
             _playerNameSensor.Value = playerName;
             
-            // Update online status
-            var onlineStatus = playerData.OnlineState ?? "Offline";
+            // Update online status - show game name if playing, otherwise show online state
+            string onlineStatus;
+            if (playerData.IsInGame() && !string.IsNullOrEmpty(playerData.CurrentGameName))
+            {
+                onlineStatus = playerData.CurrentGameName;
+            }
+            else
+            {
+                onlineStatus = playerData.OnlineState ?? "Offline";
+            }
             _onlineStatusSensor.Value = onlineStatus;
             
             // Update Steam level
