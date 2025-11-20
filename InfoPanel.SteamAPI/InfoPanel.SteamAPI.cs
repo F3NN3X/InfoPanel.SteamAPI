@@ -218,10 +218,12 @@ namespace InfoPanel.SteamAPI
         private InfoPanel.SteamAPI.Services.Monitoring.PlayerMonitoringService? _playerMonitoring;
         private InfoPanel.SteamAPI.Services.Monitoring.SocialMonitoringService? _socialMonitoring;
         private InfoPanel.SteamAPI.Services.Monitoring.LibraryMonitoringService? _libraryMonitoring;
+        private InfoPanel.SteamAPI.Services.Monitoring.AchievementsMonitoringService? _achievementsMonitoring;
 
         private InfoPanel.SteamAPI.Services.Sensors.PlayerSensorService? _playerSensors;
         private InfoPanel.SteamAPI.Services.Sensors.SocialSensorService? _socialSensors;
         private InfoPanel.SteamAPI.Services.Sensors.LibrarySensorService? _librarySensors;
+        private InfoPanel.SteamAPI.Services.Sensors.AchievementsSensorService? _achievementsSensors;
 
         // Shared infrastructure
         private ConfigurationService? _configService;
@@ -233,6 +235,7 @@ namespace InfoPanel.SteamAPI
         private PlayerDataService? _playerDataService;
         private SocialDataService? _socialDataService;
         private LibraryDataService? _libraryDataService;
+        private AchievementsDataService? _achievementsDataService;
         private SessionTrackingService? _sessionTrackingService;
 
         private CancellationTokenSource? _cancellationTokenSource;
@@ -341,6 +344,7 @@ namespace InfoPanel.SteamAPI
                 _playerDataService = new PlayerDataService(_configService, steamApiService, _sessionTrackingService, _loggingService, _enhancedLoggingService);
                 _socialDataService = new SocialDataService(_configService, steamApiService, _loggingService, _enhancedLoggingService);
                 _libraryDataService = new LibraryDataService(_configService, steamApiService, _sessionTrackingService, _loggingService, _enhancedLoggingService);
+                _achievementsDataService = new AchievementsDataService(_configService, steamApiService, _enhancedLoggingService);
 
                 // Initialize domain monitoring services
                 _playerMonitoring = new InfoPanel.SteamAPI.Services.Monitoring.PlayerMonitoringService(
@@ -359,6 +363,12 @@ namespace InfoPanel.SteamAPI
                 _libraryMonitoring = new InfoPanel.SteamAPI.Services.Monitoring.LibraryMonitoringService(
                     _configService,
                     _libraryDataService,
+                    _apiSemaphore,
+                    _enhancedLoggingService);
+
+                _achievementsMonitoring = new InfoPanel.SteamAPI.Services.Monitoring.AchievementsMonitoringService(
+                    _configService,
+                    _achievementsDataService,
                     _apiSemaphore,
                     _enhancedLoggingService);
 
@@ -399,15 +409,28 @@ namespace InfoPanel.SteamAPI
                     _recentGamesTable,
                     _enhancedLoggingService);
 
+                _achievementsSensors = new InfoPanel.SteamAPI.Services.Sensors.AchievementsSensorService(
+                    _configService,
+                    _currentGameAchievementsSensor,
+                    _currentGameAchievementsUnlockedSensor,
+                    _currentGameAchievementsTotalSensor,
+                    _latestAchievementSensor,
+                    _totalBadgesEarnedSensor,
+                    _totalBadgeXPSensor,
+                    _latestBadgeSensor,
+                    _enhancedLoggingService);
+
                 // Subscribe sensor services to monitoring events
                 _playerSensors.SubscribeToMonitoring(_playerMonitoring);
                 _socialSensors.SubscribeToMonitoring(_socialMonitoring);
                 _librarySensors.SubscribeToMonitoring(_libraryMonitoring);
+                _achievementsSensors.SubscribeToMonitoring(_achievementsMonitoring);
 
                 // Set session cache reference for social and library domains
                 var sessionCache = _playerMonitoring.GetSessionCache();
                 _socialMonitoring.SetSessionCache(sessionCache);
                 _libraryMonitoring.SetSessionCache(sessionCache);
+                // Achievements domain does not use session cache currently
 
                 // Get version from assembly
                 var assemblyVersion = assembly.GetName().Version?.ToString() ?? "Unknown";
@@ -535,14 +558,21 @@ namespace InfoPanel.SteamAPI
                     _librarySensors.UnsubscribeFromMonitoring(_libraryMonitoring);
                 }
 
-                // Dispose domain services
+                if (_achievementsSensors != null && _achievementsMonitoring != null)
+                {
+                    _achievementsSensors.UnsubscribeFromMonitoring(_achievementsMonitoring);
+                }
+
+                // Dispose domain monitoring services
                 _playerMonitoring?.Dispose();
                 _socialMonitoring?.Dispose();
                 _libraryMonitoring?.Dispose();
+                _achievementsMonitoring?.Dispose();
 
                 _playerSensors?.Dispose();
                 _socialSensors?.Dispose();
                 _librarySensors?.Dispose();
+                _achievementsSensors?.Dispose();
 
                 // Dispose shared services
                 _apiSemaphore?.Dispose();
@@ -568,9 +598,10 @@ namespace InfoPanel.SteamAPI
                 _playerMonitoring?.StartMonitoring();
                 _socialMonitoring?.StartMonitoring();
                 _libraryMonitoring?.StartMonitoring();
+                _achievementsMonitoring?.StartMonitoring();
 
                 Console.WriteLine("[SteamAPI] All domain monitoring services started");
-                _loggingService?.LogInfo("Domain monitoring services started: Player (1s), Social (15s), Library (45s)");
+                _loggingService?.LogInfo("Domain monitoring services started: Player (1s), Social (15s), Library (45s), Achievements (60s)");
 
                 // Keep task alive until cancellation
                 await Task.Delay(Timeout.Infinite, cancellationToken);
@@ -584,6 +615,7 @@ namespace InfoPanel.SteamAPI
                 _playerMonitoring?.StopMonitoring();
                 _socialMonitoring?.StopMonitoring();
                 _libraryMonitoring?.StopMonitoring();
+                _achievementsMonitoring?.StopMonitoring();
 
                 Console.WriteLine("[SteamAPI] All domain monitoring services stopped");
             }
@@ -631,15 +663,22 @@ namespace InfoPanel.SteamAPI
                     _librarySensors.UnsubscribeFromMonitoring(_libraryMonitoring);
                 }
 
+                if (_achievementsSensors != null && _achievementsMonitoring != null)
+                {
+                    _achievementsSensors.UnsubscribeFromMonitoring(_achievementsMonitoring);
+                }
+
                 // Dispose domain monitoring services
                 _playerMonitoring?.Dispose();
                 _socialMonitoring?.Dispose();
                 _libraryMonitoring?.Dispose();
+                _achievementsMonitoring?.Dispose();
 
                 // Dispose domain sensor services
                 _playerSensors?.Dispose();
                 _socialSensors?.Dispose();
                 _librarySensors?.Dispose();
+                _achievementsSensors?.Dispose();
 
                 // Dispose shared services
                 _apiSemaphore?.Dispose();
