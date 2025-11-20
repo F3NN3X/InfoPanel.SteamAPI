@@ -19,9 +19,6 @@ namespace InfoPanel.SteamAPI.Services.Sensors
         private readonly PluginSensor _currentGameAchievementsTotalSensor;
         private readonly PluginText _latestAchievementSensor;
         private readonly PluginText _latestAchievementIconSensor;
-        private readonly PluginSensor _totalBadgesEarnedSensor;
-        private readonly PluginSensor _totalBadgeXPSensor;
-        private readonly PluginText _latestBadgeSensor;
 
         public AchievementsSensorService(
             ConfigurationService configService,
@@ -30,9 +27,6 @@ namespace InfoPanel.SteamAPI.Services.Sensors
             PluginSensor currentGameAchievementsTotalSensor,
             PluginText latestAchievementSensor,
             PluginText latestAchievementIconSensor,
-            PluginSensor totalBadgesEarnedSensor,
-            PluginSensor totalBadgeXPSensor,
-            PluginText latestBadgeSensor,
             EnhancedLoggingService? enhancedLogger = null)
         {
             _configService = configService ?? throw new ArgumentNullException(nameof(configService));
@@ -41,9 +35,6 @@ namespace InfoPanel.SteamAPI.Services.Sensors
             _currentGameAchievementsTotalSensor = currentGameAchievementsTotalSensor;
             _latestAchievementSensor = latestAchievementSensor;
             _latestAchievementIconSensor = latestAchievementIconSensor;
-            _totalBadgesEarnedSensor = totalBadgesEarnedSensor;
-            _totalBadgeXPSensor = totalBadgeXPSensor;
-            _latestBadgeSensor = latestBadgeSensor;
             _enhancedLogger = enhancedLogger;
         }
 
@@ -67,11 +58,6 @@ namespace InfoPanel.SteamAPI.Services.Sensors
                 {
                     var data = e.Data;
 
-                    // Badges
-                    _totalBadgesEarnedSensor.Value = data.TotalBadgesEarned;
-                    _totalBadgeXPSensor.Value = data.TotalBadgeXP;
-                    _latestBadgeSensor.Value = data.LatestBadgeName ?? "None";
-
                     // Achievements
                     if (data.CurrentGameAppId > 0)
                     {
@@ -80,14 +66,17 @@ namespace InfoPanel.SteamAPI.Services.Sensors
                         _currentGameAchievementsTotalSensor.Value = data.CurrentGameAchievementCount;
                         _latestAchievementSensor.Value = data.LatestAchievementName ?? "None";
                         _latestAchievementIconSensor.Value = data.LatestAchievementIcon ?? "-";
+
+                        // Optional: We could update the sensor label to indicate "Last Played" if !data.IsLive
+                        // but PluginSensor labels are usually static.
                     }
                     else
                     {
-                        // Reset or keep last? Usually reset if not playing
+                        // This should only happen if we have NO current game AND NO last played game history
                         _currentGameAchievementsSensor.Value = 0;
                         _currentGameAchievementsUnlockedSensor.Value = 0;
                         _currentGameAchievementsTotalSensor.Value = 0;
-                        _latestAchievementSensor.Value = "Not Playing";
+                        _latestAchievementSensor.Value = "No Data";
                         _latestAchievementIconSensor.Value = "-";
                     }
 

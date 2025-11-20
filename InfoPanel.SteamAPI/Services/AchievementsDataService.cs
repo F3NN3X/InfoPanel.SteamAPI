@@ -29,7 +29,7 @@ namespace InfoPanel.SteamAPI.Services
         }
 
         /// <summary>
-        /// Collects achievements and badges data
+        /// Collects achievements data
         /// </summary>
         /// <param name="currentGameAppId">The AppID of the game currently being played (0 if none)</param>
         public async Task<AchievementsData> CollectAchievementsDataAsync(int currentGameAppId)
@@ -41,31 +41,7 @@ namespace InfoPanel.SteamAPI.Services
 
             try
             {
-                // 1. Get Badges (always available)
-                // We can cache this or fetch less frequently in the monitoring service, 
-                // but here we just fetch it.
-                var badgesResponse = await _steamApiService.GetPlayerBadgesAsync();
-                if (badgesResponse?.Response != null)
-                {
-                    data.TotalBadgesEarned = badgesResponse.Response.Badges.Count;
-                    data.TotalBadgeXP = badgesResponse.Response.PlayerXp;
-                    data.PlayerLevel = badgesResponse.Response.PlayerLevel;
-
-                    // Find latest badge
-                    if (badgesResponse.Response.Badges.Any())
-                    {
-                        var latestBadge = badgesResponse.Response.Badges
-                            .OrderByDescending(b => b.CompletionTime)
-                            .First();
-
-                        data.LatestBadgeDate = SteamApiService.FromUnixTimestamp(latestBadge.CompletionTime).DateTime;
-                        // Note: Badge names require extra API calls or schema knowledge. 
-                        // For now we might just show ID or generic text, or try to map common ones.
-                        data.LatestBadgeName = $"Badge #{latestBadge.BadgeId}";
-                    }
-                }
-
-                // 2. Get Game Achievements (only if in game)
+                // 1. Get Game Achievements (only if in game)
                 if (currentGameAppId > 0)
                 {
                     var achResponse = await _steamApiService.GetPlayerAchievementsAsync(currentGameAppId);
@@ -139,7 +115,6 @@ namespace InfoPanel.SteamAPI.Services
 
                 _enhancedLogger?.LogDebug("AchievementsDataService", "Collected achievements data", new
                 {
-                    Badges = data.TotalBadgesEarned,
                     InGame = currentGameAppId > 0,
                     Achievements = data.CurrentGameUnlockedCount
                 });
@@ -152,6 +127,14 @@ namespace InfoPanel.SteamAPI.Services
             }
 
             return data;
+        }
+
+        /// <summary>
+        /// Gets recently played games
+        /// </summary>
+        public async Task<OwnedGamesResponse?> GetRecentlyPlayedGamesAsync()
+        {
+            return await _steamApiService.GetRecentlyPlayedGamesAsync();
         }
     }
 }

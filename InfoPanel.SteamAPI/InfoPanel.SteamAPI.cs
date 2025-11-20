@@ -1,4 +1,4 @@
-// InfoPanel.SteamAPI v1.0.0 - Steam API Plugin for InfoPanel
+// InfoPanel.SteamAPI v1.2.5 - Steam API Plugin for InfoPanel
 using InfoPanel.Plugins;
 using InfoPanel.SteamAPI.Services;
 using InfoPanel.SteamAPI.Models;
@@ -198,9 +198,7 @@ namespace InfoPanel.SteamAPI
         private readonly PluginText _latestAchievementIconSensor = new("latest-achievement-icon", "Latest Achievement Icon", "-");
         // Removed artificial achievement sensors (overall completion, total unlocked, percentile rank)
         // These would require analyzing achievement data across all owned games, not available via Steam Web API
-        private readonly PluginSensor _totalBadgesEarnedSensor = new("total-badges-earned", "Steam Badges Earned", 0, "badges");
-        private readonly PluginSensor _totalBadgeXPSensor = new("total-badge-xp", "Total Badge XP", 0, "XP");
-        private readonly PluginText _latestBadgeSensor = new("latest-badge", "Latest Badge Earned", "None");
+        // Removed badge sensors as per user request in v1.2.5
 
         // Friends and Social Activity
         private readonly PluginSensor _friendsOnlineSensor = new("friends-online", "Friends Online", 0, "friends");
@@ -370,6 +368,7 @@ namespace InfoPanel.SteamAPI
                 _achievementsMonitoring = new InfoPanel.SteamAPI.Services.Monitoring.AchievementsMonitoringService(
                     _configService,
                     _achievementsDataService,
+                    _sessionTrackingService,
                     _apiSemaphore,
                     _enhancedLoggingService);
 
@@ -417,9 +416,6 @@ namespace InfoPanel.SteamAPI
                     _currentGameAchievementsTotalSensor,
                     _latestAchievementSensor,
                     _latestAchievementIconSensor,
-                    _totalBadgesEarnedSensor,
-                    _totalBadgeXPSensor,
-                    _latestBadgeSensor,
                     _enhancedLoggingService);
 
                 // Subscribe sensor services to monitoring events
@@ -491,17 +487,15 @@ namespace InfoPanel.SteamAPI
                 containers.Add(libraryContainer);
 
                 // Create Achievements & Badges container
-                var achievementsContainer = new PluginContainer("SteamAPI-Achievements", "Achievements & Badges");
+                var achievementsContainer = new PluginContainer("SteamAPI-Achievements", "Achievements");
                 achievementsContainer.Entries.Add(_currentGameAchievementsSensor);
                 achievementsContainer.Entries.Add(_currentGameAchievementsUnlockedSensor);
                 achievementsContainer.Entries.Add(_currentGameAchievementsTotalSensor);
                 achievementsContainer.Entries.Add(_latestAchievementSensor);
                 achievementsContainer.Entries.Add(_latestAchievementIconSensor);
                 // Removed artificial achievement sensors - Steam API doesn't provide overall achievement statistics
-                achievementsContainer.Entries.Add(_totalBadgesEarnedSensor);
-                achievementsContainer.Entries.Add(_totalBadgeXPSensor);
-                achievementsContainer.Entries.Add(_latestBadgeSensor);
-                _loggingService.LogInfo($"Created Achievements & Badges container with {achievementsContainer.Entries.Count} sensors");
+                // Removed badge sensors as per user request in v1.2.5
+                _loggingService.LogInfo($"Created Achievements container with {achievementsContainer.Entries.Count} sensors");
                 containers.Add(achievementsContainer);
 
                 // Create Friends & Social container

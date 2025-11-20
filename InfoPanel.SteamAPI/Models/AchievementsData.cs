@@ -3,20 +3,10 @@ using System;
 namespace InfoPanel.SteamAPI.Models
 {
     /// <summary>
-    /// Data model for Achievements and Badges domain
+    /// Data model for Achievements domain
     /// </summary>
     public class AchievementsData
     {
-        #region Badges Data
-
-        public int TotalBadgesEarned { get; set; }
-        public int TotalBadgeXP { get; set; }
-        public int PlayerLevel { get; set; }
-        public string? LatestBadgeName { get; set; }
-        public DateTime? LatestBadgeDate { get; set; }
-
-        #endregion
-
         #region Current Game Achievements
 
         public int CurrentGameAppId { get; set; }
@@ -26,6 +16,7 @@ namespace InfoPanel.SteamAPI.Models
         public double CurrentGameCompletionPercent { get; set; }
         public string? LatestAchievementName { get; set; }
         public string? LatestAchievementIcon { get; set; }
+        public bool IsLive { get; set; }
 
         #endregion
 

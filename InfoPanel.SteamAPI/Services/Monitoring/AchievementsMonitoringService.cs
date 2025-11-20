@@ -28,21 +28,25 @@ namespace InfoPanel.SteamAPI.Services.Monitoring
 
         private readonly ConfigurationService _configService;
         private readonly AchievementsDataService _dataService;
+        private readonly SessionTrackingService? _sessionTrackingService;
         private readonly System.Threading.SemaphoreSlim _apiSemaphore;
         private readonly EnhancedLoggingService? _enhancedLogger;
 
         private System.Threading.Timer? _timer;
         private bool _isMonitoring;
         private int _currentGameAppId;
+        private int _lastPlayedAppId;
 
         public AchievementsMonitoringService(
             ConfigurationService configService,
             AchievementsDataService dataService,
+            SessionTrackingService? sessionTrackingService,
             System.Threading.SemaphoreSlim apiSemaphore,
             EnhancedLoggingService? enhancedLogger = null)
         {
             _configService = configService ?? throw new ArgumentNullException(nameof(configService));
             _dataService = dataService ?? throw new ArgumentNullException(nameof(dataService));
+            _sessionTrackingService = sessionTrackingService;
             _apiSemaphore = apiSemaphore ?? throw new ArgumentNullException(nameof(apiSemaphore));
             _enhancedLogger = enhancedLogger;
         }
@@ -52,6 +56,19 @@ namespace InfoPanel.SteamAPI.Services.Monitoring
             if (_isMonitoring) return;
 
             _isMonitoring = true;
+
+            // Initialize last played game from session history if available
+            // This avoids an API call on startup and provides immediate data
+            if (_sessionTrackingService != null)
+            {
+                var lastGame = _sessionTrackingService.GetLastPlayedGame();
+                if (lastGame.appId > 0)
+                {
+                    _lastPlayedAppId = lastGame.appId;
+                    _enhancedLogger?.LogInfo($"{DOMAIN_NAME}.StartMonitoring", $"Initialized last played game from session history: {_lastPlayedAppId}");
+                }
+            }
+
             _timer = new System.Threading.Timer(async _ => await UpdateLoopAsync(), null, 0, TIMER_INTERVAL_SECONDS * 1000);
 
             _enhancedLogger?.LogInfo($"{DOMAIN_NAME}.StartMonitoring", "Achievements monitoring started");
@@ -72,9 +89,19 @@ namespace InfoPanel.SteamAPI.Services.Monitoring
         {
             if (_currentGameAppId != appId)
             {
+                _enhancedLogger?.LogInfo($"{DOMAIN_NAME}.UpdateCurrentGame", $"Game changed from {_currentGameAppId} to {appId}. Triggering immediate update.");
+
                 _currentGameAppId = appId;
-                // Trigger immediate update on game change
-                Task.Run(() => UpdateLoopAsync());
+
+                if (appId > 0)
+                {
+                    _lastPlayedAppId = appId;
+                }
+
+                // Trigger immediate update on game change by resetting the timer
+                // This ensures we don't have concurrent updates and realigns the interval
+                // We use a small delay (250ms) to allow PlayerMonitoringService to release the API semaphore
+                _timer?.Change(250, TIMER_INTERVAL_SECONDS * 1000);
             }
         }
 
@@ -87,7 +114,30 @@ namespace InfoPanel.SteamAPI.Services.Monitoring
                 await _apiSemaphore.WaitAsync();
                 try
                 {
-                    var data = await _dataService.CollectAchievementsDataAsync(_currentGameAppId);
+                    // If we don't have a current game, and haven't found a last played game yet, try to find one
+                    if (_currentGameAppId <= 0 && _lastPlayedAppId <= 0)
+                    {
+                        try
+                        {
+                            var recentGames = await _dataService.GetRecentlyPlayedGamesAsync();
+                            if (recentGames?.Response?.Games?.Any() == true)
+                            {
+                                _lastPlayedAppId = recentGames.Response.Games.First().AppId;
+                                _enhancedLogger?.LogInfo($"{DOMAIN_NAME}.UpdateLoopAsync", $"Found last played game: {_lastPlayedAppId}");
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            _enhancedLogger?.LogWarning($"{DOMAIN_NAME}.UpdateLoopAsync", "Failed to fetch recent games", ex);
+                        }
+                    }
+
+                    int targetAppId = _currentGameAppId > 0 ? _currentGameAppId : _lastPlayedAppId;
+                    var data = await _dataService.CollectAchievementsDataAsync(targetAppId);
+
+                    // Mark if this is live data or historical
+                    data.IsLive = _currentGameAppId > 0;
+
                     AchievementsDataUpdated?.Invoke(this, new AchievementsDataEventArgs(data));
                 }
                 finally

@@ -2,6 +2,27 @@
 
 All notable changes to InfoPanel Steam API Plugin will be documented in this file.
 
+## [1.2.5] - 2025-11-20
+
+### ✨ **New Features**
+
+- **Enhanced Achievements Metadata**: Added support for fetching achievement display names and icons using the Steam Game Schema.
+- **Context-Aware Achievements**: Achievements sensors now display data for the *last played game* when not currently in-game, instead of showing empty data.
+- **Instant Startup Data**: Plugin now initializes with the last played game from session history, providing immediate achievement data on startup without API delays.
+- **Responsive Updates**: Optimized update triggers to refresh achievement data immediately upon game launch.
+
+### ⚡ **Performance & Optimization**
+
+- **Reduced API Contention**: Increased Player Monitoring interval from 1s to 3s to prevent API rate limit conflicts with other services.
+- **Optimized Semaphore Usage**: Added intelligent delays to prevent lock contention during game state transitions.
+- **Schema Caching**: Implemented caching for game schemas to minimize expensive API calls.
+
+### 🧹 **Cleanup & Feature Removal**
+
+- **Removed Badge Data**: Removed all badge-related sensors and data collection to streamline the Achievements domain as per user request.
+
+---
+
 ## [1.2.2] - 2025-11-20
 
 ### ✨ **New Features**
