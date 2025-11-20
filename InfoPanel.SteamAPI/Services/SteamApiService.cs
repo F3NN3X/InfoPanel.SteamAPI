@@ -440,8 +440,9 @@ namespace InfoPanel.SteamAPI.Services
         {
             try
             {
-                var endpoint = $"IPlayerService/GetOwnedGames/v1/?key={_apiKey}&steamid={_steamId64}&include_appinfo=1&include_played_free_games=1&format=json";
-                _enhancedLogger?.LogDebug("SteamApiService.GetOwnedGamesAsync", "Initiating API call for owned games", new { SteamId = _steamId64, IncludeAppInfo = true, IncludeFreeGames = true });
+                // Exclude free games to match Steam profile count more closely
+                var endpoint = $"IPlayerService/GetOwnedGames/v1/?key={_apiKey}&steamid={_steamId64}&include_appinfo=1&include_played_free_games=0&format=json";
+                _enhancedLogger?.LogDebug("SteamApiService.GetOwnedGamesAsync", "Initiating API call for owned games", new { SteamId = _steamId64, IncludeAppInfo = true, IncludeFreeGames = false });
                 var jsonResponse = await CallSteamApiAsync(endpoint);
 
                 if (!string.IsNullOrEmpty(jsonResponse))

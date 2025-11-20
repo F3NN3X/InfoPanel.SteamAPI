@@ -2,6 +2,12 @@
 
 All notable changes to InfoPanel Steam API Plugin will be documented in this file.
 
+## [1.2.6] - 2025-11-20
+
+### 🐛 **Bug Fixes**
+
+- **Game Count Accuracy**: Updated `GetOwnedGamesAsync` to exclude free games (`include_played_free_games=0`). This aligns the "Total Games Owned" count more closely with the official Steam profile badge count.
+
 ## [1.2.5] - 2025-11-20
 
 ### ✨ **New Features**
