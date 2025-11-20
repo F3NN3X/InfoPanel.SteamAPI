@@ -88,7 +88,8 @@ namespace InfoPanel.SteamAPI.Services
 
                         if (unlocked != null)
                         {
-                            data.LatestAchievementName = unlocked.Name; // Default to API name
+                            // Use ApiName as default, since Name is not returned by GetPlayerAchievements
+                            data.LatestAchievementName = !string.IsNullOrEmpty(unlocked.Name) ? unlocked.Name : unlocked.ApiName;
 
                             // Fetch schema to get display name
                             try
@@ -110,8 +111,9 @@ namespace InfoPanel.SteamAPI.Services
 
                                 if (schemaResponse?.Game?.AvailableGameStats?.Achievements != null)
                                 {
+                                    // Match using ApiName
                                     var achievementSchema = schemaResponse.Game.AvailableGameStats.Achievements
-                                        .FirstOrDefault(a => a.Name.Equals(unlocked.Name, StringComparison.OrdinalIgnoreCase));
+                                        .FirstOrDefault(a => a.Name.Equals(unlocked.ApiName, StringComparison.OrdinalIgnoreCase));
 
                                     if (achievementSchema != null)
                                     {

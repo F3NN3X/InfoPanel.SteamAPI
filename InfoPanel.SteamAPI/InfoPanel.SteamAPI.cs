@@ -553,7 +553,7 @@ namespace InfoPanel.SteamAPI
                 {
                     _playerSensors.UnsubscribeFromMonitoring(_playerMonitoring);
                 }
-                
+
                 // Unsubscribe cross-domain events
                 if (_playerMonitoring != null)
                 {
@@ -641,7 +641,7 @@ namespace InfoPanel.SteamAPI
         #endregion
 
         #region Event Handlers
-        
+
         /// <summary>
         /// Handles player data updates to coordinate cross-domain logic
         /// </summary>
