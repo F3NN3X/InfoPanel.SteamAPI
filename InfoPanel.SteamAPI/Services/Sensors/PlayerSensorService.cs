@@ -260,13 +260,41 @@ namespace InfoPanel.SteamAPI.Services.Sensors
         /// </summary>
         private void UpdateSessionSensors(SessionDataCache sessionCache)
         {
-            // Format current session time
-            var currentSessionFormatted = FormatMinutesToHourMin(sessionCache.CurrentSessionMinutes);
-            _currentSessionTimeSensor.Value = currentSessionFormatted;
+            // Determine if we are in an active session
+            bool isActiveSession = sessionCache.SessionStartTime.HasValue;
 
-            // Format session start time
-            var sessionStartTime = sessionCache.SessionStartTime?.ToString("HH:mm") ?? "Not in game";
-            _sessionStartTimeSensor.Value = sessionStartTime;
+            if (isActiveSession)
+            {
+                // Format current session time
+                var currentSessionFormatted = FormatMinutesToHourMin(sessionCache.CurrentSessionMinutes);
+                _currentSessionTimeSensor.Value = currentSessionFormatted;
+
+                // Format session start time
+                var sessionStartTime = sessionCache.SessionStartTime?.ToString("HH:mm") ?? "Not in game";
+                _sessionStartTimeSensor.Value = sessionStartTime;
+            }
+            else
+            {
+                // Show last session info if available
+                if (sessionCache.LastSessionMinutes > 0)
+                {
+                    var lastSessionFormatted = FormatMinutesToHourMin(sessionCache.LastSessionMinutes);
+                    _currentSessionTimeSensor.Value = lastSessionFormatted;
+                }
+                else
+                {
+                    _currentSessionTimeSensor.Value = "0m";
+                }
+
+                if (sessionCache.LastSessionStartTime.HasValue)
+                {
+                    _sessionStartTimeSensor.Value = sessionCache.LastSessionStartTime.Value.ToString("HH:mm");
+                }
+                else
+                {
+                    _sessionStartTimeSensor.Value = "Not in game";
+                }
+            }
 
             // Format average session time
             var avgSessionFormatted = FormatMinutesToHourMin((int)Math.Round(sessionCache.AverageSessionMinutes));
@@ -274,11 +302,11 @@ namespace InfoPanel.SteamAPI.Services.Sensors
 
             _enhancedLogger?.LogInfo($"{DOMAIN_NAME}.UpdateSessionSensors", "Session sensors updated", new
             {
-                CurrentSessionTime = currentSessionFormatted,
+                IsActive = isActiveSession,
                 CurrentSessionMinutes = sessionCache.CurrentSessionMinutes,
-                SessionStartTime = sessionStartTime,
-                AverageSessionTime = avgSessionFormatted,
-                AverageSessionMinutes = Math.Round(sessionCache.AverageSessionMinutes, 1)
+                LastSessionMinutes = sessionCache.LastSessionMinutes,
+                SessionStartTime = isActiveSession ? sessionCache.SessionStartTime : sessionCache.LastSessionStartTime,
+                AverageSessionTime = avgSessionFormatted
             });
         }
 

@@ -31,6 +31,16 @@ namespace InfoPanel.SteamAPI.Models
         /// </summary>
         public double AverageSessionMinutes { get; set; }
         
+        /// <summary>
+        /// Duration of the last completed session in minutes
+        /// </summary>
+        public int LastSessionMinutes { get; set; }
+
+        /// <summary>
+        /// Start time of the last completed session
+        /// </summary>
+        public DateTime? LastSessionStartTime { get; set; }
+        
         #endregion
 
         #region Last Played Game Data
@@ -97,6 +107,8 @@ namespace InfoPanel.SteamAPI.Models
                     CurrentSessionMinutes = this.CurrentSessionMinutes,
                     SessionStartTime = this.SessionStartTime,
                     AverageSessionMinutes = this.AverageSessionMinutes,
+                    LastSessionMinutes = this.LastSessionMinutes,
+                    LastSessionStartTime = this.LastSessionStartTime,
                     LastPlayedGameName = this.LastPlayedGameName,
                     LastPlayedGameAppId = this.LastPlayedGameAppId,
                     LastPlayedGameBannerUrl = this.LastPlayedGameBannerUrl,
@@ -117,6 +129,8 @@ namespace InfoPanel.SteamAPI.Models
                 CurrentSessionMinutes = (int)Math.Ceiling(playerData.CurrentSessionTimeMinutes);
                 SessionStartTime = playerData.CurrentSessionStartTime;
                 AverageSessionMinutes = playerData.AverageSessionTimeMinutes;
+                LastSessionMinutes = (int)Math.Ceiling(playerData.LastSessionMinutes);
+                LastSessionStartTime = playerData.LastSessionStartTime;
                 LastPlayedGameName = playerData.LastPlayedGameName;
                 LastPlayedGameAppId = playerData.LastPlayedGameAppId;
                 LastPlayedGameBannerUrl = playerData.LastPlayedGameBannerUrl;

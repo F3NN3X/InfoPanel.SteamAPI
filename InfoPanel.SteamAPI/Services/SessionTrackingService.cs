@@ -494,7 +494,23 @@ namespace InfoPanel.SteamAPI.Services
                 }
             }
         }
-        
+
+        /// <summary>
+        /// Gets information about the last completed session
+        /// </summary>
+        public (int durationMinutes, DateTime? startTime) GetLastSessionInfo()
+        {
+            lock (_sessionLock)
+            {
+                var lastSession = _sessionHistory.Sessions.LastOrDefault();
+                if (lastSession != null)
+                {
+                    return (lastSession.DurationMinutes, lastSession.StartTime);
+                }
+                return (0, null);
+            }
+        }
+
         #endregion
 
         #region Private Methods

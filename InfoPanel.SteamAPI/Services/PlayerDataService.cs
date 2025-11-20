@@ -407,6 +407,11 @@ namespace InfoPanel.SteamAPI.Services
                     playerData.CurrentSessionTimeMinutes = sessionInfo.sessionMinutes;
                     playerData.CurrentSessionStartTime = sessionInfo.sessionStart;
 
+                    // Get last session info
+                    var lastSessionInfo = _sessionTracker.GetLastSessionInfo();
+                    playerData.LastSessionMinutes = lastSessionInfo.durationMinutes;
+                    playerData.LastSessionStartTime = lastSessionInfo.startTime;
+
                     // Get average session time from recent sessions
                     var recentStats = _sessionTracker.GetRecentSessionStats(daysBack: 30);  // Last 30 days
                     playerData.AverageSessionTimeMinutes = recentStats.averageMinutes;
@@ -668,6 +673,8 @@ namespace InfoPanel.SteamAPI.Services
         public double TodayPlaytimeHours { get; set; }
         public DateTime? CurrentSessionStartTime { get; set; }
         public double AverageSessionTimeMinutes { get; set; }
+        public double LastSessionMinutes { get; set; }
+        public DateTime? LastSessionStartTime { get; set; }
 
         #endregion
 

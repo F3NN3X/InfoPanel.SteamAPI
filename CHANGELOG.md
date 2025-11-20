@@ -2,6 +2,14 @@
 
 All notable changes to InfoPanel Steam API Plugin will be documented in this file.
 
+## [1.3.2] - 2025-11-20
+
+### ✨ **New Features**
+
+- **Persistent Session Info**: "Current Session Time" and "Session Started" sensors now display data from the *last* gaming session when no game is currently running, instead of showing "0m" or "Not in game".
+
+---
+
 ## [1.3.1] - 2025-11-20
 
 ### ⚡ **Performance & Optimization**
