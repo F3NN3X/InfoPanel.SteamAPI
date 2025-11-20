@@ -14,7 +14,7 @@ namespace InfoPanel.SteamAPI.Services
         private readonly ConfigurationService _configService;
         private readonly SteamApiService _steamApiService;
         private readonly EnhancedLoggingService? _enhancedLogger;
-        
+
         // Simple in-memory cache for game schemas to avoid repeated heavy API calls
         private readonly Dictionary<int, GameSchemaResponse> _schemaCache = new();
 
@@ -89,12 +89,12 @@ namespace InfoPanel.SteamAPI.Services
                         if (unlocked != null)
                         {
                             data.LatestAchievementName = unlocked.Name; // Default to API name
-                            
+
                             // Fetch schema to get display name
-                            try 
+                            try
                             {
                                 GameSchemaResponse? schemaResponse = null;
-                                
+
                                 if (_schemaCache.ContainsKey(currentGameAppId))
                                 {
                                     schemaResponse = _schemaCache[currentGameAppId];
@@ -112,14 +112,14 @@ namespace InfoPanel.SteamAPI.Services
                                 {
                                     var achievementSchema = schemaResponse.Game.AvailableGameStats.Achievements
                                         .FirstOrDefault(a => a.Name.Equals(unlocked.Name, StringComparison.OrdinalIgnoreCase));
-                                        
+
                                     if (achievementSchema != null)
                                     {
                                         if (!string.IsNullOrEmpty(achievementSchema.DisplayName))
                                         {
                                             data.LatestAchievementName = achievementSchema.DisplayName;
                                         }
-                                        
+
                                         if (!string.IsNullOrEmpty(achievementSchema.Icon))
                                         {
                                             data.LatestAchievementIcon = achievementSchema.Icon;

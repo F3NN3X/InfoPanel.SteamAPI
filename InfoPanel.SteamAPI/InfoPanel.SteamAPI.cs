@@ -428,6 +428,9 @@ namespace InfoPanel.SteamAPI
                 _librarySensors.SubscribeToMonitoring(_libraryMonitoring);
                 _achievementsSensors.SubscribeToMonitoring(_achievementsMonitoring);
 
+                // Wire up cross-domain communication
+                _playerMonitoring.PlayerDataUpdated += OnPlayerDataUpdated;
+
                 // Set session cache reference for social and library domains
                 var sessionCache = _playerMonitoring.GetSessionCache();
                 _socialMonitoring.SetSessionCache(sessionCache);
@@ -550,6 +553,12 @@ namespace InfoPanel.SteamAPI
                 {
                     _playerSensors.UnsubscribeFromMonitoring(_playerMonitoring);
                 }
+                
+                // Unsubscribe cross-domain events
+                if (_playerMonitoring != null)
+                {
+                    _playerMonitoring.PlayerDataUpdated -= OnPlayerDataUpdated;
+                }
 
                 if (_socialSensors != null && _socialMonitoring != null)
                 {
@@ -632,6 +641,19 @@ namespace InfoPanel.SteamAPI
         #endregion
 
         #region Event Handlers
+        
+        /// <summary>
+        /// Handles player data updates to coordinate cross-domain logic
+        /// </summary>
+        private void OnPlayerDataUpdated(object? sender, InfoPanel.SteamAPI.Services.Monitoring.PlayerDataEventArgs e)
+        {
+            // Notify achievements service about current game
+            if (_achievementsMonitoring != null)
+            {
+                _achievementsMonitoring.UpdateCurrentGame(e.Data.CurrentGameAppId);
+            }
+        }
+
         // Domain-driven architecture: Sensor updates handled automatically by domain sensor services
         // - PlayerSensorService subscribes to PlayerMonitoringService.PlayerDataUpdated
         // - SocialSensorService subscribes to SocialMonitoringService.SocialDataUpdated  
