@@ -17,23 +17,22 @@ namespace InfoPanel.SteamAPI.Services.Sensors
     public class SocialSensorService : IDisposable
     {
         private const string DOMAIN_NAME = "SOCIAL_SENSORS";
-        
+
         // Configuration and services
         private readonly ConfigurationService _configService;
         private readonly EnhancedLoggingService? _enhancedLogger;
-        
+
         // Thread safety
         private readonly object _sensorLock = new();
-        
+
         // Social sensors (injected via constructor)
         private readonly PluginSensor _friendsOnlineSensor;
         private readonly PluginSensor _friendsInGameSensor;
         private readonly PluginSensor _totalFriendsCountSensor;
         private readonly PluginTable _friendsActivityTable;
-        private readonly PluginText _friendsPopularGameSensor;
-        
+
         private bool _disposed = false;
-        
+
         /// <summary>
         /// Constructor with dependency injection
         /// </summary>
@@ -43,7 +42,6 @@ namespace InfoPanel.SteamAPI.Services.Sensors
             PluginSensor friendsInGameSensor,
             PluginSensor totalFriendsCountSensor,
             PluginTable friendsActivityTable,
-            PluginText friendsPopularGameSensor,
             EnhancedLoggingService? enhancedLogger = null)
         {
             _configService = configService ?? throw new ArgumentNullException(nameof(configService));
@@ -51,12 +49,11 @@ namespace InfoPanel.SteamAPI.Services.Sensors
             _friendsInGameSensor = friendsInGameSensor ?? throw new ArgumentNullException(nameof(friendsInGameSensor));
             _totalFriendsCountSensor = totalFriendsCountSensor ?? throw new ArgumentNullException(nameof(totalFriendsCountSensor));
             _friendsActivityTable = friendsActivityTable ?? throw new ArgumentNullException(nameof(friendsActivityTable));
-            _friendsPopularGameSensor = friendsPopularGameSensor ?? throw new ArgumentNullException(nameof(friendsPopularGameSensor));
             _enhancedLogger = enhancedLogger;
-            
+
             Console.WriteLine($"[{DOMAIN_NAME}] SocialSensorService initialized");
         }
-        
+
         /// <summary>
         /// Subscribe to social monitoring events
         /// </summary>
@@ -64,12 +61,12 @@ namespace InfoPanel.SteamAPI.Services.Sensors
         {
             if (socialMonitoring == null)
                 throw new ArgumentNullException(nameof(socialMonitoring));
-            
+
             socialMonitoring.SocialDataUpdated += OnSocialDataUpdated;
-            
+
             _enhancedLogger?.LogInfo($"{DOMAIN_NAME}.SubscribeToMonitoring", "Subscribed to social monitoring events");
         }
-        
+
         /// <summary>
         /// Unsubscribe from social monitoring events
         /// </summary>
@@ -77,12 +74,12 @@ namespace InfoPanel.SteamAPI.Services.Sensors
         {
             if (socialMonitoring == null)
                 return;
-            
+
             socialMonitoring.SocialDataUpdated -= OnSocialDataUpdated;
-            
+
             _enhancedLogger?.LogInfo($"{DOMAIN_NAME}.UnsubscribeFromMonitoring", "Unsubscribed from social monitoring events");
         }
-        
+
         /// <summary>
         /// Event handler for social data updates
         /// </summary>
@@ -93,7 +90,7 @@ namespace InfoPanel.SteamAPI.Services.Sensors
                 _enhancedLogger?.LogWarning($"{DOMAIN_NAME}.OnSocialDataUpdated", "Received null social data");
                 return;
             }
-            
+
             try
             {
                 UpdateSocialSensors(e.SocialData, e.SessionCache);
@@ -101,11 +98,11 @@ namespace InfoPanel.SteamAPI.Services.Sensors
             catch (Exception ex)
             {
                 Console.WriteLine($"[{DOMAIN_NAME}] Error updating social sensors: {ex.Message}");
-                
+
                 _enhancedLogger?.LogError($"{DOMAIN_NAME}.OnSocialDataUpdated", "Failed to update sensors", ex);
             }
         }
-        
+
         /// <summary>
         /// Update all social sensors with data from monitoring service
         /// </summary>
@@ -121,39 +118,34 @@ namespace InfoPanel.SteamAPI.Services.Sensors
                         FriendsInGame = socialData.FriendsInGame,
                         TotalFriends = socialData.TotalFriends
                     });
-                    
+
                     // Update friends count sensors
                     _friendsOnlineSensor.Value = (float)socialData.FriendsOnline;
                     _friendsInGameSensor.Value = (float)socialData.FriendsInGame;
                     _totalFriendsCountSensor.Value = (float)socialData.TotalFriends;
-                    
-                    // Update popular game sensor
-                    var popularGame = socialData.FriendsPopularGame ?? "None";
-                    _friendsPopularGameSensor.Value = popularGame;
-                    
+
                     // Build friends activity table
                     _friendsActivityTable.Value = BuildFriendsActivityTable(socialData);
-                    
+
                     _enhancedLogger?.LogInfo($"{DOMAIN_NAME}.UpdateSocialSensors", "Social sensors updated successfully", new
                     {
                         FriendsOnline = socialData.FriendsOnline,
                         FriendsInGame = socialData.FriendsInGame,
                         TotalFriends = socialData.TotalFriends,
-                        PopularGame = popularGame,
                         FriendsActivityCount = socialData.FriendsActivity?.Count ?? 0
                     });
                 }
                 catch (Exception ex)
                 {
                     Console.WriteLine($"[{DOMAIN_NAME}] Error updating sensors: {ex.Message}");
-                    
+
                     _enhancedLogger?.LogError($"{DOMAIN_NAME}.UpdateSocialSensors", "Sensor update failed", ex);
-                    
+
                     SetErrorState(ex.Message);
                 }
             }
         }
-        
+
         /// <summary>
         /// Build friends activity table from social data
         /// CRITICAL: Must use PluginText objects (not plain strings) for InfoPanel table cells
@@ -162,7 +154,7 @@ namespace InfoPanel.SteamAPI.Services.Sensors
         private DataTable BuildFriendsActivityTable(SocialData socialData)
         {
             var dataTable = new DataTable();
-            
+
             try
             {
                 // Initialize columns - MUST use PluginText type for InfoPanel tables
@@ -170,33 +162,33 @@ namespace InfoPanel.SteamAPI.Services.Sensors
                 dataTable.Columns.Add("Status", typeof(PluginText));
                 dataTable.Columns.Add("Playing", typeof(PluginText));
                 dataTable.Columns.Add("Last Online", typeof(PluginText));
-                
+
                 if (socialData.FriendsActivity != null && socialData.FriendsActivity.Count > 0)
                 {
                     // Add friends to table
                     foreach (var friend in socialData.FriendsActivity)
                     {
                         var row = dataTable.NewRow();
-                        
+
                         // Friend name - use FriendName as both ID and display text
                         var friendName = friend.FriendName ?? "Unknown";
                         row["Friend"] = new PluginText($"friend_{friendName}", friendName);
-                        
+
                         // Status - online/offline/away
                         var status = friend.Status ?? "Unknown";
                         row["Status"] = new PluginText($"friend_status_{friendName}", status);
-                        
+
                         // Currently playing game - leave blank if not playing
                         var gameText = friend.CurrentGame == "Not in game" ? "" : friend.CurrentGame ?? "";
                         row["Playing"] = new PluginText($"friend_game_{friendName}", gameText);
-                        
+
                         // Last seen time - format as relative time
                         var lastOnlineText = FormatLastSeenTime(friend.LastSeen);
                         row["Last Online"] = new PluginText($"friend_since_{friendName}", lastOnlineText);
-                        
+
                         dataTable.Rows.Add(row);
                     }
-                    
+
                     _enhancedLogger?.LogDebug($"{DOMAIN_NAME}.BuildFriendsActivityTable", "Built friends activity table", new
                     {
                         FriendsCount = dataTable.Rows.Count,
@@ -212,13 +204,13 @@ namespace InfoPanel.SteamAPI.Services.Sensors
             catch (Exception ex)
             {
                 Console.WriteLine($"[{DOMAIN_NAME}] Error building friends activity table: {ex.Message}");
-                
+
                 _enhancedLogger?.LogError($"{DOMAIN_NAME}.BuildFriendsActivityTable", "Failed to build table", ex);
             }
-            
+
             return dataTable;
         }
-        
+
         /// <summary>
         /// Formats the last seen time as a relative time string (e.g., "2 hours ago", "Online now")
         /// </summary>
@@ -226,13 +218,13 @@ namespace InfoPanel.SteamAPI.Services.Sensors
         {
             var now = DateTime.UtcNow;
             var timeSince = now - lastSeen;
-            
+
             // If last seen is in the future or very recent (< 5 minutes), consider them online now
             if (timeSince.TotalMinutes < 5)
             {
                 return "Online now";
             }
-            
+
             // Format based on time elapsed
             if (timeSince.TotalMinutes < 60)
             {
@@ -260,7 +252,7 @@ namespace InfoPanel.SteamAPI.Services.Sensors
                 return $"{months} month{(months != 1 ? "s" : "")} ago";
             }
         }
-        
+
         /// <summary>
         /// Set all social sensors to error state
         /// </summary>
@@ -271,9 +263,8 @@ namespace InfoPanel.SteamAPI.Services.Sensors
                 _friendsOnlineSensor.Value = 0f;
                 _friendsInGameSensor.Value = 0f;
                 _totalFriendsCountSensor.Value = 0f;
-                _friendsPopularGameSensor.Value = "Error";
                 _friendsActivityTable.Value = new DataTable();
-                
+
                 _enhancedLogger?.LogError($"{DOMAIN_NAME}.SetErrorState", "Social sensors set to error state", null, new
                 {
                     ErrorMessage = errorMessage
@@ -284,7 +275,7 @@ namespace InfoPanel.SteamAPI.Services.Sensors
                 Console.WriteLine($"[{DOMAIN_NAME}] Error setting error state: {ex.Message}");
             }
         }
-        
+
         /// <summary>
         /// Dispose resources
         /// </summary>
@@ -292,7 +283,7 @@ namespace InfoPanel.SteamAPI.Services.Sensors
         {
             if (_disposed)
                 return;
-            
+
             try
             {
                 Console.WriteLine($"[{DOMAIN_NAME}] SocialSensorService disposed");

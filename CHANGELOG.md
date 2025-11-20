@@ -2,6 +2,23 @@
 
 All notable changes to InfoPanel Steam API Plugin will be documented in this file.
 
+## [1.2.2] - 2025-11-20
+
+### 🧹 **Cleanup & Feature Removal**
+
+**Removed unused features to streamline the plugin**
+
+#### Removed Features
+- **Monitored Games**: Removed "Monitored Games" count and "Monitored Total Hours" sensors
+- **Game Details & News**: Removed the entire "Game Details & News" container and all associated sensors
+- **Configuration**: Removed `MAX_MONITORED_GAMES_IN_TABLE` constant
+
+#### Changes
+- **Social Container**: Kept "Friends Activity" table (restored after initial removal attempt)
+- **Code Cleanup**: Removed dead code related to monitored games and game news
+
+---
+
 ## [1.2.1] - 2025-11-12
 
 ### 🏗️ **Major Refactoring: Domain-Driven Architecture**
