@@ -20,7 +20,7 @@ namespace InfoPanel.SteamAPI.Services
         public const int PERSONA_STATE_SNOOZE = 4;
         public const int PERSONA_STATE_LOOKING_TO_TRADE = 5;
         public const int PERSONA_STATE_LOOKING_TO_PLAY = 6;
-        
+
         // Game state constants
         public const int INVALID_GAME_APP_ID = 0;
     }
@@ -33,19 +33,19 @@ namespace InfoPanel.SteamAPI.Services
     public class PlayerDataService
     {
         #region Fields
-        
+
         private readonly ConfigurationService _configService;
         private readonly FileLoggingService? _logger;
         private readonly EnhancedLoggingService? _enhancedLogger;
         private readonly SteamApiService _steamApiService;
         private readonly SessionTrackingService? _sessionTracker;
-        
+
         #endregion
 
         #region Constructor
-        
+
         public PlayerDataService(
-            ConfigurationService configService, 
+            ConfigurationService configService,
             SteamApiService steamApiService,
             SessionTrackingService? sessionTracker = null,
             FileLoggingService? logger = null,
@@ -57,7 +57,7 @@ namespace InfoPanel.SteamAPI.Services
             _logger = logger;
             _enhancedLogger = enhancedLogger;
         }
-        
+
         #endregion
 
         #region Player Data Collection
@@ -82,16 +82,16 @@ namespace InfoPanel.SteamAPI.Services
                         Timestamp = DateTime.Now
                     });
                 }
-                
+
                 var playerData = new PlayerData();
 
                 // 1. Get basic player summary (online status, current game)
                 var playerSummary = await _steamApiService.GetPlayerSummaryAsync();
-                
+
                 if (playerSummary?.Response?.Players?.Any() == true)
                 {
                     var player = playerSummary.Response.Players.First();
-                    
+
                     // Core player profile data
                     playerData.PlayerName = player.PersonaName ?? "Unknown";
                     playerData.ProfileUrl = player.ProfileUrl;
@@ -99,7 +99,7 @@ namespace InfoPanel.SteamAPI.Services
                     playerData.ProfileImageUrl = player.AvatarFull ?? player.AvatarMedium ?? player.Avatar;
                     playerData.LastLogOff = player.LastLogoff;
                     playerData.OnlineState = MapPersonaStateToString(player.PersonaState);
-                    
+
                     // Enhanced logging for avatar data with delta detection 
                     if (_enhancedLogger != null)
                     {
@@ -122,7 +122,7 @@ namespace InfoPanel.SteamAPI.Services
                             ProfileImageUrl = playerData.ProfileImageUrl
                         });
                     }
-                    
+
                     // Get Steam Level (separate API call)
                     try
                     {
@@ -141,7 +141,7 @@ namespace InfoPanel.SteamAPI.Services
                         });
                         playerData.SteamLevel = 0; // Default to 0 if unable to fetch
                     }
-                    
+
                     // Current game state (CRITICAL for responsiveness) - Enhanced logging with delta detection
                     if (_enhancedLogger != null)
                     {
@@ -164,13 +164,13 @@ namespace InfoPanel.SteamAPI.Services
                         });
                         Console.WriteLine($"[PlayerDataService] Raw Steam API game fields - GameExtraInfo: '{player.GameExtraInfo}', GameId: '{player.GameId}', GameServerIp: '{player.GameServerIp}'");
                     }
-                    
+
                     if (!string.IsNullOrEmpty(player.GameExtraInfo))
                     {
                         playerData.CurrentGameName = player.GameExtraInfo;
                         playerData.CurrentGameServerIp = player.GameServerIp;
                         playerData.CurrentGameExtraInfo = player.GameExtraInfo;
-                        
+
                         // Enhanced logging for game detection
                         if (_enhancedLogger != null)
                         {
@@ -185,12 +185,12 @@ namespace InfoPanel.SteamAPI.Services
                         {
                             Console.WriteLine($"[PlayerDataService] GAME DETECTED! Setting CurrentGameName='{playerData.CurrentGameName}'");
                         }
-                        
+
                         // Parse GameId as int if possible
                         if (int.TryParse(player.GameId, out int gameId))
                         {
                             playerData.CurrentGameAppId = gameId;
-                            
+
                             // Enhanced logging for app ID
                             if (_enhancedLogger != null)
                             {
@@ -204,12 +204,12 @@ namespace InfoPanel.SteamAPI.Services
                             {
                                 Console.WriteLine($"[PlayerDataService] GAME APP ID SET! CurrentGameAppId={playerData.CurrentGameAppId}");
                             }
-                            
+
                             // Get game banner URL
                             try
                             {
                                 playerData.CurrentGameBannerUrl = await GetGameBannerUrlAsync(gameId);
-                                
+
                                 // Enhanced logging for banner with delta detection
                                 if (_enhancedLogger != null)
                                 {
@@ -237,20 +237,20 @@ namespace InfoPanel.SteamAPI.Services
                                 }
                                 else
                                 {
-                                    _enhancedLogger?.LogWarning("PlayerDataService", "Failed to fetch game banner", new 
-                                    { 
+                                    _enhancedLogger?.LogWarning("PlayerDataService", "Failed to fetch game banner", new
+                                    {
                                         AppId = gameId,
-                                        ErrorMessage = bannerEx.Message 
+                                        ErrorMessage = bannerEx.Message
                                     });
                                 }
                                 playerData.CurrentGameBannerUrl = null;
                             }
-                            
+
                             // Get current game total playtime from owned games
                             try
                             {
                                 playerData.CurrentGameTotalPlaytimeHours = await GetGameTotalPlaytimeAsync(gameId);
-                                
+
                                 _enhancedLogger?.LogDebug("PLAYER", "Game total playtime fetched", new
                                 {
                                     GameName = playerData.CurrentGameName,
@@ -260,10 +260,10 @@ namespace InfoPanel.SteamAPI.Services
                             }
                             catch (Exception playtimeEx)
                             {
-                                _enhancedLogger?.LogWarning("PLAYER", "Failed to fetch game playtime", new 
-                                { 
+                                _enhancedLogger?.LogWarning("PLAYER", "Failed to fetch game playtime", new
+                                {
                                     AppId = gameId,
-                                    ErrorMessage = playtimeEx.Message 
+                                    ErrorMessage = playtimeEx.Message
                                 });
                                 playerData.CurrentGameTotalPlaytimeHours = 0;
                             }
@@ -276,7 +276,7 @@ namespace InfoPanel.SteamAPI.Services
                                 GameName = playerData.CurrentGameName
                             });
                         }
-                        
+
                         _enhancedLogger?.LogInfo("PlayerDataService", "Player in game", new
                         {
                             GameName = playerData.CurrentGameName,
@@ -288,7 +288,7 @@ namespace InfoPanel.SteamAPI.Services
                         // CRITICAL FIX: Steam API's GameExtraInfo is the SINGLE SOURCE OF TRUTH
                         // When empty, the player is definitively NOT in a game
                         // We MUST clear game fields to break the circular dependency that kept sessions alive forever
-                        
+
                         // Always clear game state when Steam says no game
                         playerData.CurrentGameName = null;
                         playerData.CurrentGameAppId = SteamConstants.INVALID_GAME_APP_ID;
@@ -296,7 +296,7 @@ namespace InfoPanel.SteamAPI.Services
                         playerData.CurrentGameExtraInfo = null;
                         playerData.CurrentGameBannerUrl = null;
                         playerData.CurrentGameTotalPlaytimeHours = 0;
-                        
+
                         _enhancedLogger?.LogInfo("PLAYER", "Steam API reports no game - clearing game state", new
                         {
                             PlayerName = playerData.PlayerName,
@@ -304,7 +304,7 @@ namespace InfoPanel.SteamAPI.Services
                             PreviousGameCleared = true,
                             Reason = "GameExtraInfo is empty - definitive not in game"
                         });
-                        
+
                         // AFTER clearing (important!), check if we should display last played game
                         // This is ONLY for visual display - NOT used for session tracking
                         if (_sessionTracker != null)
@@ -317,13 +317,13 @@ namespace InfoPanel.SteamAPI.Services
                                 playerData.CurrentGameBannerUrl = lastPlayed.bannerUrl;
                                 // Explicitly do NOT set CurrentGameAppId - keep it as INVALID_GAME_APP_ID
                                 // This ensures SessionTrackingService knows we're not in a game
-                                
+
                                 // ALSO populate LastPlayed* properties for sensors to use
                                 playerData.LastPlayedGameName = lastPlayed.gameName;
                                 playerData.LastPlayedGameAppId = lastPlayed.appId;
                                 playerData.LastPlayedGameBannerUrl = lastPlayed.bannerUrl;
                                 playerData.LastPlayedGameTimestamp = lastPlayed.timestamp;
-                                
+
                                 // Fetch playtime for last played game
                                 try
                                 {
@@ -333,7 +333,7 @@ namespace InfoPanel.SteamAPI.Services
                                 {
                                     playerData.LastPlayedGamePlaytimeHours = 0;
                                 }
-                                
+
                                 _enhancedLogger?.LogInfo("PLAYER", "Showing last played game for display only", new
                                 {
                                     GameName = lastPlayed.gameName,
@@ -354,7 +354,7 @@ namespace InfoPanel.SteamAPI.Services
                             }
                         }
                     }
-                    
+
                     // Enhanced logging for player data collection summary
                     if (_enhancedLogger != null)
                     {
@@ -403,11 +403,11 @@ namespace InfoPanel.SteamAPI.Services
                     var sessionInfo = _sessionTracker.GetCurrentSessionInfo();
                     playerData.CurrentSessionTimeMinutes = sessionInfo.sessionMinutes;
                     playerData.CurrentSessionStartTime = sessionInfo.sessionStart;
-                    
+
                     // Get average session time from recent sessions
                     var recentStats = _sessionTracker.GetRecentSessionStats(daysBack: 30);  // Last 30 days
                     playerData.AverageSessionTimeMinutes = recentStats.averageMinutes;
-                    
+
                     // CRITICAL: Log session info retrieval with full details
                     _enhancedLogger?.LogInfo("PlayerDataService.SessionTracking", "Retrieved session info", new
                     {
@@ -420,7 +420,7 @@ namespace InfoPanel.SteamAPI.Services
                         HasSessionTracker = _sessionTracker != null,
                         PlayerDataAvgSet = Math.Round(playerData.AverageSessionTimeMinutes, 1)
                     });
-                    
+
                     if (sessionInfo.isActive && sessionInfo.sessionStart.HasValue)
                     {
                         _enhancedLogger?.LogDebug("PlayerDataService", "Active gaming session", new
@@ -451,7 +451,7 @@ namespace InfoPanel.SteamAPI.Services
                 // 3. Set status based on collected data
                 playerData.Status = playerData.IsOnline() ? "Online" : "Offline";
                 playerData.Timestamp = DateTime.Now;
-                
+
                 _enhancedLogger?.LogDebug("PlayerDataService", "Player data collection completed", new
                 {
                     PlayerName = playerData.PlayerName,
@@ -485,7 +485,7 @@ namespace InfoPanel.SteamAPI.Services
             return personaState switch
             {
                 SteamConstants.PERSONA_STATE_OFFLINE => "Offline",
-                SteamConstants.PERSONA_STATE_ONLINE => "Online", 
+                SteamConstants.PERSONA_STATE_ONLINE => "Online",
                 SteamConstants.PERSONA_STATE_BUSY => "Busy",
                 SteamConstants.PERSONA_STATE_AWAY => "Away",
                 SteamConstants.PERSONA_STATE_SNOOZE => "Snooze",
@@ -506,18 +506,18 @@ namespace InfoPanel.SteamAPI.Services
                 // Use CDN pattern for library_hero image (3840x1240 - high quality)
                 // Primary CDN: CloudFlare
                 var libraryHeroUrl = $"https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/{appId}/library_hero.jpg";
-                
+
                 _enhancedLogger?.LogDebug("PlayerDataService.GetGameBannerUrlAsync", "Using library_hero image from CDN", new
                 {
                     AppId = appId,
                     LibraryHeroUrl = libraryHeroUrl,
                     ImageSize = "3840x1240"
                 });
-                
+
                 // Verify the image exists with a HEAD request (fast check)
                 using var httpClient = new HttpClient();
                 httpClient.Timeout = TimeSpan.FromSeconds(5);
-                
+
                 try
                 {
                     var headResponse = await httpClient.SendAsync(new HttpRequestMessage(HttpMethod.Head, libraryHeroUrl));
@@ -536,13 +536,13 @@ namespace InfoPanel.SteamAPI.Services
                     // HEAD request failed, but image might still exist - return URL anyway
                     // Steam CDN is 99% reliable for published games
                 }
-                
+
                 _enhancedLogger?.LogDebug("PlayerDataService.GetGameBannerUrlAsync", "Using library_hero URL (verification skipped)", new
                 {
                     AppId = appId,
                     Note = "CDN image URL returned without verification"
                 });
-                
+
                 // Return the URL even if HEAD request failed - Steam CDN is highly reliable
                 return libraryHeroUrl;
             }
@@ -556,7 +556,7 @@ namespace InfoPanel.SteamAPI.Services
                 return null;
             }
         }
-        
+
         /// <summary>
         /// Gets the total playtime for a specific game from GetOwnedGames API
         /// </summary>
@@ -568,20 +568,20 @@ namespace InfoPanel.SteamAPI.Services
                 {
                     AppId = appId
                 });
-                
+
                 // Call GetOwnedGames API to get playtime for this specific game
                 var ownedGamesResponse = await _steamApiService.GetOwnedGamesAsync();
-                
+
                 if (ownedGamesResponse?.Response?.Games != null)
                 {
                     // Find the game by AppId
                     var game = ownedGamesResponse.Response.Games.FirstOrDefault(g => g.AppId == appId);
-                    
+
                     if (game != null)
                     {
                         // PlaytimeForever is in minutes, convert to hours
                         var playtimeHours = game.PlaytimeForever / 60.0;
-                        
+
                         _enhancedLogger?.LogInfo("PlayerDataService.GetGameTotalPlaytimeAsync", "Game playtime retrieved", new
                         {
                             AppId = appId,
@@ -589,7 +589,7 @@ namespace InfoPanel.SteamAPI.Services
                             PlaytimeMinutes = game.PlaytimeForever,
                             PlaytimeHours = Math.Round(playtimeHours, 1)
                         });
-                        
+
                         return playtimeHours;
                     }
                     else
@@ -602,7 +602,7 @@ namespace InfoPanel.SteamAPI.Services
                         return 0;
                     }
                 }
-                
+
                 _enhancedLogger?.LogWarning("PlayerDataService.GetGameTotalPlaytimeAsync", "No owned games data returned from API");
                 return 0;
             }
@@ -626,16 +626,16 @@ namespace InfoPanel.SteamAPI.Services
     public class PlayerData
     {
         #region Core Properties
-        
+
         public string? Status { get; set; }
         public DateTime Timestamp { get; set; } = DateTime.Now;
         public bool HasError { get; set; }
         public string? ErrorMessage { get; set; }
-        
+
         #endregion
 
         #region Player Profile Properties
-        
+
         public string? PlayerName { get; set; }
         public string? ProfileUrl { get; set; }
         public string? AvatarUrl { get; set; }
@@ -643,31 +643,31 @@ namespace InfoPanel.SteamAPI.Services
         public string? OnlineState { get; set; }
         public long LastLogOff { get; set; }
         public int SteamLevel { get; set; }
-        
+
         #endregion
 
         #region Current Game Properties
-        
+
         public string? CurrentGameName { get; set; }
         public int CurrentGameAppId { get; set; }
         public string? CurrentGameExtraInfo { get; set; }
         public string? CurrentGameServerIp { get; set; }
         public string? CurrentGameBannerUrl { get; set; }
         public double CurrentGameTotalPlaytimeHours { get; set; }  // Total playtime for current game from Steam API
-        
+
         #endregion
 
         #region Session Tracking Properties
-        
+
         public double CurrentSessionTimeMinutes { get; set; }
         public double TodayPlaytimeHours { get; set; }
         public DateTime? CurrentSessionStartTime { get; set; }
         public double AverageSessionTimeMinutes { get; set; }
-        
+
         #endregion
 
         #region Last Played Game Properties
-        
+
         // These properties hold the last played game information for display purposes
         // when the player is not currently in a game
         public string? LastPlayedGameName { get; set; }
@@ -675,11 +675,11 @@ namespace InfoPanel.SteamAPI.Services
         public string? LastPlayedGameBannerUrl { get; set; }
         public DateTime? LastPlayedGameTimestamp { get; set; }
         public double LastPlayedGamePlaytimeHours { get; set; }
-        
+
         #endregion
 
         #region Helper Methods
-        
+
         /// <summary>
         /// Checks if player is currently online
         /// </summary>
@@ -687,7 +687,7 @@ namespace InfoPanel.SteamAPI.Services
         {
             return OnlineState != null && OnlineState != "Offline";
         }
-        
+
         /// <summary>
         /// Checks if player is currently in a game
         /// </summary>
@@ -695,7 +695,7 @@ namespace InfoPanel.SteamAPI.Services
         {
             return !string.IsNullOrEmpty(CurrentGameName) && CurrentGameAppId > SteamConstants.INVALID_GAME_APP_ID;
         }
-        
+
         #endregion
     }
 }

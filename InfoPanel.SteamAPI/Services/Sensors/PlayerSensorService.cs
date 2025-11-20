@@ -17,14 +17,14 @@ namespace InfoPanel.SteamAPI.Services.Sensors
     public class PlayerSensorService : IDisposable
     {
         private const string DOMAIN_NAME = "PLAYER_SENSORS";
-        
+
         // Configuration and services
         private readonly ConfigurationService _configService;
         private readonly EnhancedLoggingService? _enhancedLogger;
-        
+
         // Thread safety
         private readonly object _sensorLock = new();
-        
+
         // Player sensors (injected via constructor)
         private readonly PluginText _playerNameSensor;
         private readonly PluginText _onlineStatusSensor;
@@ -33,19 +33,19 @@ namespace InfoPanel.SteamAPI.Services.Sensors
         private readonly PluginSensor _currentGamePlaytimeSensor;
         private readonly PluginText _statusSensor;
         private readonly PluginText _detailsSensor;
-        
+
         // Session tracking sensors
         private readonly PluginText _currentSessionTimeSensor;
         private readonly PluginText _sessionStartTimeSensor;
         private readonly PluginText _averageSessionTimeSensor;
-        
+
         // Image URL sensors
         private readonly PluginText _profileImageUrlSensor;
         private readonly PluginText _currentGameBannerUrlSensor;
         private readonly PluginText _gameStatusTextSensor;
-        
+
         private bool _disposed = false;
-        
+
         /// <summary>
         /// Constructor with dependency injection
         /// </summary>
@@ -81,10 +81,10 @@ namespace InfoPanel.SteamAPI.Services.Sensors
             _currentGameBannerUrlSensor = currentGameBannerUrlSensor ?? throw new ArgumentNullException(nameof(currentGameBannerUrlSensor));
             _gameStatusTextSensor = gameStatusTextSensor ?? throw new ArgumentNullException(nameof(gameStatusTextSensor));
             _enhancedLogger = enhancedLogger;
-            
+
             Console.WriteLine($"[{DOMAIN_NAME}] PlayerSensorService initialized");
         }
-        
+
         /// <summary>
         /// Subscribe to player monitoring events
         /// </summary>
@@ -92,12 +92,12 @@ namespace InfoPanel.SteamAPI.Services.Sensors
         {
             if (playerMonitoring == null)
                 throw new ArgumentNullException(nameof(playerMonitoring));
-            
+
             playerMonitoring.PlayerDataUpdated += OnPlayerDataUpdated;
-            
+
             _enhancedLogger?.LogInfo($"{DOMAIN_NAME}.SubscribeToMonitoring", "Subscribed to player monitoring events");
         }
-        
+
         /// <summary>
         /// Unsubscribe from player monitoring events
         /// </summary>
@@ -105,12 +105,12 @@ namespace InfoPanel.SteamAPI.Services.Sensors
         {
             if (playerMonitoring == null)
                 return;
-            
+
             playerMonitoring.PlayerDataUpdated -= OnPlayerDataUpdated;
-            
+
             _enhancedLogger?.LogInfo($"{DOMAIN_NAME}.UnsubscribeFromMonitoring", "Unsubscribed from player monitoring events");
         }
-        
+
         /// <summary>
         /// Event handler for player data updates
         /// </summary>
@@ -121,7 +121,7 @@ namespace InfoPanel.SteamAPI.Services.Sensors
                 _enhancedLogger?.LogWarning($"{DOMAIN_NAME}.OnPlayerDataUpdated", "Received null player data");
                 return;
             }
-            
+
             try
             {
                 UpdatePlayerSensors(e.Data, e.SessionCache);
@@ -129,11 +129,11 @@ namespace InfoPanel.SteamAPI.Services.Sensors
             catch (Exception ex)
             {
                 Console.WriteLine($"[{DOMAIN_NAME}] Error updating player sensors: {ex.Message}");
-                
+
                 _enhancedLogger?.LogError($"{DOMAIN_NAME}.OnPlayerDataUpdated", "Failed to update sensors", ex);
             }
         }
-        
+
         /// <summary>
         /// Update all player sensors with data from monitoring service
         /// </summary>
@@ -149,22 +149,22 @@ namespace InfoPanel.SteamAPI.Services.Sensors
                         IsInGame = playerData.IsInGame(),
                         CurrentSessionMinutes = sessionCache.CurrentSessionMinutes
                     });
-                    
+
                     // Update profile sensors
                     UpdateProfileSensors(playerData);
-                    
+
                     // Update current game sensors
                     UpdateCurrentGameSensors(playerData);
-                    
+
                     // Update session tracking sensors
                     UpdateSessionSensors(sessionCache);
-                    
+
                     // Update image URL sensors
                     UpdateImageUrlSensors(playerData, sessionCache);
-                    
+
                     // Update status sensors
                     UpdateStatusSensors(playerData);
-                    
+
                     _enhancedLogger?.LogInfo($"{DOMAIN_NAME}.UpdatePlayerSensors", "Player sensors updated successfully", new
                     {
                         PlayerName = playerData.PlayerName,
@@ -175,14 +175,14 @@ namespace InfoPanel.SteamAPI.Services.Sensors
                 catch (Exception ex)
                 {
                     Console.WriteLine($"[{DOMAIN_NAME}] Error updating sensors: {ex.Message}");
-                    
+
                     _enhancedLogger?.LogError($"{DOMAIN_NAME}.UpdatePlayerSensors", "Sensor update failed", ex);
-                    
+
                     SetErrorState(ex.Message);
                 }
             }
         }
-        
+
         /// <summary>
         /// Update profile sensors (name, status, level)
         /// </summary>
@@ -191,7 +191,7 @@ namespace InfoPanel.SteamAPI.Services.Sensors
             // Update player name
             var playerName = !string.IsNullOrEmpty(playerData.PlayerName) ? playerData.PlayerName : "Unknown Player";
             _playerNameSensor.Value = playerName;
-            
+
             // Update online status - show game name if playing, otherwise show online state
             string onlineStatus;
             if (playerData.IsInGame() && !string.IsNullOrEmpty(playerData.CurrentGameName))
@@ -203,10 +203,10 @@ namespace InfoPanel.SteamAPI.Services.Sensors
                 onlineStatus = playerData.OnlineState ?? "Offline";
             }
             _onlineStatusSensor.Value = onlineStatus;
-            
+
             // Update Steam level
             _steamLevelSensor.Value = playerData.SteamLevel;
-            
+
             _enhancedLogger?.LogDebug($"{DOMAIN_NAME}.UpdateProfileSensors", "Profile sensors updated", new
             {
                 PlayerName = playerName,
@@ -214,7 +214,7 @@ namespace InfoPanel.SteamAPI.Services.Sensors
                 SteamLevel = playerData.SteamLevel
             });
         }
-        
+
         /// <summary>
         /// Update current game sensors
         /// </summary>
@@ -224,7 +224,7 @@ namespace InfoPanel.SteamAPI.Services.Sensors
             {
                 _currentGameSensor.Value = playerData.CurrentGameName;
                 _currentGamePlaytimeSensor.Value = (float)Math.Round(playerData.CurrentGameTotalPlaytimeHours, 1);
-                
+
                 _enhancedLogger?.LogDebug($"{DOMAIN_NAME}.UpdateCurrentGameSensors", "Current game sensors updated", new
                 {
                     GameName = playerData.CurrentGameName,
@@ -234,12 +234,12 @@ namespace InfoPanel.SteamAPI.Services.Sensors
             else
             {
                 _currentGameSensor.Value = "Not Playing";
-                
+
                 // If we have a last played game, show its playtime
                 if (!string.IsNullOrEmpty(playerData.LastPlayedGameName))
                 {
                     _currentGamePlaytimeSensor.Value = (float)Math.Round(playerData.LastPlayedGamePlaytimeHours, 1);
-                    
+
                     _enhancedLogger?.LogDebug($"{DOMAIN_NAME}.UpdateCurrentGameSensors", "Not playing - showing last played game playtime", new
                     {
                         LastPlayedGame = playerData.LastPlayedGameName,
@@ -249,12 +249,12 @@ namespace InfoPanel.SteamAPI.Services.Sensors
                 else
                 {
                     _currentGamePlaytimeSensor.Value = 0f;
-                    
+
                     _enhancedLogger?.LogDebug($"{DOMAIN_NAME}.UpdateCurrentGameSensors", "Not playing - sensors set to default");
                 }
             }
         }
-        
+
         /// <summary>
         /// Update session tracking sensors
         /// </summary>
@@ -263,15 +263,15 @@ namespace InfoPanel.SteamAPI.Services.Sensors
             // Format current session time
             var currentSessionFormatted = FormatMinutesToHourMin(sessionCache.CurrentSessionMinutes);
             _currentSessionTimeSensor.Value = currentSessionFormatted;
-            
+
             // Format session start time
             var sessionStartTime = sessionCache.SessionStartTime?.ToString("HH:mm") ?? "Not in game";
             _sessionStartTimeSensor.Value = sessionStartTime;
-            
+
             // Format average session time
             var avgSessionFormatted = FormatMinutesToHourMin((int)Math.Round(sessionCache.AverageSessionMinutes));
             _averageSessionTimeSensor.Value = avgSessionFormatted;
-            
+
             _enhancedLogger?.LogInfo($"{DOMAIN_NAME}.UpdateSessionSensors", "Session sensors updated", new
             {
                 CurrentSessionTime = currentSessionFormatted,
@@ -281,7 +281,7 @@ namespace InfoPanel.SteamAPI.Services.Sensors
                 AverageSessionMinutes = Math.Round(sessionCache.AverageSessionMinutes, 1)
             });
         }
-        
+
         /// <summary>
         /// Update image URL sensors (profile, banner)
         /// </summary>
@@ -290,19 +290,19 @@ namespace InfoPanel.SteamAPI.Services.Sensors
             // Update profile image URL
             var profileImageUrl = playerData.ProfileImageUrl ?? "-";
             _profileImageUrlSensor.Value = profileImageUrl;
-            
+
             // Determine if user is currently playing a game
-            bool isCurrentlyPlaying = playerData.IsInGame() && 
+            bool isCurrentlyPlaying = playerData.IsInGame() &&
                                       !string.IsNullOrEmpty(playerData.CurrentGameName) &&
                                       playerData.CurrentGameAppId > 0;
-            
+
             if (isCurrentlyPlaying)
             {
                 // User is actively playing - show current game banner
                 var currentBanner = playerData.CurrentGameBannerUrl ?? "-";
                 _currentGameBannerUrlSensor.Value = currentBanner;
                 _gameStatusTextSensor.Value = _configService.CurrentlyPlayingText;
-                
+
                 _enhancedLogger?.LogDebug($"{DOMAIN_NAME}.UpdateImageUrlSensors", "Currently playing - showing current game", new
                 {
                     GameName = playerData.CurrentGameName,
@@ -317,7 +317,7 @@ namespace InfoPanel.SteamAPI.Services.Sensors
                 var lastPlayedBannerUrl = sessionCache.LastPlayedGameBannerUrl ?? "-";
                 _currentGameBannerUrlSensor.Value = lastPlayedBannerUrl;
                 _gameStatusTextSensor.Value = _configService.LastPlayedGameText;
-                
+
                 _enhancedLogger?.LogInfo($"{DOMAIN_NAME}.UpdateImageUrlSensors", "Not playing - showing last played game", new
                 {
                     LastPlayedGameName = sessionCache.LastPlayedGameName,
@@ -326,7 +326,7 @@ namespace InfoPanel.SteamAPI.Services.Sensors
                 });
             }
         }
-        
+
         /// <summary>
         /// Update status sensors
         /// </summary>
@@ -347,18 +347,18 @@ namespace InfoPanel.SteamAPI.Services.Sensors
                 status = "Offline";
             }
             _statusSensor.Value = status;
-            
+
             // Format details text
             var details = $"Level {playerData.SteamLevel}";
             _detailsSensor.Value = details;
-            
+
             _enhancedLogger?.LogDebug($"{DOMAIN_NAME}.UpdateStatusSensors", "Status sensors updated", new
             {
                 Status = status,
                 Details = details
             });
         }
-        
+
         /// <summary>
         /// Set all player sensors to error state
         /// </summary>
@@ -379,7 +379,7 @@ namespace InfoPanel.SteamAPI.Services.Sensors
                 _profileImageUrlSensor.Value = "-";
                 _currentGameBannerUrlSensor.Value = "-";
                 _gameStatusTextSensor.Value = "Error";
-                
+
                 _enhancedLogger?.LogError($"{DOMAIN_NAME}.SetErrorState", "Player sensors set to error state", null, new
                 {
                     ErrorMessage = errorMessage
@@ -390,7 +390,7 @@ namespace InfoPanel.SteamAPI.Services.Sensors
                 Console.WriteLine($"[{DOMAIN_NAME}] Error setting error state: {ex.Message}");
             }
         }
-        
+
         /// <summary>
         /// Formats minutes to hour:minute format (e.g., 90 -> "1:30", 30 -> "30m")
         /// </summary>
@@ -398,11 +398,11 @@ namespace InfoPanel.SteamAPI.Services.Sensors
         {
             var hours = totalMinutes / 60;
             var minutes = totalMinutes % 60;
-            
+
             // Always format as HH:mm (e.g., 00:05, 01:30, 06:45)
             return $"{hours:D2}:{minutes:D2}";
         }
-        
+
         /// <summary>
         /// Dispose resources
         /// </summary>
@@ -410,7 +410,7 @@ namespace InfoPanel.SteamAPI.Services.Sensors
         {
             if (_disposed)
                 return;
-            
+
             try
             {
                 Console.WriteLine($"[{DOMAIN_NAME}] PlayerSensorService disposed");
