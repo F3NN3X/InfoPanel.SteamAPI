@@ -39,7 +39,7 @@ namespace InfoPanel.SteamAPI.Services
         private readonly EnhancedLoggingService? _enhancedLogger;
         private readonly SteamApiService _steamApiService;
         private readonly SessionTrackingService? _sessionTracker;
-        
+
         // Cache for game banner URLs to avoid repeated HEAD requests
         private readonly System.Collections.Concurrent.ConcurrentDictionary<int, string> _bannerUrlCache = new();
 
@@ -530,7 +530,7 @@ namespace InfoPanel.SteamAPI.Services
 
                 // Verify the image exists using the shared service
                 bool isValid = await _steamApiService.CheckImageUrlAsync(libraryHeroUrl);
-                
+
                 if (isValid)
                 {
                     _enhancedLogger?.LogDebug("PlayerDataService.GetGameBannerUrlAsync", "Library hero image verified", new

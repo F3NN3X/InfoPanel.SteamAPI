@@ -599,7 +599,7 @@ namespace InfoPanel.SteamAPI.Services
                     var response = JsonSerializer.Deserialize<SteamLevelResponse>(jsonResponse, JsonOptions);
                     var level = response?.Response?.PlayerLevel ?? 0;
                     _enhancedLogger?.LogDebug("SteamApiService.GetSteamLevelAsync", "Parsed Steam level data", new { PlayerLevel = level });
-                    
+
                     // Update cache
                     _cachedSteamLevel = response;
                     _steamLevelCacheTime = DateTime.Now;
