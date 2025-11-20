@@ -11,26 +11,26 @@ namespace InfoPanel.SteamAPI.Models
     public class SessionDataCache
     {
         #region Current Session Data
-        
+
         /// <summary>
         /// Current gaming session duration in minutes (rounded up)
         /// </summary>
         public int CurrentSessionMinutes { get; set; }
-        
+
         /// <summary>
         /// Start time of the current gaming session (null if not in game)
         /// </summary>
         public DateTime? SessionStartTime { get; set; }
-        
+
         #endregion
 
         #region Historical Session Data
-        
+
         /// <summary>
         /// Average session duration across all recorded sessions in minutes
         /// </summary>
         public double AverageSessionMinutes { get; set; }
-        
+
         /// <summary>
         /// Duration of the last completed session in minutes
         /// </summary>
@@ -40,49 +40,49 @@ namespace InfoPanel.SteamAPI.Models
         /// Start time of the last completed session
         /// </summary>
         public DateTime? LastSessionStartTime { get; set; }
-        
+
         #endregion
 
         #region Last Played Game Data
-        
+
         /// <summary>
         /// Name of the last played game (for display when not currently playing)
         /// </summary>
         public string? LastPlayedGameName { get; set; }
-        
+
         /// <summary>
         /// App ID of the last played game
         /// </summary>
         public int LastPlayedGameAppId { get; set; }
-        
+
         /// <summary>
         /// Banner URL for the last played game
         /// </summary>
         public string? LastPlayedGameBannerUrl { get; set; }
-        
+
         #endregion
 
         #region Metadata
-        
+
         /// <summary>
         /// Timestamp when this cache was last updated by the player domain
         /// </summary>
         public DateTime LastUpdated { get; set; }
-        
+
         #endregion
 
         #region Thread Safety
-        
+
         /// <summary>
         /// Lock object for thread-safe access to cache properties.
         /// Use this when reading or writing multiple properties atomically.
         /// </summary>
         public object Lock { get; } = new object();
-        
+
         #endregion
 
         #region Constructor
-        
+
         /// <summary>
         /// Creates a new empty session data cache
         /// </summary>
@@ -90,11 +90,11 @@ namespace InfoPanel.SteamAPI.Models
         {
             LastUpdated = DateTime.Now;
         }
-        
+
         #endregion
 
         #region Helper Methods
-        
+
         /// <summary>
         /// Creates a snapshot of the current cache state (thread-safe)
         /// </summary>
@@ -116,14 +116,14 @@ namespace InfoPanel.SteamAPI.Models
                 };
             }
         }
-        
+
         /// <summary>
         /// Updates all cache properties from player data (thread-safe)
         /// </summary>
         public void UpdateFromPlayerData(PlayerData playerData)
         {
             if (playerData == null) return;
-            
+
             lock (Lock)
             {
                 CurrentSessionMinutes = (int)Math.Ceiling(playerData.CurrentSessionTimeMinutes);
@@ -135,12 +135,12 @@ namespace InfoPanel.SteamAPI.Models
                 LastPlayedGameAppId = playerData.LastPlayedGameAppId;
                 LastPlayedGameBannerUrl = playerData.LastPlayedGameBannerUrl;
                 LastUpdated = DateTime.Now;
-                
+
                 // Debug logging to trace value propagation
                 Console.WriteLine($"[SessionDataCache] Updated from PlayerData: CurrentSession={CurrentSessionMinutes}m, AvgSession={Math.Round(AverageSessionMinutes, 1)}m, LastGame={LastPlayedGameName ?? "None"}");
             }
         }
-        
+
         #endregion
     }
 }

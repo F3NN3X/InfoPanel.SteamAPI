@@ -263,6 +263,9 @@ namespace InfoPanel.SteamAPI.Services.Sensors
             // Determine if we are in an active session
             bool isActiveSession = sessionCache.SessionStartTime.HasValue;
 
+            // Get configured date format
+            string dateFormat = _configService.DateFormat;
+
             if (isActiveSession)
             {
                 // Format current session time
@@ -270,7 +273,7 @@ namespace InfoPanel.SteamAPI.Services.Sensors
                 _currentSessionTimeSensor.Value = currentSessionFormatted;
 
                 // Format session start time
-                var sessionStartTime = sessionCache.SessionStartTime?.ToString("HH:mm") ?? "Not in game";
+                var sessionStartTime = sessionCache.SessionStartTime?.ToString(dateFormat) ?? "Not in game";
                 _sessionStartTimeSensor.Value = sessionStartTime;
             }
             else
@@ -288,7 +291,7 @@ namespace InfoPanel.SteamAPI.Services.Sensors
 
                 if (sessionCache.LastSessionStartTime.HasValue)
                 {
-                    _sessionStartTimeSensor.Value = sessionCache.LastSessionStartTime.Value.ToString("HH:mm");
+                    _sessionStartTimeSensor.Value = sessionCache.LastSessionStartTime.Value.ToString(dateFormat);
                 }
                 else
                 {

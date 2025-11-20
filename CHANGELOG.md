@@ -2,6 +2,15 @@
 
 All notable changes to InfoPanel Steam API Plugin will be documented in this file.
 
+## [1.3.3] - 2025-11-20
+
+### ✨ **New Features**
+
+- **Configurable Date Format**: Added `DateFormat` setting to `[Display Settings]` in configuration.
+- **Enhanced Session Display**: "Session Started" sensor now displays both date and time (e.g., "11/20/2025 14:30") using the configured format, supporting international users.
+
+---
+
 ## [1.3.2] - 2025-11-20
 
 ### ✨ **New Features**

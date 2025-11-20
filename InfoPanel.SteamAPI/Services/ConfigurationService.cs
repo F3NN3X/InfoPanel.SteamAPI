@@ -72,6 +72,10 @@ namespace InfoPanel.SteamAPI.Services
         #region Parser Configuration
         public const string COMMENT_STRING = "#";
         #endregion
+
+        #region Date/Time Formats
+        public const string DEFAULT_DATE_FORMAT = "MM/dd/yyyy HH:mm";
+        #endregion
     }
 
     /// <summary>
@@ -253,6 +257,7 @@ namespace InfoPanel.SteamAPI.Services
                 _config[ConfigurationConstants.DISPLAY_SETTINGS_SECTION]["UseMetricSystem"] = "true";
                 _config[ConfigurationConstants.DISPLAY_SETTINGS_SECTION]["CurrentlyPlayingText"] = "Currently Playing";
                 _config[ConfigurationConstants.DISPLAY_SETTINGS_SECTION]["LastPlayedGameText"] = "Last Played Game";
+                _config[ConfigurationConstants.DISPLAY_SETTINGS_SECTION]["DateFormat"] = ConfigurationConstants.DEFAULT_DATE_FORMAT;
                 
                 // Steam Settings
                 _config[ConfigurationConstants.STEAM_SETTINGS_SECTION]["ApiKey"] = ConfigurationConstants.API_KEY_PLACEHOLDER;
@@ -689,6 +694,12 @@ namespace InfoPanel.SteamAPI.Services
         /// </summary>
         public string LastPlayedGameText => 
             GetSetting("Display Settings", "LastPlayedGameText", "Last Played Game");
+        
+        /// <summary>
+        /// Gets the date format string for displaying dates
+        /// </summary>
+        public string DateFormat => 
+            GetSetting(ConfigurationConstants.DISPLAY_SETTINGS_SECTION, "DateFormat", ConfigurationConstants.DEFAULT_DATE_FORMAT);
         
         #endregion
 
