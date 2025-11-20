@@ -340,7 +340,7 @@ namespace InfoPanel.SteamAPI
                 // Initialize data collection services
                 _playerDataService = new PlayerDataService(_configService, steamApiService, _sessionTrackingService, _loggingService, _enhancedLoggingService);
                 _socialDataService = new SocialDataService(_configService, steamApiService, _loggingService, _enhancedLoggingService);
-                _libraryDataService = new LibraryDataService(_configService, steamApiService, _loggingService, _enhancedLoggingService);
+                _libraryDataService = new LibraryDataService(_configService, steamApiService, _sessionTrackingService, _loggingService, _enhancedLoggingService);
 
                 // Initialize domain monitoring services
                 _playerMonitoring = new InfoPanel.SteamAPI.Services.Monitoring.PlayerMonitoringService(
@@ -395,6 +395,7 @@ namespace InfoPanel.SteamAPI
                     _recentPlaytimeSensor,
                     _recentGamesCountSensor,
                     _mostPlayedRecentSensor,
+                    _recentSessionsSensor,
                     _recentGamesTable,
                     _enhancedLoggingService);
 

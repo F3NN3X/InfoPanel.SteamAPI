@@ -4,6 +4,10 @@ All notable changes to InfoPanel Steam API Plugin will be documented in this fil
 
 ## [1.2.2] - 2025-11-20
 
+### ✨ **New Features**
+
+- **Gaming Sessions Counter**: Added "Gaming Sessions (2w)" sensor to the Library container. This displays the total number of gaming sessions in the last 14 days, based on local session tracking.
+
 ### 🧹 **Cleanup & Feature Removal**
 
 **Removed unused features to streamline the plugin**
