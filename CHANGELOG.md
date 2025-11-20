@@ -2,6 +2,21 @@
 
 All notable changes to InfoPanel Steam API Plugin will be documented in this file.
 
+## [1.3.0] - 2025-11-20
+
+### ✨ **New Features**
+
+- **Game News Integration**: Added a new "News & Updates" container.
+- **Current Game News**: Displays the latest news headline for the game currently being played.
+- **Library News Feed**: Displays a "What's New" table showing recent news for your recently played games.
+- **Smart Updates**: News is fetched immediately when launching a game and periodically for the library feed.
+
+### 🏗️ **Architecture**
+
+- **News Domain**: Implemented a full Domain-Driven Design for News (Data Service, Monitoring Service, Sensor Service).
+
+---
+
 ## [1.2.6] - 2025-11-20
 
 ### 🐛 **Bug Fixes**

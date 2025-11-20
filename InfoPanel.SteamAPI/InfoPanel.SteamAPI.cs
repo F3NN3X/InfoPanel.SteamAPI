@@ -198,16 +198,19 @@ namespace InfoPanel.SteamAPI
         private readonly PluginText _latestAchievementIconSensor = new("latest-achievement-icon", "Latest Achievement Icon", "-");
         // Removed artificial achievement sensors (overall completion, total unlocked, percentile rank)
         // These would require analyzing achievement data across all owned games, not available via Steam Web API
-        // Removed badge sensors as per user request in v1.2.5
 
-        // Friends and Social Activity
-        private readonly PluginSensor _friendsOnlineSensor = new("friends-online", "Friends Online", 0, "friends");
-        private readonly PluginSensor _friendsInGameSensor = new("friends-in-game", "Friends Gaming", 0, "friends");
-        private readonly PluginSensor _totalFriendsCountSensor = new("total-friends-count", "Total Friends", 0, "friends");
+        // News Sensors
+        private readonly PluginText _currentGameNewsTitleSensor = new("current_game_news_title", "Current Game News", "-");
+        private readonly PluginTable _libraryNewsTableSensor;
 
         // Tables
         private readonly PluginTable _recentGamesTable;
         private readonly PluginTable _friendsActivityTable;
+
+        // Social Sensors
+        private readonly PluginSensor _friendsOnlineSensor = new("friends-online", "Friends Online", 0, "");
+        private readonly PluginSensor _friendsInGameSensor = new("friends-ingame", "Friends In-Game", 0, "");
+        private readonly PluginSensor _totalFriendsCountSensor = new("total-friends", "Total Friends", 0, "");
 
         #endregion
 
@@ -218,16 +221,19 @@ namespace InfoPanel.SteamAPI
         private InfoPanel.SteamAPI.Services.Monitoring.SocialMonitoringService? _socialMonitoring;
         private InfoPanel.SteamAPI.Services.Monitoring.LibraryMonitoringService? _libraryMonitoring;
         private InfoPanel.SteamAPI.Services.Monitoring.AchievementsMonitoringService? _achievementsMonitoring;
+        private InfoPanel.SteamAPI.Services.Monitoring.NewsMonitoringService? _newsMonitoring;
 
         private InfoPanel.SteamAPI.Services.Sensors.PlayerSensorService? _playerSensors;
         private InfoPanel.SteamAPI.Services.Sensors.SocialSensorService? _socialSensors;
         private InfoPanel.SteamAPI.Services.Sensors.LibrarySensorService? _librarySensors;
         private InfoPanel.SteamAPI.Services.Sensors.AchievementsSensorService? _achievementsSensors;
+        private InfoPanel.SteamAPI.Services.Sensors.NewsSensorService? _newsSensors;
 
         // Shared infrastructure
         private ConfigurationService? _configService;
         private FileLoggingService? _loggingService;
         private EnhancedLoggingService? _enhancedLoggingService;
+        private SessionTrackingService? _sessionTrackingService;
         private System.Threading.SemaphoreSlim? _apiSemaphore;
 
         // Data services (used by monitoring services)
@@ -235,7 +241,7 @@ namespace InfoPanel.SteamAPI
         private SocialDataService? _socialDataService;
         private LibraryDataService? _libraryDataService;
         private AchievementsDataService? _achievementsDataService;
-        private SessionTrackingService? _sessionTrackingService;
+        private NewsDataService? _newsDataService;
 
         private CancellationTokenSource? _cancellationTokenSource;
 
@@ -252,6 +258,9 @@ namespace InfoPanel.SteamAPI
 
                 // Initialize the Friends Activity table
                 _friendsActivityTable = new PluginTable("Friends Activity", new DataTable(), SteamAPIConstants.FRIENDS_ACTIVITY_TABLE_FORMAT);
+
+                // Initialize the Library News table
+                _libraryNewsTableSensor = new PluginTable("Library News", new DataTable(), "0:150|1:200|2:80");
 
                 // Note: _configFilePath will be set in Initialize()
                 // ConfigurationService will be initialized after we have the path
@@ -344,6 +353,7 @@ namespace InfoPanel.SteamAPI
                 _socialDataService = new SocialDataService(_configService, steamApiService, _loggingService, _enhancedLoggingService);
                 _libraryDataService = new LibraryDataService(_configService, steamApiService, _sessionTrackingService, _loggingService, _enhancedLoggingService);
                 _achievementsDataService = new AchievementsDataService(_configService, steamApiService, _enhancedLoggingService);
+                _newsDataService = new NewsDataService(steamApiService, _enhancedLoggingService);
 
                 // Initialize domain monitoring services
                 _playerMonitoring = new InfoPanel.SteamAPI.Services.Monitoring.PlayerMonitoringService(
@@ -370,6 +380,10 @@ namespace InfoPanel.SteamAPI
                     _achievementsDataService,
                     _sessionTrackingService,
                     _apiSemaphore,
+                    _enhancedLoggingService);
+
+                _newsMonitoring = new InfoPanel.SteamAPI.Services.Monitoring.NewsMonitoringService(
+                    _newsDataService,
                     _enhancedLoggingService);
 
                 // Initialize domain sensor services
@@ -418,14 +432,24 @@ namespace InfoPanel.SteamAPI
                     _latestAchievementIconSensor,
                     _enhancedLoggingService);
 
+                _newsSensors = new InfoPanel.SteamAPI.Services.Sensors.NewsSensorService(
+                    _currentGameNewsTitleSensor,
+                    _libraryNewsTableSensor,
+                    _enhancedLoggingService);
+
                 // Subscribe sensor services to monitoring events
                 _playerSensors.SubscribeToMonitoring(_playerMonitoring);
                 _socialSensors.SubscribeToMonitoring(_socialMonitoring);
                 _librarySensors.SubscribeToMonitoring(_libraryMonitoring);
                 _achievementsSensors.SubscribeToMonitoring(_achievementsMonitoring);
+                _newsSensors.SubscribeToMonitoring(_newsMonitoring);
 
                 // Wire up cross-domain communication
                 _playerMonitoring.PlayerDataUpdated += OnPlayerDataUpdated;
+
+                // Wire up News Monitoring events
+                _playerMonitoring.PlayerDataUpdated += _newsMonitoring.OnPlayerDataUpdated;
+                _libraryMonitoring.LibraryDataUpdated += _newsMonitoring.OnLibraryDataUpdated;
 
                 // Set session cache reference for social and library domains
                 var sessionCache = _playerMonitoring.GetSessionCache();
@@ -507,6 +531,13 @@ namespace InfoPanel.SteamAPI
                 _loggingService.LogInfo($"Created Friends & Social Activity container with {socialContainer.Entries.Count} items (3 sensors + 1 table)");
                 containers.Add(socialContainer);
 
+                // Create News & Updates container
+                var newsContainer = new PluginContainer("SteamAPI-News", "News & Updates");
+                newsContainer.Entries.Add(_currentGameNewsTitleSensor);
+                newsContainer.Entries.Add(_libraryNewsTableSensor);
+                _loggingService.LogInfo($"Created News & Updates container with {newsContainer.Entries.Count} items");
+                containers.Add(newsContainer);
+
                 // Start monitoring
                 _cancellationTokenSource = new CancellationTokenSource();
                 _ = StartMonitoringAsync(_cancellationTokenSource.Token);
@@ -569,16 +600,23 @@ namespace InfoPanel.SteamAPI
                     _achievementsSensors.UnsubscribeFromMonitoring(_achievementsMonitoring);
                 }
 
+                if (_newsSensors != null && _newsMonitoring != null)
+                {
+                    _newsSensors.UnsubscribeFromMonitoring(_newsMonitoring);
+                }
+
                 // Dispose domain monitoring services
                 _playerMonitoring?.Dispose();
                 _socialMonitoring?.Dispose();
                 _libraryMonitoring?.Dispose();
                 _achievementsMonitoring?.Dispose();
+                _newsMonitoring?.Dispose();
 
                 _playerSensors?.Dispose();
                 _socialSensors?.Dispose();
                 _librarySensors?.Dispose();
                 _achievementsSensors?.Dispose();
+                _newsSensors?.Dispose();
 
                 // Dispose shared services
                 _apiSemaphore?.Dispose();
@@ -605,6 +643,7 @@ namespace InfoPanel.SteamAPI
                 _socialMonitoring?.StartMonitoring();
                 _libraryMonitoring?.StartMonitoring();
                 _achievementsMonitoring?.StartMonitoring();
+                _newsMonitoring?.StartMonitoring();
 
                 Console.WriteLine("[SteamAPI] All domain monitoring services started");
                 _loggingService?.LogInfo("Domain monitoring services started: Player (1s), Social (15s), Library (45s), Achievements (60s)");
@@ -622,6 +661,7 @@ namespace InfoPanel.SteamAPI
                 _socialMonitoring?.StopMonitoring();
                 _libraryMonitoring?.StopMonitoring();
                 _achievementsMonitoring?.StopMonitoring();
+                _newsMonitoring?.StopMonitoring();
 
                 Console.WriteLine("[SteamAPI] All domain monitoring services stopped");
             }
@@ -687,17 +727,24 @@ namespace InfoPanel.SteamAPI
                     _achievementsSensors.UnsubscribeFromMonitoring(_achievementsMonitoring);
                 }
 
+                if (_newsSensors != null && _newsMonitoring != null)
+                {
+                    _newsSensors.UnsubscribeFromMonitoring(_newsMonitoring);
+                }
+
                 // Dispose domain monitoring services
                 _playerMonitoring?.Dispose();
                 _socialMonitoring?.Dispose();
                 _libraryMonitoring?.Dispose();
                 _achievementsMonitoring?.Dispose();
+                _newsMonitoring?.Dispose();
 
                 // Dispose domain sensor services
                 _playerSensors?.Dispose();
                 _socialSensors?.Dispose();
                 _librarySensors?.Dispose();
                 _achievementsSensors?.Dispose();
+                _newsSensors?.Dispose();
 
                 // Dispose shared services
                 _apiSemaphore?.Dispose();
