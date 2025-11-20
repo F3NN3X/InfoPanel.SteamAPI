@@ -3,6 +3,7 @@
 This document provides a comprehensive guide to implementing tables in InfoPanel plugins. Tables allow you to display structured data with multiple columns and rows in a clean, organized format.
 
 ## Table of Contents
+
 1. [Overview](#overview)
 2. [Core Components](#core-components)
 3. [Implementation Steps](#implementation-steps)
@@ -17,12 +18,14 @@ This document provides a comprehensive guide to implementing tables in InfoPanel
 The table feature in InfoPanel allows plugins to display tabular data with multiple columns and rows. This is ideal for displaying structured information like schedules, comparisons, forecasts, logs, or any data that benefits from a grid layout.
 
 ### Key Features
+
 - **Dynamic columns**: Define column types (PluginText, PluginSensor, etc.)
 - **Flexible formatting**: Column width control via format string
 - **Data binding**: Automatic data presentation in InfoPanel UI
 - **Type-safe**: Strongly-typed column data using InfoPanel.Plugins types
 
 ### Common Use Cases
+
 - **Weather forecasts**: Daily weather data with conditions, temperatures, precipitation
 - **Event schedules**: Time, event name, location, status
 - **System monitoring**: Service name, status, CPU usage, memory usage
@@ -33,6 +36,7 @@ The table feature in InfoPanel allows plugins to display tabular data with multi
 ## Core Components
 
 ### 1. PluginTable Declaration
+
 ```csharp
 // Generic table format - adjust column widths based on your data
 private static readonly string _tableFormat = "0:150|1:100|2:80|3:60|4:100";
@@ -40,31 +44,37 @@ private PluginTable _dataTable;
 ```
 
 **Breakdown:**
+
 - `_tableFormat`: Column width specification (see [Column Format String](#column-format-string))
 - `_dataTable`: The table instance that gets populated and exported to InfoPanel
 
 **Weather Forecast Example:**
+
 ```csharp
 private static readonly string _forecastTableFormat = "0:150|1:100|2:80|3:60|4:100";
 private PluginTable _forecastTable;
 ```
 
 ### 2. Constructor Initialization
+
 ```csharp
 _dataTable = new PluginTable("Table Name", new DataTable(), _tableFormat);
 ```
 
 **Parameters:**
+
 - `"Table Name"`: Display name shown in InfoPanel UI
 - `new DataTable()`: Initial empty DataTable (populated later)
 - `_tableFormat`: Column width configuration
 
 **Weather Forecast Example:**
+
 ```csharp
 _forecastTable = new PluginTable("Forecast", new DataTable(), _forecastTableFormat);
 ```
 
 ### 3. Registration with Plugin Container
+
 ```csharp
 public override void Load(List<IPluginContainer> containers)
 {
@@ -79,6 +89,7 @@ public override void Load(List<IPluginContainer> containers)
 ```
 
 **Weather Forecast Example:**
+
 ```csharp
 public override void Load(List<IPluginContainer> containers)
 {
@@ -129,6 +140,7 @@ private void InitializeTableColumns(DataTable dataTable)
 ```
 
 **Weather Forecast Example:**
+
 ```csharp
 private void InitializeForecastTableColumns(DataTable dataTable)
 {
@@ -141,6 +153,7 @@ private void InitializeForecastTableColumns(DataTable dataTable)
 ```
 
 **Column Types Available:**
+
 - `typeof(PluginText)`: Text display with ID and value
 - `typeof(PluginSensor)`: Numeric values with units
 - Other InfoPanel.Plugins types as supported
@@ -171,6 +184,7 @@ private DataTable BuildTable(YourDataSource[] data)
 ```
 
 **Weather Forecast Example:**
+
 ```csharp
 private DataTable BuildForecastTable(YrTimeseries[] data)
 {
@@ -220,6 +234,7 @@ private void AddRowToTable(DataTable dataTable, YourDataItem item)
 ```
 
 **Weather Forecast Example:**
+
 ```csharp
 private void AddDayToForecastTable(DataTable dataTable, DateTime day, List<YrTimeseries> blockData)
 {
@@ -274,6 +289,7 @@ public override async Task UpdateAsync(CancellationToken cancellationToken)
 ```
 
 **Weather Forecast Example:**
+
 ```csharp
 public override async Task UpdateAsync(CancellationToken cancellationToken)
 {
@@ -299,6 +315,7 @@ public override async Task UpdateAsync(CancellationToken cancellationToken)
 Tables often require processing raw data into a structured format. Here are common patterns:
 
 ### 1. Raw Data Grouping
+
 Group your raw data by a key (e.g., date, category, status):
 
 ```csharp
@@ -321,6 +338,7 @@ private Dictionary<string, List<YourDataType>> GroupData(YourDataType[] rawData)
 ```
 
 **Weather Forecast Example (YrWeatherPlugin):**
+
 ```csharp
 private Dictionary<DateTime, List<YrTimeseries>> GetDailyForecastData(YrTimeseries[] timeseries)
 {
@@ -349,6 +367,7 @@ private Dictionary<DateTime, List<YrTimeseries>> GetDailyForecastData(YrTimeseri
 ```
 
 ### 2. Data Aggregation
+
 Once grouped, aggregate the data for each group:
 
 ```csharp
@@ -367,6 +386,7 @@ private AggregatedData ProcessGroup(List<YourDataType> groupData)
 ```
 
 **Weather Forecast Example (Finding Dominant Weather):**
+
 ```csharp
 private (string? SymbolCode, double MaxPrecipitation) GetDominantWeatherForDay(List<YrTimeseries> blockData)
 {
@@ -394,6 +414,7 @@ private (string? SymbolCode, double MaxPrecipitation) GetDominantWeatherForDay(L
 ### 3. Other Common Aggregation Patterns
 
 **System Monitoring Example:**
+
 ```csharp
 private ServiceSummary AggregateServiceData(List<ServiceMetric> metrics)
 {
@@ -408,6 +429,7 @@ private ServiceSummary AggregateServiceData(List<ServiceMetric> metrics)
 ```
 
 **Financial Data Example:**
+
 ```csharp
 private DayTradingSummary AggregateTradingData(List<Trade> trades)
 {
@@ -432,6 +454,7 @@ private static readonly string _tableFormat = "0:150|1:100|2:80|3:60|4:100";
 ```
 
 **Format Breakdown:**
+
 - `0:150` = Column 0, 150 pixels wide
 - `1:100` = Column 1, 100 pixels wide  
 - `2:80` = Column 2, 80 pixels wide
@@ -440,12 +463,14 @@ private static readonly string _tableFormat = "0:150|1:100|2:80|3:60|4:100";
 - `|` = Column separator
 
 **Design Guidelines:**
+
 - **Date columns**: 100-150px (depends on date format length)
 - **Short text**: 80-100px (weather icons, directions)
 - **Numeric values**: 60-80px (temperatures, precipitation)
 - **Long text**: 120-150px (descriptions, ranges)
 
 **Examples:**
+
 ```csharp
 // Simple 3-column table
 "0:120|1:80|2:100"
@@ -671,6 +696,7 @@ public class EventSchedulePlugin : BasePlugin
 ## Best Practices
 
 ### 1. Unique IDs for Table Items
+
 Always use unique IDs for PluginText and PluginSensor objects:
 
 ```csharp
@@ -682,6 +708,7 @@ new PluginText("weather", description)
 ```
 
 ### 2. Error Handling
+
 Wrap table building in try-catch blocks:
 
 ```csharp
@@ -713,6 +740,7 @@ private DataTable BuildTable(YourData[] data)
 ```
 
 ### 3. Data Validation
+
 Validate data before adding to table:
 
 ```csharp
@@ -731,6 +759,7 @@ private void AddRowToTable(DataTable table, DataItem item)
 ```
 
 ### 4. Configurable Formatting
+
 Make formats configurable via INI or constants:
 
 ```csharp
@@ -745,6 +774,7 @@ string dateStr = day.ToString(_forecastDateFormat, CultureInfo.InvariantCulture)
 ```
 
 ### 5. Performance Considerations
+
 - Limit the number of rows (5-10 for most tables, 20+ only if necessary)
 - Use StringBuilder for complex string formatting
 - Cache processed data when possible

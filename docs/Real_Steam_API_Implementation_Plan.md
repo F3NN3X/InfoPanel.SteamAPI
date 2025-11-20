@@ -11,6 +11,7 @@ This document outlines the step-by-step implementation plan to replace our curre
 First, we need to create proper C# models to deserialize Steam API JSON responses.
 
 #### 1.1 Player Summary Models
+
 ```csharp
 // File: Models/SteamApiModels.cs
 
@@ -85,6 +86,7 @@ public class SteamPlayer
 ```
 
 #### 1.2 Steam Level Models
+
 ```csharp
 public class SteamLevelResponse
 {
@@ -100,6 +102,7 @@ public class SteamLevelResult
 ```
 
 #### 1.3 Owned Games Models
+
 ```csharp
 public class OwnedGamesResponse
 {
@@ -154,6 +157,7 @@ public class SteamGame
 ```
 
 #### 1.4 Friends List Models
+
 ```csharp
 public class FriendsListResponse
 {
@@ -185,6 +189,7 @@ public class SteamFriend
 ### Replace Simulation Methods with Real API Calls
 
 #### 2.1 Update Core Methods
+
 ```csharp
 public async Task<PlayerSummariesResponse?> GetPlayerSummaryAsync()
 {
@@ -322,6 +327,7 @@ public async Task<FriendsListResponse?> GetFriendsListAsync()
 ### Replace Data Collection with Real API Parsing
 
 #### 3.1 Update CollectSteamDataAsync Method
+
 ```csharp
 private async Task<SteamData> CollectSteamDataAsync()
 {
@@ -461,6 +467,7 @@ private string GetPersonaStateString(int personaState)
 ## Phase 4: Enhanced Features with Token Integration
 
 ### 4.1 Badge and Achievement Data
+
 ```csharp
 public async Task<BadgesResponse?> GetPlayerBadgesAsync(string? communityToken = null)
 {
@@ -498,6 +505,7 @@ public async Task<BadgesResponse?> GetPlayerBadgesAsync(string? communityToken =
 ## Phase 5: Error Handling and Privacy Support
 
 ### 5.1 Profile Privacy Detection
+
 ```csharp
 private bool IsProfilePublic(SteamPlayer player)
 {
@@ -524,6 +532,7 @@ private SteamData HandlePrivateProfile(SteamPlayer player)
 ```
 
 ### 5.2 Rate Limiting and Retry Logic
+
 ```csharp
 private async Task<string?> CallSteamApiAsync(string endpoint)
 {
@@ -579,11 +588,13 @@ private async Task<string?> CallSteamApiAsync(string endpoint)
 ## Phase 6: Configuration and Testing
 
 ### 6.1 Add Required NuGet Package
+
 ```xml
 <PackageReference Include="System.Text.Json" Version="8.0.0" />
 ```
 
 ### 6.2 Configuration Validation
+
 ```csharp
 public bool ValidateRealApiConfiguration()
 {
@@ -616,6 +627,7 @@ public bool ValidateRealApiConfiguration()
 ## Testing Strategy
 
 ### 6.3 Test Plan
+
 1. **Unit Testing**: Test individual API methods with mock responses
 2. **Integration Testing**: Test with real Steam API key and public profile
 3. **Error Testing**: Test with private profiles, invalid keys, rate limiting

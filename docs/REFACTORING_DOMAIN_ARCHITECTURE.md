@@ -11,12 +11,14 @@
 Refactoring the monolithic `MonitoringService` (1082 lines) and `SensorManagementService` (1037 lines) into domain-driven architecture with separate monitoring and sensor services for Player, Social, and Library domains.
 
 ### Goals
+
 - ✅ Improve maintainability (smaller, focused files)
 - ✅ Enhance testability (independent domain testing)
 - ✅ Simplify troubleshooting (clear domain boundaries)
 - ✅ Enable scalability (easy to add new domains)
 
 ### Metrics
+
 - **Before:** 2119 lines in 2 monolithic files
 - **After:** ~1850 lines in 8 focused files (~231 lines avg)
 - **Net Reduction:** 269 lines (removing duplication)
@@ -26,6 +28,7 @@ Refactoring the monolithic `MonitoringService` (1082 lines) and `SensorManagemen
 ## 🎯 Current Architecture (Before)
 
 ### 2-Layer Monolithic Structure
+
 ```
 MonitoringService (1082 lines)
 ├── Coordinates 3 timers (Player, Social, Library)
@@ -41,6 +44,7 @@ SensorManagementService (1037 lines)
 ```
 
 ### Data Collection Services (Already Separated) ✅
+
 - `PlayerDataService.cs` - Player profile & game state
 - `SocialDataService.cs` - Friends data
 - `LibraryDataService.cs` - Game library
@@ -53,6 +57,7 @@ SensorManagementService (1037 lines)
 ## 🎯 Target Architecture (After)
 
 ### 3-Layer Domain-Driven Design
+
 ```
 ┌─────────────────────────────────────────────────────────┐
 │              MAIN PLUGIN (Orchestrator)                  │
@@ -94,6 +99,7 @@ SensorManagementService (1037 lines)
 ## 📋 Refactoring Phases
 
 ### ✅ Phase 0: Preparation
+
 - [x] Create `refactor-domain-architecture` branch
 - [x] Document refactoring plan
 - [ ] Create progress tracking todos
@@ -103,9 +109,11 @@ SensorManagementService (1037 lines)
 ### 🚧 Phase 1: Create Domain Monitor Services
 
 #### 1.1 PlayerMonitoringService.cs (~350 lines)
+
 **Location:** `Services/Monitoring/PlayerMonitoringService.cs`
 
 **Responsibilities:**
+
 - Player timer (1 second interval)
 - Call `PlayerDataService` for data collection
 - Manage player sensors via `PlayerSensorService`
@@ -114,6 +122,7 @@ SensorManagementService (1037 lines)
 - Fire `PlayerDataUpdated` event
 
 **Key Methods:**
+
 ```csharp
 public class PlayerMonitoringService : IDisposable
 {
@@ -135,9 +144,11 @@ public class PlayerMonitoringService : IDisposable
 ---
 
 #### 1.2 SocialMonitoringService.cs (~250 lines)
+
 **Location:** `Services/Monitoring/SocialMonitoringService.cs`
 
 **Responsibilities:**
+
 - Social timer (15 second interval)
 - Call `SocialDataService` for data collection
 - Manage social sensors via `SocialSensorService`
@@ -145,6 +156,7 @@ public class PlayerMonitoringService : IDisposable
 - Fire `SocialDataUpdated` event
 
 **Key Methods:**
+
 ```csharp
 public class SocialMonitoringService : IDisposable
 {
@@ -165,9 +177,11 @@ public class SocialMonitoringService : IDisposable
 ---
 
 #### 1.3 LibraryMonitoringService.cs (~300 lines)
+
 **Location:** `Services/Monitoring/LibraryMonitoringService.cs`
 
 **Responsibilities:**
+
 - Library timer (45 second interval)
 - Call `LibraryDataService` for data collection
 - Manage library sensors via `LibrarySensorService`
@@ -175,6 +189,7 @@ public class SocialMonitoringService : IDisposable
 - Fire `LibraryDataUpdated` event
 
 **Key Methods:**
+
 ```csharp
 public class LibraryMonitoringService : IDisposable
 {
@@ -197,9 +212,11 @@ public class LibraryMonitoringService : IDisposable
 ### 🚧 Phase 2: Create Domain Sensor Services
 
 #### 2.1 PlayerSensorService.cs (~300 lines)
+
 **Location:** `Services/Sensors/PlayerSensorService.cs`
 
 **Responsibilities:**
+
 - Update player profile sensors (name, level, online status)
 - Update current game sensors (name, playtime)
 - Update session time sensors (current, start time, average)
@@ -207,6 +224,7 @@ public class LibraryMonitoringService : IDisposable
 - Format player-specific data
 
 **Key Methods:**
+
 ```csharp
 public class PlayerSensorService
 {
@@ -225,15 +243,18 @@ public class PlayerSensorService
 ---
 
 #### 2.2 SocialSensorService.cs (~200 lines)
+
 **Location:** `Services/Sensors/SocialSensorService.cs`
 
 **Responsibilities:**
+
 - Update friends sensors (total, online, in game)
 - Update social activity sensors
 - Build friends activity table
 - Format social-specific data
 
 **Key Methods:**
+
 ```csharp
 public class SocialSensorService
 {
@@ -250,9 +271,11 @@ public class SocialSensorService
 ---
 
 #### 2.3 LibrarySensorService.cs (~250 lines)
+
 **Location:** `Services/Sensors/LibrarySensorService.cs`
 
 **Responsibilities:**
+
 - Update library statistics sensors (total games, playtime)
 - Update recent games sensors
 - Build recent games table
@@ -260,6 +283,7 @@ public class SocialSensorService
 - Format library-specific data
 
 **Key Methods:**
+
 ```csharp
 public class LibrarySensorService
 {
@@ -280,11 +304,13 @@ public class LibrarySensorService
 ### 🚧 Phase 3: Create Shared Infrastructure
 
 #### 3.1 SessionDataCache.cs (~50 lines)
+
 **Location:** `Models/SessionDataCache.cs`
 
 **Purpose:** Shared cache object passed between domains to preserve session data
 
 **Structure:**
+
 ```csharp
 public class SessionDataCache
 {
@@ -313,11 +339,13 @@ public class SessionDataCache
 ---
 
 #### 3.2 DomainMonitorBase.cs (Optional - ~150 lines)
+
 **Location:** `Services/Monitoring/DomainMonitorBase.cs`
 
 **Purpose:** Shared base class for all monitoring services to reduce duplication
 
 **Structure:**
+
 ```csharp
 public abstract class DomainMonitorBase : IDisposable
 {
@@ -352,9 +380,11 @@ public abstract class DomainMonitorBase : IDisposable
 ### 🚧 Phase 4: Update Main Plugin Orchestrator
 
 #### 4.1 InfoPanel.SteamAPI.cs (Modified)
+
 **Changes Required:**
 
 **Before (Current):**
+
 ```csharp
 private MonitoringService? _monitoringService;
 private SensorManagementService? _sensorService;
@@ -367,6 +397,7 @@ private void OnDataUpdated(object? sender, DataUpdatedEventArgs e)
 ```
 
 **After (New):**
+
 ```csharp
 // Domain-specific monitor services
 private PlayerMonitoringService? _playerMonitor;
@@ -401,6 +432,7 @@ private void OnLibraryDataUpdated(object? sender, LibraryDataEventArgs e)
 ```
 
 **Initialization Changes:**
+
 ```csharp
 private void InitializeMonitoring()
 {
@@ -439,7 +471,9 @@ private void InitializeMonitoring()
 ### 🚧 Phase 5: Testing & Migration
 
 #### 5.1 Create Feature Flag (Optional)
+
 Add config option to switch between old and new architecture:
+
 ```ini
 [Experimental]
 UseDomainArchitecture=true
@@ -450,6 +484,7 @@ UseDomainArchitecture=true
 ---
 
 #### 5.2 Testing Checklist
+
 - [ ] **Player Domain**
   - [ ] Profile sensors update correctly (1s interval)
   - [ ] Current game sensors update when playing
@@ -490,7 +525,9 @@ UseDomainArchitecture=true
 ---
 
 #### 5.3 Remove Old Services
+
 Once new architecture is validated:
+
 - [ ] Remove `MonitoringService.cs` (1082 lines)
 - [ ] Remove `SensorManagementService.cs` (1037 lines)
 - [ ] Remove any unused helper methods
@@ -570,24 +607,28 @@ InfoPanel.SteamAPI/
 ## 🎯 Benefits Realized (Post-Refactoring)
 
 ### Maintainability
+
 - [ ] ✅ Smaller files (avg 231 lines vs 1000+ lines)
 - [ ] ✅ Clear domain boundaries (player/social/library)
 - [ ] ✅ Easy to locate domain-specific code
 - [ ] ✅ Reduced cognitive load when making changes
 
 ### Testability
+
 - [ ] ✅ Unit test each domain independently
 - [ ] ✅ Mock one domain while testing another
 - [ ] ✅ Integration tests easier to write
 - [ ] ✅ Test coverage increased
 
 ### Troubleshooting
+
 - [ ] ✅ Logs clearly show which domain has issues
 - [ ] ✅ Can disable one domain without breaking others
 - [ ] ✅ Stack traces point to specific domain code
 - [ ] ✅ Debugging time reduced
 
 ### Scalability
+
 - [ ] ✅ Easy to add new domains (e.g., AchievementMonitor)
 - [ ] ✅ Can optimize each domain's timing independently
 - [ ] ✅ Domain-specific caching strategies possible
@@ -600,29 +641,34 @@ InfoPanel.SteamAPI/
 ### Design Decisions
 
 #### 1. Why Domain-Driven Design?
+
 - Clear separation of concerns (player, social, library)
 - Each domain owns its data, timing, and sensors
 - Natural alignment with InfoPanel's plugin architecture
 - Easier to reason about and maintain
 
 #### 2. Why Separate Monitoring and Sensor Services?
+
 - **Monitoring Services**: Handle timers, data collection, orchestration
 - **Sensor Services**: Handle UI updates, formatting, display logic
 - Clear separation of concerns (business logic vs presentation)
 - Easier to test each layer independently
 
 #### 3. Why Keep Data Services Separate?
+
 - Data services (PlayerDataService, etc.) are already well-separated
 - Focus on API calls and data transformation
 - No need to change what's already working well
 
 #### 4. Session Cache Sharing Strategy
+
 - Player domain owns the session cache (it's player-specific data)
 - Player updates cache every cycle
 - Social/Library read cache when needed
 - Immutable cache objects prevent race conditions
 
 #### 5. Base Class vs Interface?
+
 - `DomainMonitorBase` is optional but recommended
 - Reduces duplication across monitor services
 - Provides consistent logging and error handling
@@ -631,16 +677,19 @@ InfoPanel.SteamAPI/
 ### Technical Considerations
 
 #### Thread Safety
+
 - Each domain has its own timer (no shared state)
 - Session cache uses lock for thread-safe access
 - API semaphore shared across domains (rate limiting)
 
 #### Performance
+
 - No performance regression expected
 - Potential improvement from better cache locality
 - Domain-specific optimizations easier to implement
 
 #### Backward Compatibility
+
 - Plugin API unchanged (sensors remain the same)
 - InfoPanel won't notice the internal refactoring
 - Configuration file unchanged
@@ -650,6 +699,7 @@ InfoPanel.SteamAPI/
 ## 🔧 Development Commands
 
 ### Branch Management
+
 ```bash
 # Switch to refactor branch
 git checkout refactor-domain-architecture
@@ -666,6 +716,7 @@ git push -u origin refactor-domain-architecture
 ```
 
 ### Build & Test
+
 ```bash
 # Build solution
 dotnet build -c Release

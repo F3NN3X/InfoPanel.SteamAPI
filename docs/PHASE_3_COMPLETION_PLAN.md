@@ -9,6 +9,7 @@
 ## 🎯 **PHILOSOPHY: SLOW, CLEAN, GRACEFUL**
 
 This plan prioritizes:
+
 - ✅ **Safety**: One service at a time, verify after each
 - ✅ **Quality**: Proper structured logging patterns, not just replacements
 - ✅ **Testability**: Build and test after every service completion
@@ -19,21 +20,24 @@ This plan prioritizes:
 
 ## 📊 **REMAINING WORK BREAKDOWN**
 
-### Services by Priority Tier:
+### Services by Priority Tier
 
 **🟡 TIER 1: Medium Priority** (~40-50 calls)
+
 - Runs every 15-45 seconds, visible impact on log quality
 - **SocialDataService**: ~10 detail method calls (every 15s)
 - **LibraryDataService**: ~15-20 calls (every 45s)
 - **GameStatsService**: ~15-20 calls (variable frequency)
 
 **🟢 TIER 2: Lower Priority** (~20-25 calls)
+
 - Less frequent or initialization-only
 - **SessionTrackingService**: ~8-10 calls (on state changes)
 - **SensorManagementService**: ~5 calls (sensor updates)
 - **ConfigurationService**: ~5-8 calls (initialization/errors)
 
 **🔵 TIER 3: Debug/Diagnostic** (~90+ calls)
+
 - Very verbose, primarily for debugging
 - **SteamApiService**: ~60+ calls (per API call, very verbose)
 - **SteamTokenService**: ~30+ calls (rare, token acquisition only)
@@ -47,9 +51,11 @@ This plan prioritizes:
 **Scope**: 10 logging calls in friends/community data collection methods
 
 **Files to Update**:
+
 - `InfoPanel.SteamAPI/Services/SocialDataService.cs`
 
 **Method-by-Method Approach**:
+
 ```
 1. CollectFriendsDataAsync() - 7 calls
    ├─ Friends list retrieval logging
@@ -64,6 +70,7 @@ This plan prioritizes:
 ```
 
 **Pattern to Apply**:
+
 ```csharp
 // OLD:
 _logger?.LogDebug("[SocialDataService] Processing friends...");
@@ -77,6 +84,7 @@ _enhancedLogger?.LogDebug("SocialDataService.CollectFriendsDataAsync", "Processi
 ```
 
 **Success Criteria**:
+
 - ✅ All 10 calls replaced with structured logging
 - ✅ Build succeeds with no new warnings
 - ✅ Git commit: "Phase 3: Complete SocialDataService logging migration"
@@ -91,9 +99,11 @@ _enhancedLogger?.LogDebug("SocialDataService.CollectFriendsDataAsync", "Processi
 **Scope**: 15-20 logging calls in library data collection
 
 **Files to Update**:
+
 - `InfoPanel.SteamAPI/Services/LibraryDataService.cs`
 
 **Method-by-Method Approach**:
+
 ```
 1. CollectLibraryDataAsync() - Main method (5 calls)
 2. ProcessOwnedGamesAsync() - Game processing (5-7 calls)
@@ -102,6 +112,7 @@ _enhancedLogger?.LogDebug("SocialDataService.CollectFriendsDataAsync", "Processi
 ```
 
 **Enhanced Logging Opportunities**:
+
 ```csharp
 // Example: Library statistics with rich context
 _enhancedLogger?.LogDebug("LibraryDataService", "Library statistics calculated", new {
@@ -114,6 +125,7 @@ _enhancedLogger?.LogDebug("LibraryDataService", "Library statistics calculated",
 ```
 
 **Success Criteria**:
+
 - ✅ All 15-20 calls replaced
 - ✅ Enhanced statistics logging with comprehensive data
 - ✅ Build succeeds
@@ -127,9 +139,11 @@ _enhancedLogger?.LogDebug("LibraryDataService", "Library statistics calculated",
 **Scope**: 15-20 logging calls in game statistics collection
 
 **Files to Update**:
+
 - `InfoPanel.SteamAPI/Services/GameStatsService.cs`
 
 **Method-by-Method Approach**:
+
 ```
 1. CollectGameStatsAsync() - Main collection (4-5 calls)
 2. GetAchievementDataAsync() - Achievement processing (5-7 calls)
@@ -138,6 +152,7 @@ _enhancedLogger?.LogDebug("LibraryDataService", "Library statistics calculated",
 ```
 
 **Enhanced Logging Opportunities**:
+
 ```csharp
 // Example: Achievement tracking with progress
 _enhancedLogger?.LogInfo("GameStatsService", "Achievement progress updated", new {
@@ -151,6 +166,7 @@ _enhancedLogger?.LogInfo("GameStatsService", "Achievement progress updated", new
 ```
 
 **Success Criteria**:
+
 - ✅ All 15-20 calls replaced
 - ✅ Achievement tracking with rich metadata
 - ✅ Build succeeds
@@ -164,9 +180,11 @@ _enhancedLogger?.LogInfo("GameStatsService", "Achievement progress updated", new
 **Scope**: 8-10 logging calls in session management
 
 **Files to Update**:
+
 - `InfoPanel.SteamAPI/Services/SessionTrackingService.cs`
 
 **Method-by-Method Approach**:
+
 ```
 1. StartSession() - Session initialization (2-3 calls)
 2. UpdateSession() - Session updates (2-3 calls)
@@ -175,6 +193,7 @@ _enhancedLogger?.LogInfo("GameStatsService", "Achievement progress updated", new
 ```
 
 **Enhanced Logging Opportunities**:
+
 ```csharp
 // Example: Session lifecycle with operation pairing
 var correlationId = _enhancedLogger?.LogOperationStart(
@@ -196,6 +215,7 @@ _enhancedLogger?.LogOperationEnd(
 ```
 
 **Success Criteria**:
+
 - ✅ All 8-10 calls replaced
 - ✅ Session lifecycle with operation pairing
 - ✅ Build succeeds
@@ -209,9 +229,11 @@ _enhancedLogger?.LogOperationEnd(
 **Scope**: ~5 logging calls in sensor updates
 
 **Files to Update**:
+
 - `InfoPanel.SteamAPI/Services/SensorManagementService.cs`
 
 **Method-by-Method Approach**:
+
 ```
 1. UpdateSteamSensors() - Main sensor updates (2 calls)
 2. UpdateSocialSensors() - Social sensor updates (1-2 calls)
@@ -219,6 +241,7 @@ _enhancedLogger?.LogOperationEnd(
 ```
 
 **Enhanced Logging Opportunities**:
+
 ```csharp
 // Example: Sensor update batching
 _enhancedLogger?.LogDebug("SensorManagementService", "Batch sensor update", new {
@@ -230,6 +253,7 @@ _enhancedLogger?.LogDebug("SensorManagementService", "Batch sensor update", new 
 ```
 
 **Success Criteria**:
+
 - ✅ All ~5 calls replaced
 - ✅ Sensor update tracking with metrics
 - ✅ Build succeeds
@@ -243,15 +267,18 @@ _enhancedLogger?.LogDebug("SensorManagementService", "Batch sensor update", new 
 **Scope**: 5-8 logging calls in configuration management
 
 **Files to Update**:
+
 - `InfoPanel.SteamAPI/Services/ConfigurationService.cs`
 
 **⚠️ Special Consideration**:
 ConfigurationService currently uses `Console.WriteLine` heavily. Need to:
+
 1. Add EnhancedLoggingService support to constructor
 2. Replace Console.WriteLine with proper logging
 3. Maintain console output for critical initialization messages
 
 **Method-by-Method Approach**:
+
 ```
 1. LoadConfiguration() - Config loading (2-3 calls)
 2. ValidateConfiguration() - Validation (2-3 calls)
@@ -259,6 +286,7 @@ ConfigurationService currently uses `Console.WriteLine` heavily. Need to:
 ```
 
 **Enhanced Logging Opportunities**:
+
 ```csharp
 // Example: Configuration validation with details
 _enhancedLogger?.LogInfo("ConfigurationService", "Configuration loaded", new {
@@ -271,6 +299,7 @@ _enhancedLogger?.LogInfo("ConfigurationService", "Configuration loaded", new {
 ```
 
 **Success Criteria**:
+
 - ✅ All 5-8 calls replaced
 - ✅ Configuration lifecycle tracking
 - ✅ Build succeeds
@@ -284,15 +313,18 @@ _enhancedLogger?.LogInfo("ConfigurationService", "Configuration loaded", new {
 **Scope**: ~60+ logging calls (MOST VERBOSE SERVICE)
 
 **Files to Update**:
+
 - `InfoPanel.SteamAPI/Services/SteamApiService.cs`
 
 **⚠️ Special Considerations**:
 This service has extensive API call logging. Need careful approach:
+
 - Many logs are at Error level (incorrectly) - should be Info/Debug
 - Contains sensitive API key information - ensure redaction
 - Very detailed request/response logging - use structured data
 
 **Session 7A: Core API Methods** (30-40 calls)
+
 ```
 1. GetPlayerSummariesAsync() - Player data API (8-10 calls)
 2. GetFriendsListAsync() - Friends API (8-10 calls)
@@ -301,6 +333,7 @@ This service has extensive API call logging. Need careful approach:
 ```
 
 **Session 7B: Extended API Methods** (30-40 calls)
+
 ```
 5. GetPlayerAchievementsAsync() - Achievements API (8-10 calls)
 6. GetGameSchemaAsync() - Schema API (8-10 calls)
@@ -309,6 +342,7 @@ This service has extensive API call logging. Need careful approach:
 ```
 
 **Enhanced Logging Pattern for API Calls**:
+
 ```csharp
 // Use operation pairing for all API calls
 var correlationId = _enhancedLogger?.LogOperationStart(
@@ -352,12 +386,13 @@ catch (Exception ex)
 ```
 
 **Success Criteria per Session**:
+
 - ✅ Session 7A: 30-40 core API calls replaced
 - ✅ Session 7B: 30-40 extended API calls replaced
 - ✅ All API keys properly redacted
 - ✅ Operation pairing for performance tracking
 - ✅ Build succeeds after each session
-- ✅ Git commits: 
+- ✅ Git commits:
   - "Phase 3: Complete SteamApiService core API logging migration"
   - "Phase 3: Complete SteamApiService extended API logging migration"
 - ✅ Update progress document after each session
@@ -369,13 +404,16 @@ catch (Exception ex)
 **Scope**: ~30+ logging calls in token acquisition
 
 **Files to Update**:
+
 - `InfoPanel.SteamAPI/Services/SteamTokenService.cs`
 
 **⚠️ Prerequisites**:
+
 1. Add EnhancedLoggingService to constructor
 2. Update service instantiation to pass logger
 
 **Method-by-Method Approach**:
+
 ```
 1. AcquireTokenAsync() - Token acquisition (8-10 calls)
 2. RefreshTokenAsync() - Token refresh (6-8 calls)
@@ -385,6 +423,7 @@ catch (Exception ex)
 ```
 
 **Enhanced Logging Opportunities**:
+
 ```csharp
 // Example: Token lifecycle with security
 _enhancedLogger?.LogInfo("SteamTokenService", "Token acquired successfully", new {
@@ -397,6 +436,7 @@ _enhancedLogger?.LogInfo("SteamTokenService", "Token acquired successfully", new
 ```
 
 **Success Criteria**:
+
 - ✅ Constructor updated with EnhancedLoggingService
 - ✅ All ~30+ calls replaced
 - ✅ Token security maintained (no token values logged)
@@ -411,6 +451,7 @@ _enhancedLogger?.LogInfo("SteamTokenService", "Token acquired successfully", new
 Use this checklist for each session:
 
 **Before Starting**:
+
 - [ ] Review current branch status (`git status`)
 - [ ] Ensure working directory is clean
 - [ ] Pull latest changes if working with team
@@ -418,6 +459,7 @@ Use this checklist for each session:
 - [ ] Identify all logging calls in the service (use grep/search)
 
 **During Work**:
+
 - [ ] Update one method at a time
 - [ ] Use structured data objects for all log entries
 - [ ] Ensure sensitive data is redacted
@@ -426,6 +468,7 @@ Use this checklist for each session:
 - [ ] Test logging output if possible
 
 **After Completion**:
+
 - [ ] Final build verification (`dotnet build -c Release`)
 - [ ] Review all changes carefully
 - [ ] Stage files (`git add`)
@@ -441,17 +484,20 @@ Use this checklist for each session:
 Track these metrics after each session:
 
 **Quality Metrics**:
+
 - ✅ Zero new compiler warnings introduced
 - ✅ All logging uses structured data objects
 - ✅ Sensitive data properly redacted
 - ✅ Operation pairing used for critical operations
 
 **Progress Metrics**:
+
 - ✅ X calls migrated out of Y total for service
 - ✅ Estimated remaining work updated
 - ✅ Documentation updated
 
 **Safety Metrics**:
+
 - ✅ Clean git commit created
 - ✅ Build verification passed
 - ✅ Rollback plan confirmed
@@ -479,25 +525,30 @@ Track these metrics after each session:
 
 ## 🛡️ **RISK MITIGATION**
 
-### Common Pitfalls & Solutions:
+### Common Pitfalls & Solutions
 
 **Risk 1: File Corruption During Large Edits**
+
 - **Mitigation**: Work on small sections, build frequently
 - **Solution**: Git revert if issues occur
 
 **Risk 2: Logging Overhead Impact**
+
 - **Mitigation**: Use delta detection for high-frequency logs
 - **Solution**: Add conditional logging based on config
 
 **Risk 3: Sensitive Data Exposure**
+
 - **Mitigation**: Use redaction for API keys, tokens, passwords
 - **Solution**: Review all structured data objects for PII
 
 **Risk 4: Build Failures**
+
 - **Mitigation**: Build after every 3-5 changes
 - **Solution**: Fix immediately before continuing
 
 **Risk 5: Performance Degradation**
+
 - **Mitigation**: Use operation pairing to measure timing
 - **Solution**: Add performance benchmarks after completion
 
@@ -505,9 +556,10 @@ Track these metrics after each session:
 
 ## 💡 **BEST PRACTICES FOR MIGRATION**
 
-### Structured Logging Patterns:
+### Structured Logging Patterns
 
 **Good Examples**:
+
 ```csharp
 // ✅ Rich contextual data
 _enhancedLogger?.LogInfo("ServiceName", "Operation completed", new {
@@ -531,6 +583,7 @@ _enhancedLogger?.LogError("Service", "Operation failed", ex, new {
 ```
 
 **Avoid**:
+
 ```csharp
 // ❌ String concatenation
 _enhancedLogger?.LogInfo("Service", $"Processed {count} items in {duration}ms");
@@ -573,12 +626,15 @@ After Phase 3 completion:
 ## 📅 **ESTIMATED TIMELINE**
 
 **Conservative Estimate** (45-60 minutes per session):
+
 - 9 sessions × 45-60 minutes = **6.75 - 9 hours total**
 
 **Aggressive Estimate** (30-45 minutes per session):
+
 - 9 sessions × 30-45 minutes = **4.5 - 6.75 hours total**
 
-**Recommended Approach**: 
+**Recommended Approach**:
+
 - 2-3 sessions per day
 - Complete over 3-5 days
 - Allow time for testing and documentation
@@ -588,12 +644,14 @@ After Phase 3 completion:
 ## ✅ **READY TO START?**
 
 When ready to begin, start with:
+
 1. **Session 1: SocialDataService** (~10 calls, 30 minutes)
 2. Use the session checklist template
 3. Track progress in the table
 4. Update this document after completion
 
 **Command to start**:
+
 ```bash
 git checkout -b phase3-session-1-social
 # Begin Session 1 work

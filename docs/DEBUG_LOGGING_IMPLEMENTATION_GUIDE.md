@@ -448,19 +448,23 @@ private void InitializeThrottleIntervals()
 ### **Test Debug Toggle**
 
 1. **Enable Logging:**
+
    ```ini
    [Debug]
    debug=true
    ```
+
    - Restart plugin or click "Reload Plugin"
    - Check `your-plugin-debug.log` file is created
    - Verify startup messages appear
 
 2. **Disable Logging:**
+
    ```ini
    [Debug]
    debug=false
    ```
+
    - Reload plugin
    - Verify no new log entries (file stops growing)
 
@@ -641,22 +645,26 @@ public void ThreadSafeMethod()
 ### **Common Issues**
 
 #### **1. No Log File Created**
+
 - Check `debug=true` in INI file
 - Verify ConfigurationService.IsDebugEnabled returns true
 - Check file permissions in plugin directory
 - Verify FileLoggingService initialization didn't throw exception
 
 #### **2. Empty Log File**
+
 - Check minimum log level filtering
 - Verify messages meet throttling criteria
 - Check if buffering is working (wait 500ms for flush)
 
 #### **3. Missing Log Entries**
+
 - Check if messages are being throttled
 - Look for suppression count indicators: `[+5 similar suppressed]`
 - Verify log level meets minimum threshold
 
 #### **4. Performance Issues**
+
 - Adjust flush interval: `_flushInterval = TimeSpan.FromSeconds(1)`
 - Reduce buffer size: `MAX_BUFFER_SIZE = 10`
 - Increase throttling intervals for noisy messages
@@ -679,6 +687,7 @@ _fileLogger?.LogInfo("Test message to verify logging works");
 ## 📋 **Implementation Checklist**
 
 ### **Phase 1: Basic Setup**
+
 - [ ] Copy `FileLoggingService.cs` and adapt namespace
 - [ ] Update `ConfigurationService.cs` with `IsDebugEnabled` property  
 - [ ] Add `[Debug]` section to INI template
@@ -686,12 +695,14 @@ _fileLogger?.LogInfo("Test message to verify logging works");
 - [ ] Test basic logging works
 
 ### **Phase 2: Service Integration**
+
 - [ ] Add FileLoggingService to service constructors
 - [ ] Update Initialize() method to create logger after config
 - [ ] Add logging to main business logic methods
 - [ ] Test debug toggle works (INI → reload → logging starts/stops)
 
 ### **Phase 3: Advanced Features**
+
 - [ ] Customize throttle categories for your domain
 - [ ] Add domain-specific logging methods
 - [ ] Implement performance/memory logging if needed
@@ -699,6 +710,7 @@ _fileLogger?.LogInfo("Test message to verify logging works");
 - [ ] Test throttling with rapid messages
 
 ### **Phase 4: Production Readiness**
+
 - [ ] Set `debug=false` in default INI template
 - [ ] Add error handling around all logging calls
 - [ ] Test plugin works correctly when logging is disabled
@@ -718,8 +730,9 @@ The InfoPanel.RTSS debug logging system provides:
 ✅ **Production Ready**: Automatic throttling prevents log spam, graceful degradation  
 
 **Key Implementation Steps:**
+
 1. Copy and adapt `FileLoggingService.cs`
-2. Add `IsDebugEnabled` to `ConfigurationService.cs` 
+2. Add `IsDebugEnabled` to `ConfigurationService.cs`
 3. Update INI template with `[Debug]` section
 4. Integrate into plugin lifecycle (config → logger → services)
 5. Add logging calls throughout business logic

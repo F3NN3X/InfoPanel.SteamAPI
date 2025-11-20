@@ -3,12 +3,12 @@
 ## Quick Setup
 
 1. **Get Your Steam Web API Key**
-   - Visit: https://steamcommunity.com/dev/apikey
+   - Visit: <https://steamcommunity.com/dev/apikey>
    - You'll need to provide a domain name (you can use `localhost` for personal use)
    - Copy the generated API key
 
 2. **Find Your Steam ID**
-   - Visit: https://steamid.io/
+   - Visit: <https://steamid.io/>
    - Enter your Steam profile URL or username
    - Copy the **steamID64** value
 
@@ -64,20 +64,24 @@ EnableCurrentGameMonitoring=true
 The plugin creates the following sensors in InfoPanel:
 
 ### Profile Sensors
+
 - **Player Name**: Your Steam display name
 - **Status**: Online status (Online, Offline, Away, etc.)
 - **Steam Level**: Your current Steam level
 
 ### Game Sensors
+
 - **Current Game**: Currently playing game name
 - **Game Playtime**: Playtime for current game (hours)
 
 ### Library Sensors
+
 - **Games Owned**: Total number of games in library
 - **Total Playtime**: Total playtime across all games (hours)
 - **Recent Playtime**: Playtime in last 2 weeks (hours)
 
 ### Status Sensors
+
 - **Plugin Status**: Overall plugin status
 - **Details**: Detailed information and last update time
 
@@ -116,6 +120,7 @@ For the Steam API to work, your Steam profile must be public:
 ## Rate Limits
 
 The Steam Web API has rate limits:
+
 - Maximum ~1 request per second
 - The plugin automatically handles rate limiting
 - Minimum update interval is 10 seconds to ensure compliance

@@ -9,11 +9,13 @@ All notable changes to InfoPanel Steam API Plugin will be documented in this fil
 **Removed unused features to streamline the plugin**
 
 #### Removed Features
+
 - **Monitored Games**: Removed "Monitored Games" count and "Monitored Total Hours" sensors
 - **Game Details & News**: Removed the entire "Game Details & News" container and all associated sensors
 - **Configuration**: Removed `MAX_MONITORED_GAMES_IN_TABLE` constant
 
 #### Changes
+
 - **Social Container**: Kept "Friends Activity" table (restored after initial removal attempt)
 - **Code Cleanup**: Removed dead code related to monitored games and game news
 
@@ -26,6 +28,7 @@ All notable changes to InfoPanel Steam API Plugin will be documented in this fil
 **Complete architectural overhaul from monolithic services to clean domain-driven design**
 
 #### Architecture Changes
+
 - **Domain Separation**: Split monolithic services into three focused domains (Player, Social, Library)
 - **Monitoring Services**: PlayerMonitoringService (1s), SocialMonitoringService (15s), LibraryMonitoringService (45s)
 - **Sensor Services**: PlayerSensorService, SocialSensorService, LibrarySensorService
@@ -34,6 +37,7 @@ All notable changes to InfoPanel Steam API Plugin will be documented in this fil
 - **Event-Driven**: Clean subscription model between monitoring and sensor services
 
 #### Bug Fixes
+
 1. **Average Session Calculation**: Enhanced logging in GetRecentSessionStats() for debugging
 2. **Game Total Playtime**: Added GetGameTotalPlaytimeAsync() to fetch from GetOwnedGames API
 3. **Time Format Consistency**: FormatMinutesToHourMin() now always returns HH:mm format
@@ -42,12 +46,14 @@ All notable changes to InfoPanel Steam API Plugin will be documented in this fil
 6. **Online Status Sensor**: Now shows game name when playing instead of just "Online"
 
 #### Technical Details
+
 - **Files Added**: 7 new domain services (SessionDataCache, 3 monitoring services, 3 sensor services)
 - **Files Deleted**: 2 monolithic services (MonitoringService.cs, SensorManagementService.cs)
 - **Documentation**: Added REFACTORING_DOMAIN_ARCHITECTURE.md with complete migration guide
 - **Build Output**: InfoPanel.SteamAPI-v1.2.1
 
 #### Migration Notes
+
 - All functionality preserved - no breaking changes for users
 - Enhanced logging throughout for better debugging
 - Improved separation of concerns for future maintenance
@@ -62,14 +68,16 @@ All notable changes to InfoPanel Steam API Plugin will be documented in this fil
 **Game banner images now persist after closing games, showing your most recent activity**
 
 #### Feature Overview
+
 - **Persistent Game Banners**: Game banner images remain visible after closing a game
 - **Dynamic Status Text**: New "Game Status" sensor shows "Currently Playing" or "Last Played Game"
 - **Customizable Text**: Fully localizable status text via INI configuration
 - **Session Persistence**: Last played game info persists across plugin restarts
 
 #### What's New
+
 1. **New Sensor**: `game-status-text` - Displays dynamic game status with customizable text
-2. **Enhanced Data Model**: 
+2. **Enhanced Data Model**:
    - `LastPlayedGameName` - Name of most recently played game
    - `LastPlayedGameAppId` - Steam App ID of last played game
    - `LastPlayedGameBannerUrl` - Banner image URL (persists after game closes)
@@ -78,20 +86,24 @@ All notable changes to InfoPanel Steam API Plugin will be documented in this fil
 4. **Smart Banner Management**: Banner switches between current and last played game automatically
 
 #### Configuration Options
+
 New `[Display Settings]` keys for localization:
+
 ```ini
 CurrentlyPlayingText=Currently Playing  # Text shown when actively playing
 LastPlayedGameText=Last Played Game     # Text shown when viewing last played
 ```
 
 **Localization Examples:**
+
 - 🇩🇪 German: `Spielt gerade` / `Zuletzt gespielt`
 - 🇫🇷 French: `En train de jouer` / `Dernier jeu joué`
 - 🇪🇸 Spanish: `Jugando ahora` / `Último juego jugado`
 
 #### Technical Implementation
+
 - **Commits**: 617879c, b4adc2e, a929d39, 81b10c9, b229a03, eca5c46
-- **Files Modified**: 
+- **Files Modified**:
   - `Models/SteamData.cs` - Added last played game properties
   - `Services/SessionTrackingService.cs` - Enhanced session tracking with banner persistence
   - `Services/ConfigurationService.cs` - Added display customization properties
@@ -100,6 +112,7 @@ LastPlayedGameText=Last Played Game     # Text shown when viewing last played
   - `README.md` - Documentation for new feature
 
 #### User Experience
+
 - **Before**: Game banner disappears when closing a game (shows "-")
 - **After**: Game banner persists, showing your last played game with "Last Played Game" status
 - **During Play**: Banner shows current game with "Currently Playing" status
@@ -112,6 +125,7 @@ LastPlayedGameText=Last Played Game     # Text shown when viewing last played
 **Successfully migrated ALL logging from FileLoggingService to EnhancedLoggingService with structured JSON**
 
 #### ✅ All Sessions Complete (253 of 253 calls migrated - 100% ✨)
+
 - ✅ **Session 1** (f819b2a): SocialDataService - 13 calls
 - ✅ **Session 2** (97c45f3): LibraryDataService - 13 calls
 - ✅ **Session 3** (d81cf5f): GameStatsService - 11 calls
@@ -122,13 +136,13 @@ LastPlayedGameText=Last Played Game     # Text shown when viewing last played
   - Constructor: Service initialization logging
   - EnforceRateLimitAsync: Rate limiting wait time logging
   - CallSteamApiAsync: Core HTTP API caller (24 calls) with comprehensive debugging:
-    * Request logging with attempt tracking and URL redaction
-    * Success responses with status, timing, headers, content
-    * Error responses with status codes and error content
-    * Rate limit handling (429 TooManyRequests)
-    * Forbidden/Unauthorized handling (403/401)
-    * Network error retry logic with exponential backoff
-    * Timeout and exception handling
+    - Request logging with attempt tracking and URL redaction
+    - Success responses with status, timing, headers, content
+    - Error responses with status codes and error content
+    - Rate limit handling (429 TooManyRequests)
+    - Forbidden/Unauthorized handling (403/401)
+    - Network error retry logic with exponential backoff
+    - Timeout and exception handling
   - GetPlayerSummaryAsync (default): Player info retrieval
   - GetPlayerSummaryAsync(steamId): Specific player lookup  
   - GetPlayerSummariesAsync(steamIds): Batch player lookup
@@ -158,6 +172,7 @@ LastPlayedGameText=Last Played Game     # Text shown when viewing last played
   - **SteamTokenService 100% COMPLETE**: All 33 calls migrated
 
 #### 🏆 Migration Achievements
+
 - **96-99% Log Volume Reduction**: From extensive debug logging to concise structured JSON
 - **Enhanced Debuggability**: Structured data enables JSON parsing, filtering, and analysis
 - **Security Improvements**: URL redaction protects sensitive Steam API keys
@@ -167,6 +182,7 @@ LastPlayedGameText=Last Played Game     # Text shown when viewing last played
 - **Complete Coverage**: All 9 services migrated - 253 logging calls transformed
 
 #### 📊 Services Migrated (9/9 - 100%)
+
 1. **SocialDataService**: Friends and community features
 2. **LibraryDataService**: Game library and playtime
 3. **GameStatsService**: Achievements and game statistics
@@ -178,6 +194,7 @@ LastPlayedGameText=Last Played Game     # Text shown when viewing last played
 9. **MonitoringService**: Orchestration layer (Phase 2)
 
 #### 🎯 Technical Impact
+
 - Zero new compilation warnings introduced
 - Backward compatible with FileLoggingService during transition
 - All 253 logging calls now support structured JSON data
@@ -191,12 +208,14 @@ LastPlayedGameText=Last Played Game     # Text shown when viewing last played
 **BREAKING CHANGE**: Complete monitoring architecture rewrite to fix session tracking failures
 
 #### 🐛 **Critical Bug Fixes**
+
 - **FIXED**: Session tracking completely broken - `sessions.json` stayed empty due to timer race conditions
 - **FIXED**: Image URL sensors showing "-" due to data corruption in timer merge logic  
 - **FIXED**: Data switching between correct/incorrect states every 15 seconds
 - **ROOT CAUSE**: Original 3-timer architecture had fatal race condition where medium timer (15s social data) was overwriting fast timer (5s game data) by explicitly setting `CurrentGameName=null` and `CurrentGameAppId=null`
 
 #### 🏗️ **Complete Multi-Timer Architecture Rewrite**
+
 - **NEW**: Clean separated timer architecture - **NO DATA MERGING**
   - `PlayerTimer` (1 second): Game detection, profile data, **immediate session tracking**
   - `SocialTimer` (15 seconds): Friends status only - **cannot interfere with game data**  
@@ -206,12 +225,14 @@ LastPlayedGameText=Last Played Game     # Text shown when viewing last played
 - **NEW**: Immediate session tracking in player timer - **1-second game detection responsiveness**
 
 #### 🛡️ **Session Tracking Reliability**
+
 - **GUARANTEED**: Game state changes detected within 1 second (was 5 seconds)
 - **GUARANTEED**: Session entries created immediately when games start
 - **GUARANTEED**: Session duration tracking cannot be corrupted by social/library data
 - **NEW**: `SessionTrackingService` called directly from player timer with proper game state data
 
 #### 🚀 **Performance & Reliability Improvements**  
+
 - **ELIMINATED**: Timer race conditions causing data corruption
 - **ELIMINATED**: Complex data merging logic that caused state conflicts
 - **NEW**: Timer interval verification with deviation logging for troubleshooting
@@ -219,12 +240,14 @@ LastPlayedGameText=Last Played Game     # Text shown when viewing last played
 - **NEW**: Staggered timer startup (0s, 2s, 5s) to distribute API load
 
 #### 🔧 **Technical Implementation Details**
+
 - **API Rate Limiting**: Maximum 1 concurrent Steam API call (was unlimited)
 - **Timer Precision**: Player=1s, Social=15s, Library=45s (was 5s/15s/60s with conflicts)
 - **Memory Safety**: Proper disposal of all timer resources with cancellation support
 - **Error Handling**: Individual timer exception isolation prevents cascade failures
 
 #### 📋 **Migration Notes**
+
 - **BREAKING**: `MonitoringService` timer intervals changed - existing config may need updates
 - **BREAKING**: Event data structure simplified - no more merged conflicting data
 - **IMPROVEMENT**: Session tracking now works reliably for the first time
@@ -233,6 +256,7 @@ LastPlayedGameText=Last Played Game     # Text shown when viewing last played
 ## [1.1.1] - 2025-11-10
 
 ### 🏗️ Enterprise-Level Modernization & Optimization
+
 - **MASSIVE Code Reduction**: MonitoringService reduced from 1,905 to 674 lines (**64.6% reduction**)
 - **Complete Legacy Elimination**: Removed 1,231 lines of redundant and deprecated code
   - Eliminated all code duplication between MonitoringService and specialized services
@@ -245,6 +269,7 @@ LastPlayedGameText=Last Played Game     # Text shown when viewing last played
   - Professional separation of concerns across all service boundaries
 
 ### 🔧 Comprehensive Code Quality Transformation
+
 - **Constants Infrastructure**: Complete elimination of magic numbers across entire codebase
   - Added comprehensive constants classes for all services (ConfigurationConstants, SensorManagementConstants, etc.)
   - Converted all timeout values, intervals, thresholds to named constants
@@ -260,6 +285,7 @@ LastPlayedGameText=Last Played Game     # Text shown when viewing last played
   - Graceful degradation patterns throughout service layer
 
 ### 🚀 Performance & Resource Optimization
+
 - **Memory Optimization**: Binary size reduced from 261KB to 212KB (**18.6% reduction**)
 - **Efficient Async Patterns**: Complete async/await optimization across all services
   - Proper Task.Run usage for CPU-bound operations in timer callbacks
@@ -272,6 +298,7 @@ LastPlayedGameText=Last Played Game     # Text shown when viewing last played
   - Thread-safe resource cleanup with exception handling
 
 ### 🛡️ Thread Safety & Concurrency Mastery
+
 - **Complete Thread Safety Audit**: Professional locking mechanisms throughout
   - Sensor updates protected with dedicated _sensorLock objects
   - Rate limiting implemented with proper lock coordination in SteamApiService
@@ -279,6 +306,7 @@ LastPlayedGameText=Last Played Game     # Text shown when viewing last played
   - Concurrent collection usage (ConcurrentQueue) in FileLoggingService for performance
 
 ### 📚 Documentation Excellence
+
 - **Enterprise-Level Documentation**: Comprehensive XML documentation across all public APIs
   - Complete /// <summary> comments on all public classes and methods
   - Parameter and return value documentation with usage examples
@@ -286,6 +314,7 @@ LastPlayedGameText=Last Played Game     # Text shown when viewing last played
   - Constants documentation explaining purpose and valid ranges
 
 ### 🧪 Build Validation & Quality Assurance
+
 - **Successful Release Build**: Clean compilation with optimized output structure
   - All 21 modernization tasks completed successfully
   - Comprehensive build validation with proper deployment package generation
@@ -295,6 +324,7 @@ LastPlayedGameText=Last Played Game     # Text shown when viewing last played
 ## [1.1.0] - 2025-11-09
 
 ### 🚀 Major Performance Improvements
+
 - **NEW: Tiered Monitoring System** - Revolutionary 3-tier update architecture for optimal performance
   - **Fast Tier (5s)**: Critical real-time data - game state detection, player status, session tracking
   - **Medium Tier (15s)**: Social data - friends status, friends activity
@@ -304,6 +334,7 @@ LastPlayedGameText=Last Played Game     # Text shown when viewing last played
 - **Smart API Optimization** - Intelligent Steam API usage prioritizing important data
 
 ### 🏗️ Major Architecture Refactor
+
 - **Service-Oriented Architecture** - Completely restructured from monolithic service to specialized services
 - **PlayerDataService** - Dedicated service for real-time player profile and game state data
 - **SocialDataService** - Specialized service for friends lists and community features  
@@ -312,6 +343,7 @@ LastPlayedGameText=Last Played Game     # Text shown when viewing last played
 - **MonitoringService Orchestration** - Refactored to coordinate all specialized services
 
 ### ⚙️ Enhanced Configuration
+
 - **NEW: Performance Tuning Settings** - Configurable update intervals for each tier
   - `FastUpdateIntervalSeconds=5` - Control real-time data update frequency
   - `MediumUpdateIntervalSeconds=15` - Control social data update frequency  
@@ -319,6 +351,7 @@ LastPlayedGameText=Last Played Game     # Text shown when viewing last played
 - **Backward Compatibility** - All existing configuration settings preserved
 
 ### 🔧 Code Quality Improvements
+
 - **Maintainability** - Split 1600+ line monolithic service into focused 150-300 line services
 - **Single Responsibility** - Each service has clear, focused purpose
 - **Type Safety** - Dedicated data models (PlayerData, SocialData, LibraryData, GameStatsData)
@@ -326,12 +359,14 @@ LastPlayedGameText=Last Played Game     # Text shown when viewing last played
 - **Testability** - Services can be unit tested in isolation
 
 ### 🐛 Bug Fixes
+
 - **Fixed**: Slow game state detection causing delays in showing current game status
 - **Fixed**: Friends status showing outdated information due to infrequent updates
 - **Fixed**: Session tracking accuracy improved with faster update cycles
 - **Improved**: API rate limiting compliance with intelligent request distribution
 
 ### 📊 Performance Metrics
+
 - **Game State Detection**: 5s (was ~15-60s depending on timing)
 - **Friends Status Updates**: 15s (was 30s)  
 - **Library Updates**: 60s (optimized from 30s for non-critical data)
@@ -340,6 +375,7 @@ LastPlayedGameText=Last Played Game     # Text shown when viewing last played
 ## [1.0.0] - 2025-11-07
 
 ### Added - Phase 1: Basic Steam Data
+
 - Steam profile monitoring (player name, status, Steam level)
 - Current game tracking (game name, playtime)
 - Library statistics (total games owned, total playtime, recent playtime)
@@ -348,6 +384,7 @@ LastPlayedGameText=Last Played Game     # Text shown when viewing last played
 - Configuration management for Steam API key and settings
 
 ### Added - Phase 2: Enhanced Gaming Data
+
 - **Recent Gaming Activity (2-week stats)**
   - Games Played (2w) - Count of games played in last 2 weeks
   - Top Recent Game - Most played game in recent period
@@ -374,6 +411,7 @@ LastPlayedGameText=Last Played Game     # Text shown when viewing last played
 - Extended SteamData model with comprehensive Phase 2 properties
 
 ### Added - Phase 3: Advanced Features
+
 - **Detailed Game-Specific Statistics**
   - Primary Game Stats - Comprehensive statistics for currently played game
   - Secondary Game Stats - Statistics for second most recently played game
@@ -401,6 +439,7 @@ LastPlayedGameText=Last Played Game     # Text shown when viewing last played
 - Extended SteamData model with Phase 3 properties including MonitoredGameStats and SteamNewsItem classes
 
 ### Added - Phase 4: Social & Community Features
+
 - **Friends Activity Monitoring**
   - Total Friends - Complete Steam friends count
   - Recently Active - Number of friends active in last 24 hours
@@ -431,6 +470,7 @@ LastPlayedGameText=Last Played Game     # Text shown when viewing last played
 - Community badge tracking with XP progression analysis
 
 ### Added - Advanced Logging & Debugging
+
 - **FileLoggingService** with advanced features:
   - Batched writing for performance optimization
   - Automatic log rotation by date and size
@@ -445,6 +485,7 @@ LastPlayedGameText=Last Played Game     # Text shown when viewing last played
 - Configurable logging levels and retention policies
 
 ### Added - SteamID64 Implementation & Validation
+
 - **Explicit SteamID64 Configuration**
   - Primary `SteamId64` property for clear 64-bit format specification
   - Automatic validation of 17-digit format starting with "7656119"
@@ -470,6 +511,7 @@ LastPlayedGameText=Last Played Game     # Text shown when viewing last played
 ### Improved (v1.0.0 Updates) - 2025-11-09
 
 #### User Experience & Clarity Enhancements
+
 - **Enhanced Sensor Descriptions**
   - Improved all sensor names for better clarity and understanding
   - `"Current Game Total Hours"` instead of generic `"Game Playtime"`
@@ -481,6 +523,7 @@ LastPlayedGameText=Last Played Game     # Text shown when viewing last played
   - `"Steam Badges Earned"` clarifying community badge context
 
 #### Session Time Format Clarification
+
 - **Session Duration Display Improvements**
   - Fixed session time format confusion (7:21 = 7 hours 21 minutes, not minutes)
   - Updated sensor descriptions: "Current Session Duration", "Avg Session Duration"
@@ -489,6 +532,7 @@ LastPlayedGameText=Last Played Game     # Text shown when viewing last played
   - Added `FormatMinutesToHourMin()` helper for consistent time formatting
 
 #### Performance Optimizations
+
 - **Faster Refresh Intervals**
   - Reduced update interval from 30 seconds to 15 seconds for friends activity
   - Improved real-time experience for social features and current session tracking
@@ -496,6 +540,7 @@ LastPlayedGameText=Last Played Game     # Text shown when viewing last played
   - Better real-time session time updates
 
 #### Friends Activity Enhancements
+
 - **Improved Friend Sorting Logic**
   - Fixed offline friends incorrectly appearing as "playing" in PlayingFirst sorting
   - Enhanced `IsCurrentlyPlaying()` method to check `OnlineStatus != "Offline"`
@@ -503,6 +548,7 @@ LastPlayedGameText=Last Played Game     # Text shown when viewing last played
   - Better separation of online vs playing friend counts
 
 #### Comprehensive Documentation Updates
+
 - **README.md Major Enhancement**
   - Added comprehensive "Key Terms Explained" section
   - **Time Periods & Tracking**: Clear definitions of Recent (2w), Total, Session durations
@@ -513,6 +559,7 @@ LastPlayedGameText=Last Played Game     # Text shown when viewing last played
   - Updated refresh interval documentation to reflect 15-second updates
 
 #### JSON Session Persistence
+
 - **Session Data Preservation**
   - Confirmed sessions.json file survives InfoPanel restarts
   - Session tracking data persists across plugin disposal/restart cycles
@@ -521,6 +568,7 @@ LastPlayedGameText=Last Played Game     # Text shown when viewing last played
   - Proper cleanup on disposal without data loss
 
 ### Technical Implementation
+
 - **Service-based Architecture**: MonitoringService, SensorManagementService, ConfigurationService, FileLoggingService
 - **Dual Container System**: Organized Basic and Enhanced data separation
 - **Table Integration**: Proper InfoPanel DataTable implementation with PluginText formatting
@@ -531,6 +579,7 @@ LastPlayedGameText=Last Played Game     # Text shown when viewing last played
 - **Enhanced Data Models**: Complete SteamData model with all 13 Enhanced Gaming properties
 
 ### Configuration & Privacy
+
 - Steam API key configuration with validation
 - Steam ID (64-bit) configuration support
 - Configurable update intervals and monitoring settings
@@ -539,6 +588,7 @@ LastPlayedGameText=Last Played Game     # Text shown when viewing last played
 - Proper Steam Web API rate limiting (1 request/second)
 
 ### Total Features Delivered
+
 - **48 sensors** across 4 containers (10 basic + 13 enhanced + 12 advanced + 13 social)
 - **3 interactive tables** with real-time gaming activity, detailed game statistics, and friends activity monitoring
 - **4 containers**: "Basic Steam Data", "Enhanced Gaming Data", "Advanced Steam Features", and "Social & Community Features"
@@ -550,6 +600,7 @@ LastPlayedGameText=Last Played Game     # Text shown when viewing last played
 - **Professional debugging tools** for troubleshooting and monitoring across all features
 
 ### Documentation & User Experience
+
 - **Comprehensive README** with detailed sensor descriptions and real-world examples for all 48 sensors
 - **Understanding Your Data** section explaining gaming patterns, social insights, and community engagement
 - **Technical Overview** documenting quad-container architecture and data collection across all phases
@@ -563,12 +614,14 @@ LastPlayedGameText=Last Played Game     # Text shown when viewing last played
 ## Development Notes
 
 ### Architecture Highlights
+
 - Clean service separation with dedicated responsibilities
 - Event-driven updates ensuring real-time data freshness
 - Comprehensive error handling with graceful degradation
 - Professional logging for production monitoring and debugging
 
 ### Steam API Integration
+
 - Full Steam Web API implementation with proper authentication
 - Recent games data collection for table population
 - Friends list monitoring and popular games tracking
@@ -576,6 +629,7 @@ LastPlayedGameText=Last Played Game     # Text shown when viewing last played
 - Session time calculation and monitoring
 
 ### InfoPanel Integration
+
 - Proper plugin lifecycle management (Initialize/Dispose)
 - Standard container and sensor registration patterns
 - DataTable implementation following InfoPanel table standards

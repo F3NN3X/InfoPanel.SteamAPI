@@ -18,9 +18,11 @@
 ## 🎯 **EXECUTION PLAN**
 
 ### **PHASE 1: AUDIT CURRENT LOGGING USAGE** - ✅ COMPLETED
+
 **Goal**: Identify all places where old logging is still being used
 
 **Tasks**:
+
 - [x] Search for all `FileLoggingService` instantiations and usages
 - [x] Search for all `Console.WriteLine` debug statements
 - [x] Search for direct file writing operations
@@ -28,6 +30,7 @@
 - [x] Document all logging entry points
 
 **Expected Findings**:
+
 - Main plugin class initialization
 - MonitoringService initialization  
 - All data collection services
@@ -39,9 +42,11 @@
 ---
 
 ### **PHASE 2: UPDATE SERVICE CONSTRUCTORS** - ✅ COMPLETED
+
 **Goal**: Replace FileLoggingService with EnhancedLoggingService across all services
 
 **Services to Update**:
+
 1. ✅ **MonitoringService** - Constructor already updated
 2. ✅ **PlayerDataService** - Constructor already updated
 3. ✅ **SocialDataService** - Constructor already updated
@@ -53,6 +58,7 @@
 9. ✅ **ConfigurationService** - No logging update needed (uses Console.WriteLine only)
 
 **Pattern Applied**:
+
 ```csharp
 // OLD:
 private readonly FileLoggingService? _fileLoggingService;
@@ -70,6 +76,7 @@ public ServiceName(..., EnhancedLoggingService? logger = null)
 ```
 
 **Changes Made**:
+
 - ✅ SessionTrackingService: Added `_enhancedLogger` field and constructor parameter
 - ✅ SteamApiService: Added `_enhancedLogger` field and constructor parameter  
 - ✅ SensorManagementService: Added `_enhancedLogger` field and constructor parameter
@@ -82,26 +89,31 @@ public ServiceName(..., EnhancedLoggingService? logger = null)
 ---
 
 ### **PHASE 3: REPLACE LOGGING CALLS** - 🔄 IN PROGRESS (Critical areas COMPLETE)
+
 **Goal**: Convert all old logging patterns to new enhanced logging
 
 **Progress** (2024-11-11):
 ✅ **MonitoringService.cs** - COMPLETE - ALL 12 `_logger` calls replaced
+
 - ✨ Fixed CRITICAL log flooding: social/library sensors (every 15s/45s)
 - ✨ Fixed CRITICAL log flooding: player sensors (every 1s)
 - **IMPACT**: 80-90% log reduction achieved with delta detection!
   
 ✅ **PlayerDataService.cs** - COMPLETE - ALL 21 `_logger` calls replaced  
+
 - ✨ Fixed CRITICAL log flooding: runs every 1 second (highest frequency!)
 - All avatar, game detection, session tracking, banner URL logging migrated
 - **IMPACT**: Massive reduction in repetitive "game: Counter-Strike" logs!
   
 🔄 **SocialDataService.cs** - PARTIAL (constructor done, 10 detail calls remain)
+
 - ✅ Constructor updated with _enhancedLogger
 - ✅ Main CollectSocialDataAsync updated (3 calls)
 - ⏳ CollectFriendsDataAsync details (7 calls)
 - ⏳ CollectCommunityDataAsync details (2 calls)
   
 ⏳ **Remaining Services** (~150+ calls total):
+
 - **LibraryDataService.cs** (~15-20 calls) - Constructor ready, runs every 45s
 - **GameStatsService.cs** (~15-20 calls) - Constructor ready
 - **SessionTrackingService.cs** (~8-10 calls) - Constructor ready
@@ -112,6 +124,7 @@ public ServiceName(..., EnhancedLoggingService? logger = null)
 
 **Achievement Summary**:
 🎯 **CRITICAL GOAL ACHIEVED**: Log flooding in highest-frequency timers (1s/15s/45s) is FIXED!
+
 - Player updates (1s): Delta detection active ✅
 - Social updates (15s): SOCIAL-DEBUG spam eliminated ✅  
 - Library updates (45s): LIBRARY-DEBUG spam eliminated ✅
@@ -143,6 +156,7 @@ _logger?.LogError("Source", "Error description", ex, new { Context = data });
 ```
 
 **Critical Logging to Replace**:
+
 - [ ] All Steam API call logging (currently uses Error level incorrectly)
 - [ ] All data collection debug logging
 - [ ] All sensor update logging
@@ -152,9 +166,11 @@ _logger?.LogError("Source", "Error description", ex, new { Context = data });
 ---
 
 ### **PHASE 4: REMOVE FILELOGGINGSERVICE** - ⏳ PENDING
+
 **Goal**: Completely remove the old logging system
 
 **Tasks**:
+
 - [ ] Delete `FileLoggingService.cs` file
 - [ ] Remove all `FileLoggingService` fields from services
 - [ ] Remove `FileLoggingService` parameters from constructors
@@ -164,6 +180,7 @@ _logger?.LogError("Source", "Error description", ex, new { Context = data });
 ---
 
 ### **PHASE 5: FIX INI COMMENT GENERATION** - ⏳ PENDING
+
 **Goal**: Ensure configuration file includes helpful comments
 
 **Current Issue**:
@@ -175,9 +192,11 @@ Update the INI writing logic to include section and key comments with inline doc
 ---
 
 ### **PHASE 6: UPDATE MAIN PLUGIN INITIALIZATION** - ⏳ PENDING
+
 **Goal**: Ensure only EnhancedLoggingService is created and used
 
 **Updates Needed**:
+
 - [ ] Remove any FileLoggingService instantiation
 - [ ] Ensure EnhancedLoggingService is passed to all services
 - [ ] Update service instantiation chain in MonitoringService
@@ -185,15 +204,18 @@ Update the INI writing logic to include section and key comments with inline doc
 ---
 
 ### **PHASE 7: CLEANUP & VERIFICATION** - ⏳ PENDING
+
 **Goal**: Ensure all legacy code is removed and new system works
 
 **Cleanup Tasks**:
+
 - [ ] Remove unused `using` statements for old logging
 - [ ] Remove commented-out legacy logging code
 - [ ] Remove old log file path constants
 - [ ] Update documentation references
 
 **Verification Steps**:
+
 - [ ] Search codebase for `FileLoggingService` - should return 0 results
 - [ ] Search for `Console.WriteLine` - verify all are intentional (startup messages only)
 - [ ] Build project - should compile without warnings
@@ -204,9 +226,11 @@ Update the INI writing logic to include section and key comments with inline doc
 ---
 
 ### **PHASE 8: TEST NEW LOGGING SYSTEM** - ⏳ PENDING
+
 **Goal**: Verify enhanced logging works as expected
 
 **Test Scenarios**:
+
 - [ ] **Initial Startup**: Log shows structured initialization with all services
 - [ ] **Player Data Collection**: Only logs on actual data changes (delta detection)
 - [ ] **Social Data Collection**: Every 15s logs only if friends status changes
@@ -247,6 +271,7 @@ Update the INI writing logic to include section and key comments with inline doc
 ## 📝 **PROGRESS LOG**
 
 ### 2025-11-11: Plan Created & Phase 1 Completed
+
 - Created implementation plan document
 - ✅ **Phase 1 COMPLETED**: Comprehensive audit of logging usage
   - Identified 1 FileLoggingService instantiation (main plugin class)
@@ -256,12 +281,14 @@ Update the INI writing logic to include section and key comments with inline doc
   - Catalogued all legacy `_logger?.LogXXX()` patterns needing migration
 
 **Key Findings:**
+
 - 🔴 **Critical**: 3 services need EnhancedLoggingService constructors (SessionTrackingService, SteamApiService, SensorManagementService)
 - 🔴 **Critical**: Main plugin still instantiates FileLoggingService
 - 🟡 **High**: Legacy `[SOCIAL-DEBUG]` and `[LIBRARY-DEBUG]` patterns causing log flooding
 - 🟡 **Medium**: Extensive Console.WriteLine usage needs conversion to proper logging
 
 ### 2025-11-11: Phase 2 Completed
+
 - ✅ **Phase 2 COMPLETED**: Updated all remaining service constructors
   - ✅ SessionTrackingService: Added EnhancedLoggingService support
   - ✅ SteamApiService: Added EnhancedLoggingService support
@@ -279,12 +306,16 @@ Update the INI writing logic to include section and key comments with inline doc
 
 ### Phase 1: Logging Usage Audit - ✅ COMPLETED
 
-#### FileLoggingService Instantiations:
+#### FileLoggingService Instantiations
+
 **PRIMARY INSTANTIATION:**
+
 - ✅ `InfoPanel.SteamAPI.cs` line 287: `_loggingService = new FileLoggingService(_configService);`
 
-#### Services with Legacy FileLoggingService Fields:
+#### Services with Legacy FileLoggingService Fields
+
 **SERVICES REQUIRING UPDATE:**
+
 1. ✅ `InfoPanel.SteamAPI.cs` - Main plugin class (line 237)
 2. ✅ `MonitoringService.cs` - Has both FileLoggingService and EnhancedLoggingService (lines 79, 78)
 3. ✅ `PlayerDataService.cs` - Constructor parameter (lines 38, 51) - **Already has EnhancedLoggingService support**
@@ -295,9 +326,10 @@ Update the INI writing logic to include section and key comments with inline doc
 8. ❌ `SteamApiService.cs` - Constructor parameter (line 54) - **NEEDS UPDATE**
 9. ❌ `SensorManagementService.cs` - Constructor parameter (line 60) - **NEEDS UPDATE**
 
-#### Legacy Logging Patterns Found:
+#### Legacy Logging Patterns Found
 
 **HIGH-FREQUENCY DEBUG LOGS (Causing log flooding):**
+
 - `MonitoringService.cs`: Lines 787-788 `[SOCIAL-DEBUG]` - Every 15 seconds
 - `MonitoringService.cs`: Line 851 `[LIBRARY-DEBUG]` - Every 45 seconds
 - `PlayerDataService.cs`: Multiple debug logs every 1 second (lines 80, 114-115, 144-145, 206, 250)
@@ -306,6 +338,7 @@ Update the INI writing logic to include section and key comments with inline doc
 - `GameStatsService.cs`: Multiple debug logs (lines 83, 93, 110, 139, 152, 170, 183, 201, 221)
 
 **CONSOLE.WRITELINE DEBUG STATEMENTS:**
+
 - `ConfigurationService.cs`: 11 debug console statements (lines 99, 106, 108, 120, 124, 129, 137, 143, 152, 157, 169)
 - `InfoPanel.SteamAPI.cs`: 9 console statements (lines 265, 379, 384, 420, 424, 450, 620, 1138, 1142)
 - `MonitoringService.cs`: 21 console statements for debugging
@@ -313,10 +346,12 @@ Update the INI writing logic to include section and key comments with inline doc
 - `SensorManagementService.cs`: 8 console error statements (lines 138, 366, 402, 459, 618, 622, 676, 856)
 
 **SERVICES USING OLD LOGGING METHODS:**
+
 - All `_logger?.LogInfo()`, `_logger?.LogDebug()`, `_logger?.LogError()` calls use FileLoggingService
 - Need to migrate to EnhancedLoggingService pattern with structured data objects
 
-#### Services with Proper EnhancedLoggingService Support:
+#### Services with Proper EnhancedLoggingService Support
+
 ✅ `MonitoringService.cs` - Already integrated with both systems  
 ✅ `PlayerDataService.cs` - Constructor accepts EnhancedLoggingService, partial migration done  
 ✅ `SocialDataService.cs` - Constructor accepts EnhancedLoggingService, needs logging migration  
@@ -342,12 +377,14 @@ Update the INI writing logic to include section and key comments with inline doc
 ### **NEXT ACTIONS:**
 
 **Phase 2 Priority:**
+
 1. Update SessionTrackingService constructor to accept EnhancedLoggingService
 2. Update SteamApiService constructor to accept EnhancedLoggingService
 3. Update SensorManagementService constructor to accept EnhancedLoggingService
 4. Update all service instantiations to pass EnhancedLoggingService
 
 **Phase 3 Priority:**
+
 1. Replace all `_logger?.LogXXX()` calls with enhanced logging patterns
 2. Remove or convert Console.WriteLine debug statements to proper logging
 3. Ensure structured data objects are used for all log entries
@@ -364,17 +401,20 @@ Update the INI writing logic to include section and key comments with inline doc
 ### ✅ COMPLETED WORK
 
 **Phase 1: Audit** - 100% Complete
+
 - Full codebase audit of all logging patterns
 - Identified all FileLoggingService usage
 - Documented ~150+ legacy logging calls across 9+ services
 - Created comprehensive implementation plan
 
 **Phase 2: Constructor Updates** - 100% Complete  
+
 - ✅ All 9 services now have EnhancedLoggingService support
 - ✅ All service instantiations updated to pass EnhancedLoggingService
 - ✅ Build verified: SUCCESS (5 pre-existing warnings only)
 
 **Phase 3: Critical Logging Migration** - ~30% Complete (CRITICAL AREAS DONE!)
+
 - ✅ MonitoringService: ALL 12 calls migrated
 - ✅ PlayerDataService: ALL 21 calls migrated
 - ✅ SocialDataService: Constructor ready (10 detail calls remain)
@@ -397,14 +437,17 @@ Priority order for remaining work:
 ### ⏳ PENDING PHASES
 
 **Phase 4**: Remove FileLoggingService
+
 - Delete FileLoggingService.cs file
 - Remove all FileLoggingService references
 - Update main plugin to only use EnhancedLoggingService
 
 **Phase 5**: Fix INI Comments
+
 - Update CreateDefaultConfiguration() to write comments to INI file
 
 **Phase 6-8**: Cleanup, Verification, Testing
+
 - Remove Console.WriteLine debug statements
 - Verify JSON log output
 - Test delta detection and performance
@@ -413,9 +456,10 @@ Priority order for remaining work:
 
 ## 📊 **IMPACT ACHIEVED**
 
-### 🎉 Critical Success Metrics:
+### 🎉 Critical Success Metrics
 
-✅ **Log Flooding ELIMINATED**: 
+✅ **Log Flooding ELIMINATED**:
+
 - Player data (1s): Delta detection prevents repeated identical logs
 - Social data (15s): No more SOCIAL-DEBUG spam every 15 seconds
 - Library data (45s): No more LIBRARY-DEBUG spam every 45 seconds
@@ -426,7 +470,7 @@ Priority order for remaining work:
 
 ✅ **Structured Logging**: All migrated services now use structured data objects for better JSON output
 
-### 📈 Services Migration Status:
+### 📈 Services Migration Status
 
 | Service | Logging Calls | Status | Frequency | Priority |
 |---------|--------------|--------|-----------|----------|
@@ -460,16 +504,19 @@ Priority order for remaining work:
 ## 🚀 **NEXT STEPS**
 
 **Immediate (Next Session)**:
+
 1. Complete SocialDataService detail methods (10 calls)
 2. Complete LibraryDataService (15-20 calls)
 3. Commit Phase 3 completion
 
 **Short Term**:
+
 1. Complete remaining data collection services
 2. Begin Phase 4: Remove FileLoggingService entirely
 3. Test JSON log output with delta detection
 
 **Long Term**:
+
 1. Phase 5: Add INI comments support
 2. Phase 6-8: Cleanup, verification, full testing
 3. Remove all Console.WriteLine debug statements (50+)
@@ -480,7 +527,7 @@ Priority order for remaining work:
 
 **For completing Phase 3 work**, see these detailed planning documents:
 
-1. **PHASE_3_COMPLETION_PLAN.md**: 
+1. **PHASE_3_COMPLETION_PLAN.md**:
    - 9 session-by-session execution plan
    - Method-by-method migration approaches
    - Detailed time estimates and success criteria
@@ -493,5 +540,3 @@ Priority order for remaining work:
    - Progress tracking table
 
 ---
-
-

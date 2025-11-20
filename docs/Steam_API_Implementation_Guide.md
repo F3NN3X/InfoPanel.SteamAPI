@@ -2,26 +2,31 @@
 
 ## Overview
 
-This document provides comprehensive implementation details for Steam Web API integration based on the official Steam Web API documentation at https://steamapi.xpaw.me/. This guide covers all API endpoints needed for our InfoPanel Steam plugin, including token management for enhanced access.
+This document provides comprehensive implementation details for Steam Web API integration based on the official Steam Web API documentation at <https://steamapi.xpaw.me/>. This guide covers all API endpoints needed for our InfoPanel Steam plugin, including token management for enhanced access.
 
 ## Authentication Methods
 
 ### 1. Steam Web API Key
+
 Standard authentication method for most endpoints.
+
 ```
 https://steamcommunity.com/dev/apikey
 ```
 
 ### 2. Access Tokens (Enhanced Access)
+
 Some APIs work better with access tokens for more detailed data:
 
 #### Store Token
+
 - **Source**: `https://store.steampowered.com/pointssummary/ajaxgetasyncconfig`
 - **Token Field**: `webapi_token`
 - **Scope**: Store-related APIs, enhanced game data
 - **Expiration**: Variable (typically 24-48 hours)
 
 #### Community Token  
+
 - **Source**: `https://steamcommunity.com/my/edit/info`
 - **Token Field**: `data-loyalty_webapi_token` from `application_config` element
 - **Script**: `JSON.parse(application_config.dataset.loyalty_webapi_token)`
@@ -33,7 +38,9 @@ Some APIs work better with access tokens for more detailed data:
 ### 1. Player Profile Data
 
 #### GetPlayerSummaries (ISteamUser)
+
 **Purpose**: Basic player information, online status, current game
+
 ```
 GET https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/
 Parameters:
@@ -43,6 +50,7 @@ Parameters:
 ```
 
 **Response Fields We Use**:
+
 ```json
 {
   "response": {
@@ -65,7 +73,9 @@ Parameters:
 ```
 
 #### GetSteamLevel (IPlayerService)
+
 **Purpose**: Player's Steam level
+
 ```
 GET https://api.steampowered.com/IPlayerService/GetSteamLevel/v1/
 Parameters:
@@ -74,6 +84,7 @@ Parameters:
 ```
 
 **Response**:
+
 ```json
 {
   "response": {
@@ -85,7 +96,9 @@ Parameters:
 ### 2. Game Library Data
 
 #### GetOwnedGames (IPlayerService)
+
 **Purpose**: Complete game library with playtime statistics
+
 ```
 GET https://api.steampowered.com/IPlayerService/GetOwnedGames/v1/
 Parameters:
@@ -97,6 +110,7 @@ Parameters:
 ```
 
 **Response Fields We Use**:
+
 ```json
 {
   "response": {
@@ -117,13 +131,16 @@ Parameters:
 ```
 
 **Calculated Metrics**:
+
 - Total Games: `game_count`
 - Total Playtime: `sum(playtime_forever) / 60` hours
 - Most Played Game: `max(playtime_forever)`
 - Platform Distribution: Windows/Mac/Linux playtime ratios
 
 #### GetRecentlyPlayedGames (IPlayerService)
+
 **Purpose**: Games played in last 2 weeks
+
 ```
 GET https://api.steampowered.com/IPlayerService/GetRecentlyPlayedGames/v1/
 Parameters:
@@ -133,6 +150,7 @@ Parameters:
 ```
 
 **Response Fields We Use**:
+
 ```json
 {
   "response": {
@@ -149,6 +167,7 @@ Parameters:
 ```
 
 **Calculated Metrics**:
+
 - Recent Games Count: `total_count`
 - Recent Playtime: `sum(playtime_2weeks) / 60` hours
 - Most Played Recent: `max(playtime_2weeks)`
@@ -157,7 +176,9 @@ Parameters:
 ### 3. Social Features
 
 #### GetFriendList (ISteamUser)
+
 **Purpose**: Player's friends list
+
 ```
 GET https://api.steampowered.com/ISteamUser/GetFriendList/v1/
 Parameters:
@@ -167,6 +188,7 @@ Parameters:
 ```
 
 **Response**:
+
 ```json
 {
   "friendslist": {
@@ -180,6 +202,7 @@ Parameters:
 ```
 
 **Enhanced Friends Data** (requires multiple GetPlayerSummaries calls):
+
 - Total Friends Count
 - Online Friends Count
 - Friends In-Game Count
@@ -188,7 +211,9 @@ Parameters:
 ### 4. Achievement Data
 
 #### GetPlayerAchievements (ISteamUserStats)
+
 **Purpose**: Achievement data for specific games
+
 ```
 GET https://api.steampowered.com/ISteamUserStats/GetPlayerAchievements/v1/
 Parameters:
@@ -199,6 +224,7 @@ Parameters:
 ```
 
 **Response**:
+
 ```json
 {
   "playerstats": {
@@ -214,7 +240,9 @@ Parameters:
 ```
 
 #### GetSchemaForGame (ISteamUserStats)
+
 **Purpose**: Total achievements available for a game
+
 ```
 GET https://api.steampowered.com/ISteamUserStats/GetSchemaForGame/v2/
 Parameters:
@@ -224,6 +252,7 @@ Parameters:
 ```
 
 **Achievement Metrics**:
+
 - Total Achievements Unlocked: Sum across monitored games
 - Achievement Completion %: (unlocked / total) * 100
 - Perfect Games: Games with 100% achievements
@@ -232,7 +261,9 @@ Parameters:
 ### 5. Game News & Updates
 
 #### GetNewsForApp (ISteamNews)
+
 **Purpose**: Game news and updates
+
 ```
 GET https://api.steampowered.com/ISteamNews/GetNewsForApp/v2/
 Parameters:
@@ -243,6 +274,7 @@ Parameters:
 ```
 
 **Response**:
+
 ```json
 {
   "appnews": {
@@ -265,7 +297,9 @@ Parameters:
 ### 6. Enhanced APIs (Require Tokens)
 
 #### GetBadges (IPlayerService) - Community Token
+
 **Purpose**: Steam badges and XP data
+
 ```
 GET https://api.steampowered.com/IPlayerService/GetBadges/v1/
 Parameters:
@@ -274,13 +308,16 @@ Parameters:
 ```
 
 **Enhanced Features**:
+
 - Total Badge Count
 - Total XP/Level Progress
 - Rare Badge Collection
 - Badge Completion Rate
 
 #### GetCommunityBadgeProgress (IPlayerService) - Community Token
+
 **Purpose**: Badge progress and XP details
+
 ```
 GET https://api.steampowered.com/IPlayerService/GetCommunityBadgeProgress/v1/
 Parameters:
@@ -292,7 +329,9 @@ Parameters:
 ### 7. Store Data (Store Token)
 
 #### Enhanced Game Data
+
 With store tokens, we can access:
+
 - Game review scores
 - Wishlist information
 - Store page details
@@ -302,6 +341,7 @@ With store tokens, we can access:
 ## Token Management Implementation
 
 ### 1. Token Storage Structure
+
 ```json
 {
   "community_token": {
@@ -323,6 +363,7 @@ With store tokens, we can access:
 ### 2. Token Acquisition Methods
 
 #### Automated Token Refresh (Preferred)
+
 ```csharp
 public class SteamTokenService
 {
@@ -377,6 +418,7 @@ public class SteamTokenService
 ```
 
 #### Manual Token Entry (Fallback)
+
 ```csharp
 public class TokenManagementService
 {
@@ -437,6 +479,7 @@ public class TokenManagementService
 ```
 
 ### 3. Configuration Integration
+
 Add token management to INI configuration:
 
 ```ini
@@ -462,24 +505,28 @@ MaxMonitoredGamesForAchievements=5
 ## Implementation Priority
 
 ### Phase 1: Core API Implementation
+
 1. Replace simulation data with real Steam Web API calls
 2. Implement JSON response models
 3. Add proper error handling for private profiles
 4. Test with basic Steam Web API key authentication
 
 ### Phase 2: Enhanced Data Collection
+
 1. Add achievement tracking for monitored games
 2. Implement friends list analysis
 3. Add game news collection
 4. Optimize API call frequency and caching
 
 ### Phase 3: Token Management
+
 1. Implement token storage system
 2. Add manual token entry interface
 3. Build automatic token refresh (if feasible)
 4. Enable enhanced features with tokens
 
 ### Phase 4: Advanced Features
+
 1. Store integration for enhanced game data
 2. Community features with enhanced permissions
 3. Advanced analytics and trend tracking
@@ -488,16 +535,19 @@ MaxMonitoredGamesForAchievements=5
 ## Error Handling & Edge Cases
 
 ### Profile Privacy Settings
+
 - **Private Profile**: Limited data available, graceful degradation
 - **Friends-Only**: Some data accessible, some restricted
 - **Public**: Full data access
 
 ### Rate Limiting
+
 - **Steam Web API**: 100,000 requests/day per API key
 - **Store/Community APIs**: Lower limits, need careful management
 - **Implementation**: Exponential backoff, request queuing
 
 ### Data Validation
+
 - **Missing Games**: Handle games not in Steam database
 - **Invalid Responses**: Robust JSON parsing with fallbacks
 - **Network Issues**: Retry logic with circuit breaker pattern

@@ -1,6 +1,7 @@
 # InfoPanel Plugin Development Guide
 
 ## Table of Contents
+
 - [Introduction](#introduction)
 - [Plugin Architecture](#plugin-architecture)
 - [Creating Your First Plugin](#creating-your-first-plugin)
@@ -334,6 +335,7 @@ To share your plugin with other InfoPanel users:
 
 1. Compile your plugin in Release mode
 2. Create a ZIP file with the following structure:
+
    ```
    YourPluginName.zip
    └── YourPluginName/
