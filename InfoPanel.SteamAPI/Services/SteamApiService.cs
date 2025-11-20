@@ -734,6 +734,47 @@ namespace InfoPanel.SteamAPI.Services
         }
 
         /// <summary>
+        /// Gets the schema for a specific game (achievements, stats, etc.)
+        /// </summary>
+        public async Task<GameSchemaResponse?> GetSchemaForGameAsync(int appId)
+        {
+            try
+            {
+                _enhancedLogger?.LogDebug("SteamApiService.GetSchemaForGameAsync", "Initiating API call for game schema", new { AppId = appId });
+
+                var url = $"ISteamUserStats/GetSchemaForGame/v2/?key={_apiKey}&appid={appId}&l=english";
+                var jsonResponse = await CallSteamApiAsync(url);
+                
+                if (!string.IsNullOrEmpty(jsonResponse))
+                {
+                    _enhancedLogger?.LogDebug("SteamApiService.GetSchemaForGameAsync", "Received game schema API response", new { AppId = appId, ResponseLength = jsonResponse.Length });
+                    
+                    var result = JsonSerializer.Deserialize<GameSchemaResponse>(jsonResponse, JsonOptions);
+                    
+                    if (result?.Game?.AvailableGameStats?.Achievements != null)
+                    {
+                        _enhancedLogger?.LogDebug("SteamApiService.GetSchemaForGameAsync", "Parsed game schema data", new { AppId = appId, AchievementCount = result.Game.AvailableGameStats.Achievements.Count });
+                    }
+                    
+                    return result;
+                }
+
+                _enhancedLogger?.LogWarning("SteamApiService.GetSchemaForGameAsync", "Received empty or null response from Steam API", new { AppId = appId });
+                return null;
+            }
+            catch (JsonException ex)
+            {
+                _enhancedLogger?.LogError("SteamApiService.GetSchemaForGameAsync", "Failed to deserialize game schema JSON", ex, new { AppId = appId, ErrorMessage = ex.Message });
+                return null;
+            }
+            catch (Exception ex)
+            {
+                _enhancedLogger?.LogError("SteamApiService.GetSchemaForGameAsync", "Unexpected error getting game schema", ex, new { AppId = appId, ErrorMessage = ex.Message });
+                return null;
+            }
+        }
+
+        /// <summary>
         /// Gets news articles for a specific game
         /// </summary>
         public async Task<GameNewsResponse?> GetGameNewsAsync(int appId, int count = 5, int maxLength = 300)

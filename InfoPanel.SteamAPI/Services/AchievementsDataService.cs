@@ -1,5 +1,6 @@
 using InfoPanel.SteamAPI.Models;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -13,6 +14,9 @@ namespace InfoPanel.SteamAPI.Services
         private readonly ConfigurationService _configService;
         private readonly SteamApiService _steamApiService;
         private readonly EnhancedLoggingService? _enhancedLogger;
+        
+        // Simple in-memory cache for game schemas to avoid repeated heavy API calls
+        private readonly Dictionary<int, GameSchemaResponse> _schemaCache = new();
 
         public AchievementsDataService(
             ConfigurationService configService,
@@ -84,8 +88,49 @@ namespace InfoPanel.SteamAPI.Services
 
                         if (unlocked != null)
                         {
-                            data.LatestAchievementName = unlocked.Name; // This is the API name, display name requires schema
-                            // If we want display name, we need GetSchemaForGame
+                            data.LatestAchievementName = unlocked.Name; // Default to API name
+                            
+                            // Fetch schema to get display name
+                            try 
+                            {
+                                GameSchemaResponse? schemaResponse = null;
+                                
+                                if (_schemaCache.ContainsKey(currentGameAppId))
+                                {
+                                    schemaResponse = _schemaCache[currentGameAppId];
+                                }
+                                else
+                                {
+                                    schemaResponse = await _steamApiService.GetSchemaForGameAsync(currentGameAppId);
+                                    if (schemaResponse != null)
+                                    {
+                                        _schemaCache[currentGameAppId] = schemaResponse;
+                                    }
+                                }
+
+                                if (schemaResponse?.Game?.AvailableGameStats?.Achievements != null)
+                                {
+                                    var achievementSchema = schemaResponse.Game.AvailableGameStats.Achievements
+                                        .FirstOrDefault(a => a.Name.Equals(unlocked.Name, StringComparison.OrdinalIgnoreCase));
+                                        
+                                    if (achievementSchema != null)
+                                    {
+                                        if (!string.IsNullOrEmpty(achievementSchema.DisplayName))
+                                        {
+                                            data.LatestAchievementName = achievementSchema.DisplayName;
+                                        }
+                                        
+                                        if (!string.IsNullOrEmpty(achievementSchema.Icon))
+                                        {
+                                            data.LatestAchievementIcon = achievementSchema.Icon;
+                                        }
+                                    }
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                _enhancedLogger?.LogWarning("AchievementsDataService", "Failed to fetch achievement schema", ex);
+                            }
                         }
                     }
                 }

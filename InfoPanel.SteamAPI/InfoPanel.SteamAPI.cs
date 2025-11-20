@@ -195,6 +195,7 @@ namespace InfoPanel.SteamAPI
         private readonly PluginSensor _currentGameAchievementsUnlockedSensor = new("achievements-unlocked", "Achievements Unlocked", 0, "");
         private readonly PluginSensor _currentGameAchievementsTotalSensor = new("achievements-total", "Total Achievements", 0, "");
         private readonly PluginText _latestAchievementSensor = new("latest-achievement", "Latest Achievement", "None");
+        private readonly PluginText _latestAchievementIconSensor = new("latest-achievement-icon", "Latest Achievement Icon", "-");
         // Removed artificial achievement sensors (overall completion, total unlocked, percentile rank)
         // These would require analyzing achievement data across all owned games, not available via Steam Web API
         private readonly PluginSensor _totalBadgesEarnedSensor = new("total-badges-earned", "Steam Badges Earned", 0, "badges");
@@ -415,6 +416,7 @@ namespace InfoPanel.SteamAPI
                     _currentGameAchievementsUnlockedSensor,
                     _currentGameAchievementsTotalSensor,
                     _latestAchievementSensor,
+                    _latestAchievementIconSensor,
                     _totalBadgesEarnedSensor,
                     _totalBadgeXPSensor,
                     _latestBadgeSensor,
@@ -491,6 +493,7 @@ namespace InfoPanel.SteamAPI
                 achievementsContainer.Entries.Add(_currentGameAchievementsUnlockedSensor);
                 achievementsContainer.Entries.Add(_currentGameAchievementsTotalSensor);
                 achievementsContainer.Entries.Add(_latestAchievementSensor);
+                achievementsContainer.Entries.Add(_latestAchievementIconSensor);
                 // Removed artificial achievement sensors - Steam API doesn't provide overall achievement statistics
                 achievementsContainer.Entries.Add(_totalBadgesEarnedSensor);
                 achievementsContainer.Entries.Add(_totalBadgeXPSensor);

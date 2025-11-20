@@ -25,9 +25,10 @@ namespace InfoPanel.SteamAPI.Models
         public int CurrentGameUnlockedCount { get; set; }
         public double CurrentGameCompletionPercent { get; set; }
         public string? LatestAchievementName { get; set; }
-
+        public string? LatestAchievementIcon { get; set; }
+        
         #endregion
-
+        
         #region Metadata
 
         public bool HasError { get; set; }

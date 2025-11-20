@@ -18,6 +18,7 @@ namespace InfoPanel.SteamAPI.Services.Sensors
         private readonly PluginSensor _currentGameAchievementsUnlockedSensor;
         private readonly PluginSensor _currentGameAchievementsTotalSensor;
         private readonly PluginText _latestAchievementSensor;
+        private readonly PluginText _latestAchievementIconSensor;
         private readonly PluginSensor _totalBadgesEarnedSensor;
         private readonly PluginSensor _totalBadgeXPSensor;
         private readonly PluginText _latestBadgeSensor;
@@ -28,6 +29,7 @@ namespace InfoPanel.SteamAPI.Services.Sensors
             PluginSensor currentGameAchievementsUnlockedSensor,
             PluginSensor currentGameAchievementsTotalSensor,
             PluginText latestAchievementSensor,
+            PluginText latestAchievementIconSensor,
             PluginSensor totalBadgesEarnedSensor,
             PluginSensor totalBadgeXPSensor,
             PluginText latestBadgeSensor,
@@ -38,6 +40,7 @@ namespace InfoPanel.SteamAPI.Services.Sensors
             _currentGameAchievementsUnlockedSensor = currentGameAchievementsUnlockedSensor;
             _currentGameAchievementsTotalSensor = currentGameAchievementsTotalSensor;
             _latestAchievementSensor = latestAchievementSensor;
+            _latestAchievementIconSensor = latestAchievementIconSensor;
             _totalBadgesEarnedSensor = totalBadgesEarnedSensor;
             _totalBadgeXPSensor = totalBadgeXPSensor;
             _latestBadgeSensor = latestBadgeSensor;
@@ -76,6 +79,7 @@ namespace InfoPanel.SteamAPI.Services.Sensors
                         _currentGameAchievementsUnlockedSensor.Value = data.CurrentGameUnlockedCount;
                         _currentGameAchievementsTotalSensor.Value = data.CurrentGameAchievementCount;
                         _latestAchievementSensor.Value = data.LatestAchievementName ?? "None";
+                        _latestAchievementIconSensor.Value = data.LatestAchievementIcon ?? "-";
                     }
                     else
                     {
@@ -84,6 +88,7 @@ namespace InfoPanel.SteamAPI.Services.Sensors
                         _currentGameAchievementsUnlockedSensor.Value = 0;
                         _currentGameAchievementsTotalSensor.Value = 0;
                         _latestAchievementSensor.Value = "Not Playing";
+                        _latestAchievementIconSensor.Value = "-";
                     }
 
                     _enhancedLogger?.LogDebug($"{DOMAIN_NAME}.OnAchievementsDataUpdated", "Sensors updated");
