@@ -2,6 +2,16 @@
 
 All notable changes to InfoPanel Steam API Plugin will be documented in this file.
 
+## [1.3.1] - 2025-11-20
+
+### ⚡ **Performance & Optimization**
+
+- **API Caching**: Implemented intelligent caching for `GetOwnedGames` (10 min) and `GetSteamLevel` (15 min) to significantly reduce API rate limit usage.
+- **Resource Management**: Refactored `SteamApiService` and `PlayerDataService` to use shared `HttpClient` instances, eliminating socket exhaustion risks from frequent requests.
+- **Banner Optimization**: Added caching for game banner URL validation to prevent redundant network checks for the same game images.
+
+---
+
 ## [1.3.0] - 2025-11-20
 
 ### ✨ **New Features**
