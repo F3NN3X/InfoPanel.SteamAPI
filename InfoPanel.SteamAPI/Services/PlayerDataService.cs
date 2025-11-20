@@ -324,6 +324,16 @@ namespace InfoPanel.SteamAPI.Services
                                 playerData.LastPlayedGameBannerUrl = lastPlayed.bannerUrl;
                                 playerData.LastPlayedGameTimestamp = lastPlayed.timestamp;
                                 
+                                // Fetch playtime for last played game
+                                try
+                                {
+                                    playerData.LastPlayedGamePlaytimeHours = await GetGameTotalPlaytimeAsync(lastPlayed.appId);
+                                }
+                                catch
+                                {
+                                    playerData.LastPlayedGamePlaytimeHours = 0;
+                                }
+                                
                                 _enhancedLogger?.LogInfo("PLAYER", "Showing last played game for display only", new
                                 {
                                     GameName = lastPlayed.gameName,
@@ -664,6 +674,7 @@ namespace InfoPanel.SteamAPI.Services
         public int LastPlayedGameAppId { get; set; }
         public string? LastPlayedGameBannerUrl { get; set; }
         public DateTime? LastPlayedGameTimestamp { get; set; }
+        public double LastPlayedGamePlaytimeHours { get; set; }
         
         #endregion
 

@@ -234,9 +234,24 @@ namespace InfoPanel.SteamAPI.Services.Sensors
             else
             {
                 _currentGameSensor.Value = "Not Playing";
-                _currentGamePlaytimeSensor.Value = 0f;
                 
-                _enhancedLogger?.LogDebug($"{DOMAIN_NAME}.UpdateCurrentGameSensors", "Not playing - sensors set to default");
+                // If we have a last played game, show its playtime
+                if (!string.IsNullOrEmpty(playerData.LastPlayedGameName))
+                {
+                    _currentGamePlaytimeSensor.Value = (float)Math.Round(playerData.LastPlayedGamePlaytimeHours, 1);
+                    
+                    _enhancedLogger?.LogDebug($"{DOMAIN_NAME}.UpdateCurrentGameSensors", "Not playing - showing last played game playtime", new
+                    {
+                        LastPlayedGame = playerData.LastPlayedGameName,
+                        TotalPlaytimeHours = Math.Round(playerData.LastPlayedGamePlaytimeHours, 1)
+                    });
+                }
+                else
+                {
+                    _currentGamePlaytimeSensor.Value = 0f;
+                    
+                    _enhancedLogger?.LogDebug($"{DOMAIN_NAME}.UpdateCurrentGameSensors", "Not playing - sensors set to default");
+                }
             }
         }
         

@@ -142,10 +142,10 @@ namespace InfoPanel.SteamAPI.Services.Sensors
 
                     // Update recent games sensors
                     _recentGamesCountSensor.Value = (float)libraryData.RecentGamesCount;
-                    
+
                     // Update recent sessions count (from local tracking)
                     _recentSessionsSensor.Value = (float)libraryData.RecentSessionsCount;
-                    
+
                     var mostPlayedRecent = libraryData.MostPlayedRecentGame ?? "None";
                     _mostPlayedRecentSensor.Value = mostPlayedRecent;
 
