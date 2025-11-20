@@ -15,6 +15,12 @@ All notable changes to InfoPanel Steam API Plugin will be documented in this fil
 
 - **News Domain**: Implemented a full Domain-Driven Design for News (Data Service, Monitoring Service, Sensor Service).
 
+### 🧹 **Code Cleanup**
+
+- **Legacy Removal**: Deleted obsolete `MonitoringService.cs` and `SensorManagementService.cs` files.
+- **Refactoring**: Removed unused constants and legacy commented-out code from `InfoPanel.SteamAPI.cs`.
+- **Documentation**: Updated architecture documentation to reflect the removal of monolithic services.
+
 ---
 
 ## [1.2.6] - 2025-11-20

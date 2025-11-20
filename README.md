@@ -42,7 +42,7 @@ Comprehensive Steam API integration for InfoPanel, providing **real-time** Steam
 - **SocialDataService**: Friends and community features **(15s updates)**
 - **LibraryDataService**: Game library and playtime statistics **(45s updates)**
 - **GameStatsService**: Detailed achievements and game analytics **(45s updates)**
-- **MonitoringService**: Orchestrates all services with **separated timer responsibilities**
+- **NewsDataService**: Game news and updates **(60s updates)**
 - **SessionTrackingService**: **Reliable session tracking with immediate game state updates**
 
 ## Data Collection Overview
@@ -276,9 +276,9 @@ This plugin follows InfoPanel's service-based architecture with comprehensive St
 
 - **Main Plugin Class**: `InfoPanel.SteamAPI.cs` - Entry point with quad container management
 - **Service Layer**: Clean separation with dedicated services
-  - `MonitoringService`: Real-time Steam API data collection with advanced features and social monitoring
+  - **Domain Monitoring Services**: `PlayerMonitoringService`, `SocialMonitoringService`, `LibraryMonitoringService`, `AchievementsMonitoringService`, `NewsMonitoringService`
+  - **Domain Sensor Services**: `PlayerSensorService`, `SocialSensorService`, `LibrarySensorService`, `AchievementsSensorService`, `NewsSensorService`
   - `ConfigurationService`: Thread-safe INI configuration management
-  - `SensorManagementService`: Centralized sensor updates with data validation across all phases
   - `FileLoggingService`: Advanced logging with batching and rotation
 - **Data Models**: Enhanced `SteamData` with comprehensive gaming metrics, advanced features, and social community data
 - **Triple Table Integration**: Recent Games, Game Statistics, and Friends Activity tables with real-time updates and proper InfoPanel formatting
@@ -467,8 +467,14 @@ The plugin follows a service-based architecture:
 ```
 InfoPanel.SteamAPI.cs    # Main plugin class
 ├── Services/
-│   ├── MonitoringService.cs         # Steam API data collection
-│   ├── SensorManagementService.cs   # Thread-safe sensor updates
+│   ├── Monitoring/      # Domain-specific monitoring services
+│   │   ├── PlayerMonitoringService.cs
+│   │   ├── SocialMonitoringService.cs
+│   │   └── ...
+│   ├── Sensors/         # Domain-specific sensor services
+│   │   ├── PlayerSensorService.cs
+│   │   ├── SocialSensorService.cs
+│   │   └── ...
 │   ├── ConfigurationService.cs      # INI configuration management
 │   └── FileLoggingService.cs        # Debug logging
 ├── Models/

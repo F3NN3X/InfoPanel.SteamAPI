@@ -26,59 +26,8 @@ namespace InfoPanel.SteamAPI
         #endregion
 
         #region Time Conversion
-        /// <summary>Minutes per hour conversion factor</summary>
-        public const double MINUTES_PER_HOUR = 60.0;
-
-        /// <summary>Hours per day for time calculations</summary>
-        public const int HOURS_PER_DAY = 24;
-
         /// <summary>Default update interval in seconds when configuration is not available</summary>
         public const int DEFAULT_UPDATE_INTERVAL_SECONDS = 30;
-        #endregion
-
-        #region Activity Filtering
-        /// <summary>Activity filter for friends active within 3 days</summary>
-        public const int ACTIVITY_FILTER_3_DAYS = 3;
-
-        /// <summary>Activity filter for friends active within 5 days</summary>
-        public const int ACTIVITY_FILTER_5_DAYS = 5;
-
-        /// <summary>Activity filter for friends active within 7 days</summary>
-        public const int ACTIVITY_FILTER_7_DAYS = 7;
-
-        /// <summary>Days threshold for smart last seen format</summary>
-        public const int SMART_FORMAT_DAYS_THRESHOLD = 7;
-
-        /// <summary>Days in month approximation for relative time formatting</summary>
-        public const int DAYS_PER_MONTH = 30;
-        #endregion
-
-        #region Status Sorting
-        /// <summary>Sort order for online status (highest priority)</summary>
-        public const int ONLINE_STATUS_SORT_ORDER = 3;
-
-        /// <summary>Sort order for away/busy status (medium priority)</summary>
-        public const int AWAY_STATUS_SORT_ORDER = 2;
-
-        /// <summary>Sort order for offline status (lowest priority)</summary>
-        public const int OFFLINE_STATUS_SORT_ORDER = 1;
-
-        /// <summary>Playing game priority for sorting (highest priority)</summary>
-        public const int PLAYING_GAME_SORT_PRIORITY = 3;
-        #endregion
-
-        #region Default Values and Limits
-        /// <summary>Maximum friend name length default</summary>
-        public const int DEFAULT_MAX_FRIEND_NAME_LENGTH = 20;
-
-        /// <summary>Name truncation suffix</summary>
-        public const string NAME_TRUNCATION_SUFFIX = "...";
-
-        /// <summary>Length of truncation suffix</summary>
-        public const int TRUNCATION_SUFFIX_LENGTH = 3;
-
-        /// <summary>Default maximum friends to display (0 = no limit)</summary>
-        public const int DEFAULT_MAX_FRIENDS_TO_DISPLAY = 0;
         #endregion
 
         #region Logging and Status Messages
@@ -93,43 +42,6 @@ namespace InfoPanel.SteamAPI
 
         /// <summary>Plugin subtitle for InfoPanel</summary>
         public const string PLUGIN_SUBTITLE = "Get data from SteamAPI";
-        #endregion
-
-        #region Status Indicators
-        /// <summary>Online status indicator</summary>
-        public const string STATUS_INDICATOR_ONLINE = "●";
-
-        /// <summary>Away status indicator</summary>
-        public const string STATUS_INDICATOR_AWAY = "◐";
-
-        /// <summary>Busy status indicator</summary>
-        public const string STATUS_INDICATOR_BUSY = "◒";
-
-        /// <summary>Snooze status indicator</summary>
-        public const string STATUS_INDICATOR_SNOOZE = "◑";
-
-        /// <summary>Offline status indicator</summary>
-        public const string STATUS_INDICATOR_OFFLINE = "○";
-        #endregion
-
-        #region String Literals
-        /// <summary>Unknown game name fallback</summary>
-        public const string UNKNOWN_GAME = "Unknown Game";
-
-        /// <summary>Not playing status</summary>
-        public const string NOT_PLAYING = "Not Playing";
-
-        /// <summary>Online now status for last seen</summary>
-        public const string ONLINE_NOW = "Online Now";
-
-        /// <summary>Unknown status fallback</summary>
-        public const string UNKNOWN_STATUS = "Unknown";
-
-        /// <summary>Playing indicator for currently playing games</summary>
-        public const string PLAYING_INDICATOR = "▶ ";
-
-        /// <summary>Achievement not available text</summary>
-        public const string ACHIEVEMENT_NOT_AVAILABLE = "N/A";
         #endregion
     }
 
@@ -196,8 +108,6 @@ namespace InfoPanel.SteamAPI
         private readonly PluginSensor _currentGameAchievementsTotalSensor = new("achievements-total", "Total Achievements", 0, "");
         private readonly PluginText _latestAchievementSensor = new("latest-achievement", "Latest Achievement", "None");
         private readonly PluginText _latestAchievementIconSensor = new("latest-achievement-icon", "Latest Achievement Icon", "-");
-        // Removed artificial achievement sensors (overall completion, total unlocked, percentile rank)
-        // These would require analyzing achievement data across all owned games, not available via Steam Web API
 
         // News Sensors
         private readonly PluginText _currentGameNewsTitleSensor = new("current_game_news_title", "Current Game News", "-");
@@ -471,10 +381,6 @@ namespace InfoPanel.SteamAPI
                 _loggingService.LogInfo($"Config file path: {_configFilePath}");
                 _loggingService.LogDebug("Services initialized successfully");
 
-                // OLD: Subscribe to monolithic monitoring service events
-                // _monitoringService.DataUpdated += OnDataUpdated;
-                // NEW: Event subscriptions handled in sensor service initialization above
-
                 // Create User Profile & Status container
                 var profileContainer = new PluginContainer("SteamAPI-Profile", "User Profile & Status");
                 profileContainer.Entries.Add(_playerNameSensor);
@@ -517,8 +423,6 @@ namespace InfoPanel.SteamAPI
                 achievementsContainer.Entries.Add(_currentGameAchievementsTotalSensor);
                 achievementsContainer.Entries.Add(_latestAchievementSensor);
                 achievementsContainer.Entries.Add(_latestAchievementIconSensor);
-                // Removed artificial achievement sensors - Steam API doesn't provide overall achievement statistics
-                // Removed badge sensors as per user request in v1.2.5
                 _loggingService.LogInfo($"Created Achievements container with {achievementsContainer.Entries.Count} sensors");
                 containers.Add(achievementsContainer);
 
