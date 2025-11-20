@@ -28,6 +28,15 @@ namespace InfoPanel.SteamAPI.Services
         private const int MIN_REQUEST_INTERVAL_MS = 1100; // 1.1 seconds between requests for safety
         private bool _disposed = false;
 
+        // Caching fields
+        private OwnedGamesResponse? _cachedOwnedGames;
+        private DateTime _ownedGamesCacheTime = DateTime.MinValue;
+        private readonly TimeSpan _ownedGamesCacheDuration = TimeSpan.FromMinutes(10);
+
+        private SteamLevelResponse? _cachedSteamLevel;
+        private DateTime _steamLevelCacheTime = DateTime.MinValue;
+        private readonly TimeSpan _steamLevelCacheDuration = TimeSpan.FromMinutes(15);
+
         /// <summary>
         /// Base URL for Steam Web API
         /// </summary>
@@ -81,6 +90,23 @@ namespace InfoPanel.SteamAPI.Services
                 Timeout = "30s",
                 UserAgent = "InfoPanel-SteamAPI/1.0.0"
             });
+        }
+
+        /// <summary>
+        /// Checks if an image URL is valid using a HEAD request
+        /// </summary>
+        public async Task<bool> CheckImageUrlAsync(string url)
+        {
+            try
+            {
+                using var request = new HttpRequestMessage(HttpMethod.Head, url);
+                using var response = await _httpClient.SendAsync(request);
+                return response.IsSuccessStatusCode;
+            }
+            catch
+            {
+                return false;
+            }
         }
 
         /// <summary>
@@ -440,6 +466,13 @@ namespace InfoPanel.SteamAPI.Services
         {
             try
             {
+                // Check cache first
+                if (_cachedOwnedGames != null && DateTime.Now - _ownedGamesCacheTime < _ownedGamesCacheDuration)
+                {
+                    _enhancedLogger?.LogDebug("SteamApiService.GetOwnedGamesAsync", "Returning cached owned games data", new { CacheDurationMinutes = _ownedGamesCacheDuration.TotalMinutes });
+                    return _cachedOwnedGames;
+                }
+
                 // Exclude free games to match Steam profile count more closely
                 var endpoint = $"IPlayerService/GetOwnedGames/v1/?key={_apiKey}&steamid={_steamId64}&include_appinfo=1&include_played_free_games=0&format=json";
                 _enhancedLogger?.LogDebug("SteamApiService.GetOwnedGamesAsync", "Initiating API call for owned games", new { SteamId = _steamId64, IncludeAppInfo = true, IncludeFreeGames = false });
@@ -466,6 +499,10 @@ namespace InfoPanel.SteamAPI.Services
                             _enhancedLogger?.LogDebug("SteamApiService.GetOwnedGamesAsync", "Identified most played recent game", new { GameName = recentGame.Name, Playtime2WeeksMinutes = recentGame.Playtime2weeks });
                         }
                     }
+
+                    // Update cache
+                    _cachedOwnedGames = response;
+                    _ownedGamesCacheTime = DateTime.Now;
 
                     return response;
                 }
@@ -545,6 +582,13 @@ namespace InfoPanel.SteamAPI.Services
         {
             try
             {
+                // Check cache first
+                if (_cachedSteamLevel != null && DateTime.Now - _steamLevelCacheTime < _steamLevelCacheDuration)
+                {
+                    _enhancedLogger?.LogDebug("SteamApiService.GetSteamLevelAsync", "Returning cached Steam level data", new { CacheDurationMinutes = _steamLevelCacheDuration.TotalMinutes });
+                    return _cachedSteamLevel;
+                }
+
                 var endpoint = $"IPlayerService/GetSteamLevel/v1/?key={_apiKey}&steamid={_steamId64}&format=json";
                 _enhancedLogger?.LogDebug("SteamApiService.GetSteamLevelAsync", "Initiating API call for Steam level", new { SteamId = _steamId64 });
                 var jsonResponse = await CallSteamApiAsync(endpoint);
@@ -555,6 +599,11 @@ namespace InfoPanel.SteamAPI.Services
                     var response = JsonSerializer.Deserialize<SteamLevelResponse>(jsonResponse, JsonOptions);
                     var level = response?.Response?.PlayerLevel ?? 0;
                     _enhancedLogger?.LogDebug("SteamApiService.GetSteamLevelAsync", "Parsed Steam level data", new { PlayerLevel = level });
+                    
+                    // Update cache
+                    _cachedSteamLevel = response;
+                    _steamLevelCacheTime = DateTime.Now;
+
                     return response;
                 }
 

@@ -39,6 +39,9 @@ namespace InfoPanel.SteamAPI.Services
         private readonly EnhancedLoggingService? _enhancedLogger;
         private readonly SteamApiService _steamApiService;
         private readonly SessionTrackingService? _sessionTracker;
+        
+        // Cache for game banner URLs to avoid repeated HEAD requests
+        private readonly System.Collections.Concurrent.ConcurrentDictionary<int, string> _bannerUrlCache = new();
 
         #endregion
 
@@ -503,6 +506,17 @@ namespace InfoPanel.SteamAPI.Services
         {
             try
             {
+                // Check cache first
+                if (_bannerUrlCache.TryGetValue(appId, out var cachedUrl))
+                {
+                    _enhancedLogger?.LogDebug("PlayerDataService.GetGameBannerUrlAsync", "Cache hit for game banner URL", new
+                    {
+                        AppId = appId,
+                        BannerUrl = cachedUrl
+                    });
+                    return cachedUrl;
+                }
+
                 // Use CDN pattern for library_hero image (3840x1240 - high quality)
                 // Primary CDN: CloudFlare
                 var libraryHeroUrl = $"https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/{appId}/library_hero.jpg";
@@ -514,27 +528,18 @@ namespace InfoPanel.SteamAPI.Services
                     ImageSize = "3840x1240"
                 });
 
-                // Verify the image exists with a HEAD request (fast check)
-                using var httpClient = new HttpClient();
-                httpClient.Timeout = TimeSpan.FromSeconds(5);
-
-                try
+                // Verify the image exists using the shared service
+                bool isValid = await _steamApiService.CheckImageUrlAsync(libraryHeroUrl);
+                
+                if (isValid)
                 {
-                    var headResponse = await httpClient.SendAsync(new HttpRequestMessage(HttpMethod.Head, libraryHeroUrl));
-                    if (headResponse.IsSuccessStatusCode)
+                    _enhancedLogger?.LogDebug("PlayerDataService.GetGameBannerUrlAsync", "Library hero image verified", new
                     {
-                        _enhancedLogger?.LogDebug("PlayerDataService.GetGameBannerUrlAsync", "Library hero image verified", new
-                        {
-                            AppId = appId,
-                            StatusCode = (int)headResponse.StatusCode
-                        });
-                        return libraryHeroUrl;
-                    }
-                }
-                catch
-                {
-                    // HEAD request failed, but image might still exist - return URL anyway
-                    // Steam CDN is 99% reliable for published games
+                        AppId = appId
+                    });
+                    // Cache the URL
+                    _bannerUrlCache[appId] = libraryHeroUrl;
+                    return libraryHeroUrl;
                 }
 
                 _enhancedLogger?.LogDebug("PlayerDataService.GetGameBannerUrlAsync", "Using library_hero URL (verification skipped)", new
