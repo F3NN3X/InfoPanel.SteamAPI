@@ -8,6 +8,7 @@ All notable changes to InfoPanel Steam API Plugin will be documented in this fil
 
 - **Gaming Sessions Counter**: Added "Gaming Sessions (2w)" sensor to the Library container. This displays the total number of gaming sessions in the last 14 days, based on local session tracking.
 - **Last Played Game Hours**: The "Current Game Total Hours" sensor now displays the total playtime of the *last played game* when no game is currently running, instead of showing 0.
+- **Last Played Game Title**: The "Current Game" sensor now displays the title of the *last played game* when no game is currently running, instead of showing "Not Playing".
 
 ### 🧹 **Cleanup & Feature Removal**
 
