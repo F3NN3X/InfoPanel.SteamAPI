@@ -6,6 +6,9 @@ on:
       - 'v*' # Triggers on tags like v1.0.0, v1.3.5, etc.
   workflow_dispatch: # Allows manual triggering from GitHub UI
 
+permissions:
+  contents: write
+
 jobs:
   build-and-release:
     runs-on: windows-latest # Required for .NET Windows Forms / WPF apps
