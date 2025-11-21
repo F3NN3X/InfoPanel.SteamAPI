@@ -61,11 +61,50 @@ jobs:
             exit 1
         }
 
+    - name: Get Current Date
+      id: get_date
+      shell: pwsh
+      run: echo "DATE=$(Get-Date -Format 'yyyy-MM-dd')" >> $env:GITHUB_OUTPUT
+
+    - name: Extract Release Notes
+      id: extract_release_notes
+      shell: pwsh
+      run: |
+        $version = "${{ steps.get_version.outputs.VERSION }}"
+        $changelog = Get-Content "CHANGELOG.md"
+        $recording = $false
+        $notes = @()
+        
+        foreach ($line in $changelog) {
+            if ($line -match "^## \[$version\]") {
+                $recording = $true
+                continue
+            }
+            if ($recording -and $line -match "^## \[") {
+                break
+            }
+            if ($recording) {
+                $notes += $line
+            }
+        }
+        
+        $body = $notes -join "`n"
+        $body = $body.Trim()
+        
+        if ([string]::IsNullOrWhiteSpace($body)) {
+            $body = "See CHANGELOG.md for details."
+        }
+        
+        $releaseNotesPath = "release_notes.md"
+        Set-Content -Path $releaseNotesPath -Value $body
+        echo "NOTES_PATH=$releaseNotesPath" >> $env:GITHUB_OUTPUT
+
     - name: Create GitHub Release
       uses: softprops/action-gh-release@v1
       if: startsWith(github.ref, 'refs/tags/')
       with:
         files: InfoPanel.SteamAPI-v${{ steps.get_version.outputs.VERSION }}.zip
-        generate_release_notes: true
+        body_path: ${{ steps.extract_release_notes.outputs.NOTES_PATH }}
+        name: "v${{ steps.get_version.outputs.VERSION }} - ${{ steps.get_date.outputs.DATE }}"
         draft: false
         prerelease: false
