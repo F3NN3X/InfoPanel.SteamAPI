@@ -238,19 +238,6 @@ namespace InfoPanel.SteamAPI.Services
             {
                 _config = new IniData();
 
-                // Monitoring Settings
-                _config[ConfigurationConstants.MONITORING_SETTINGS_SECTION]["MonitoringIntervalMs"] = ConfigurationConstants.DEFAULT_MONITORING_INTERVAL_MS.ToString();
-                _config[ConfigurationConstants.MONITORING_SETTINGS_SECTION]["EnableAutoReconnect"] = "true";
-                _config[ConfigurationConstants.MONITORING_SETTINGS_SECTION]["ConnectionTimeoutMs"] = ConfigurationConstants.DEFAULT_CONNECTION_TIMEOUT_MS.ToString();
-
-                // Display Settings
-                _config[ConfigurationConstants.DISPLAY_SETTINGS_SECTION]["ShowStatusMessages"] = "true";
-                _config[ConfigurationConstants.DISPLAY_SETTINGS_SECTION]["ShowDetailedMetrics"] = "true";
-                _config[ConfigurationConstants.DISPLAY_SETTINGS_SECTION]["UseMetricSystem"] = "true";
-                _config[ConfigurationConstants.DISPLAY_SETTINGS_SECTION]["CurrentlyPlayingText"] = "Currently Playing";
-                _config[ConfigurationConstants.DISPLAY_SETTINGS_SECTION]["LastPlayedGameText"] = "Last Played Game";
-                _config[ConfigurationConstants.DISPLAY_SETTINGS_SECTION]["DateFormat"] = ConfigurationConstants.DEFAULT_DATE_FORMAT;
-
                 // Steam Settings
                 _config[ConfigurationConstants.STEAM_SETTINGS_SECTION]["ApiKey"] = ConfigurationConstants.API_KEY_PLACEHOLDER;
                 _config[ConfigurationConstants.STEAM_SETTINGS_SECTION]["SteamId64"] = ConfigurationConstants.STEAM_ID_PLACEHOLDER;
@@ -264,6 +251,14 @@ namespace InfoPanel.SteamAPI.Services
                 _config[ConfigurationConstants.STEAM_SETTINGS_SECTION]["EnableAchievementMonitoring"] = ConfigurationConstants.DEFAULT_BOOL_VALUE.ToString().ToLower();
                 _config[ConfigurationConstants.STEAM_SETTINGS_SECTION]["MaxRecentGames"] = ConfigurationConstants.DEFAULT_MAX_RECENT_GAMES.ToString();
 
+                // Display Settings
+                _config[ConfigurationConstants.DISPLAY_SETTINGS_SECTION]["ShowStatusMessages"] = "true";
+                _config[ConfigurationConstants.DISPLAY_SETTINGS_SECTION]["ShowDetailedMetrics"] = "true";
+                _config[ConfigurationConstants.DISPLAY_SETTINGS_SECTION]["UseMetricSystem"] = "true";
+                _config[ConfigurationConstants.DISPLAY_SETTINGS_SECTION]["CurrentlyPlayingText"] = "Currently Playing";
+                _config[ConfigurationConstants.DISPLAY_SETTINGS_SECTION]["LastPlayedGameText"] = "Last Played Game";
+                _config[ConfigurationConstants.DISPLAY_SETTINGS_SECTION]["DateFormat"] = ConfigurationConstants.DEFAULT_DATE_FORMAT;
+
                 // Friends Activity Settings
                 _config[ConfigurationConstants.FRIENDS_ACTIVITY_SECTION]["ShowAllFriends"] = "true";
                 _config[ConfigurationConstants.FRIENDS_ACTIVITY_SECTION]["MaxFriendsToDisplay"] = ConfigurationConstants.DEFAULT_MAX_FRIENDS_DISPLAY.ToString();
@@ -276,7 +271,18 @@ namespace InfoPanel.SteamAPI.Services
                 _config[ConfigurationConstants.FRIENDS_ACTIVITY_SECTION]["FriendNameDisplay"] = ConfigurationConstants.DEFAULT_FRIEND_NAME_DISPLAY;
                 _config[ConfigurationConstants.FRIENDS_ACTIVITY_SECTION]["MaxFriendNameLength"] = ConfigurationConstants.DEFAULT_MAX_FRIEND_NAME_LENGTH.ToString();
 
-                // Enhanced Logging Settings
+                // Monitoring Settings
+                _config[ConfigurationConstants.MONITORING_SETTINGS_SECTION]["MonitoringIntervalMs"] = ConfigurationConstants.DEFAULT_MONITORING_INTERVAL_MS.ToString();
+                _config[ConfigurationConstants.MONITORING_SETTINGS_SECTION]["EnableAutoReconnect"] = "true";
+                _config[ConfigurationConstants.MONITORING_SETTINGS_SECTION]["ConnectionTimeoutMs"] = ConfigurationConstants.DEFAULT_CONNECTION_TIMEOUT_MS.ToString();
+
+                // Advanced Features
+                _config[ConfigurationConstants.ADVANCED_FEATURES_SECTION]["EnableEnhancedBadgeData"] = "false";
+                _config[ConfigurationConstants.ADVANCED_FEATURES_SECTION]["EnableStoreIntegration"] = "false";
+                _config[ConfigurationConstants.ADVANCED_FEATURES_SECTION]["EnableExtendedAchievements"] = "false";
+                _config[ConfigurationConstants.ADVANCED_FEATURES_SECTION]["MaxMonitoredGamesForAchievements"] = ConfigurationConstants.DEFAULT_MAX_MONITORED_ACHIEVEMENT_GAMES.ToString();
+
+                // Logging Settings
                 _config[ConfigurationConstants.ENHANCED_LOGGING_SECTION]["Enabled"] = "false";
                 _config[ConfigurationConstants.ENHANCED_LOGGING_SECTION]["EnableDeltaLogging"] = "true";
                 _config[ConfigurationConstants.ENHANCED_LOGGING_SECTION]["EnableStructuredLogging"] = "true";
@@ -314,11 +320,11 @@ namespace InfoPanel.SteamAPI.Services
             // Check for missing keys across all sections
             var requiredKeys = new Dictionary<string, string[]>
             {
-                ["Monitoring Settings"] = new[] { "MonitoringIntervalMs", "EnableAutoReconnect", "ConnectionTimeoutMs" },
-                ["Display Settings"] = new[] { "ShowStatusMessages", "ShowDetailedMetrics", "UseMetricSystem" },
                 ["Steam Settings"] = new[] { "ApiKey", "SteamId64", "UpdateIntervalSeconds", "EnableProfileMonitoring", "EnableLibraryMonitoring", "EnableCurrentGameMonitoring", "EnableAchievementMonitoring", "MaxRecentGames" },
-                ["Advanced Features"] = new[] { "EnableEnhancedBadgeData", "EnableStoreIntegration", "EnableExtendedAchievements", "MaxMonitoredGamesForAchievements" },
+                ["Display Settings"] = new[] { "ShowStatusMessages", "ShowDetailedMetrics", "UseMetricSystem" },
                 ["Friends Activity Settings"] = new[] { "ShowAllFriends", "MaxFriendsToDisplay", "FriendsFilter", "FriendsSortBy", "SortDescending", "FriendsTableColumns", "LastSeenFormat", "HiddenStatuses", "FriendNameDisplay", "MaxFriendNameLength" },
+                ["Monitoring Settings"] = new[] { "MonitoringIntervalMs", "EnableAutoReconnect", "ConnectionTimeoutMs" },
+                ["Advanced Features"] = new[] { "EnableEnhancedBadgeData", "EnableStoreIntegration", "EnableExtendedAchievements", "MaxMonitoredGamesForAchievements" },
                 ["Logging Settings"] = new[] { "Enabled", "EnableDeltaLogging", "EnableStructuredLogging", "FlushIntervalMs", "MinimumLevel", "EnablePerformanceLogging", "EnableOperationPairing", "LogRotationSizeMB", "MaxArchivedLogs", "EnableSensitiveDataRedaction" }
             };
 
