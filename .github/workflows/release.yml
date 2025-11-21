@@ -1,0 +1,61 @@
+name: Release Build
+
+on:
+  push:
+    tags:
+      - 'v*' # Triggers on tags like v1.0.0, v1.3.5, etc.
+  workflow_dispatch: # Allows manual triggering from GitHub UI
+
+jobs:
+  build-and-release:
+    runs-on: windows-latest # Required for .NET Windows Forms / WPF apps
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '8.0.x'
+
+    - name: Restore dependencies
+      run: dotnet restore InfoPanel.SteamAPI/InfoPanel.SteamAPI.csproj
+
+    - name: Build Plugin
+      run: dotnet build InfoPanel.SteamAPI/InfoPanel.SteamAPI.csproj --configuration Release --no-restore
+
+    - name: Get Version from Project
+      id: get_version
+      shell: pwsh
+      run: |
+        # Read the version directly from the .csproj file to ensure we find the correct build output folder
+        [xml]$csproj = Get-Content "InfoPanel.SteamAPI/InfoPanel.SteamAPI.csproj"
+        $version = $csproj.Project.PropertyGroup.Version
+        echo "Detected Version: $version"
+        echo "VERSION=$version" >> $env:GITHUB_OUTPUT
+
+    - name: Package Plugin
+      shell: pwsh
+      run: |
+        $version = "${{ steps.get_version.outputs.VERSION }}"
+        # Path matches your project's specific output structure
+        $sourcePath = "InfoPanel.SteamAPI\bin\Release\net8.0-windows\InfoPanel.SteamAPI-v$version\InfoPanel.SteamAPI"
+        $zipName = "InfoPanel.SteamAPI-v$version.zip"
+        
+        if (Test-Path $sourcePath) {
+            Write-Host "Zipping build output from: $sourcePath"
+            Compress-Archive -Path "$sourcePath\*" -DestinationPath $zipName
+        } else {
+            Write-Error "Build output directory not found at $sourcePath. Check if the .csproj Version matches the folder structure."
+            exit 1
+        }
+
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v1
+      if: startsWith(github.ref, 'refs/tags/')
+      with:
+        files: InfoPanel.SteamAPI-v${{ steps.get_version.outputs.VERSION }}.zip
+        generate_release_notes: true
+        draft: false
+        prerelease: false

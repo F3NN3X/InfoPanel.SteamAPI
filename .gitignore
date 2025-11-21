@@ -69,3 +69,6 @@ Thumbs.db
 # Documentation
 docs/
 
+
+!.github/
+!.github/**/*
