@@ -31,8 +31,8 @@ jobs:
       run: |
         # Read the version directly from the .csproj file to ensure we find the correct build output folder
         [xml]$csproj = Get-Content "InfoPanel.SteamAPI/InfoPanel.SteamAPI.csproj"
-        $version = $csproj.Project.PropertyGroup.Version
-        echo "Detected Version: $version"
+        $version = $csproj.Project.PropertyGroup.Version.Trim()
+        echo "Detected Version: '$version'"
         echo "VERSION=$version" >> $env:GITHUB_OUTPUT
 
     - name: Package Plugin
