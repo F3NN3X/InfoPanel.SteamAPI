@@ -2,6 +2,17 @@
 
 All notable changes to InfoPanel Steam API Plugin will be documented in this file.
 
+## [1.3.4] - 2025-11-21
+
+### 🧹 **Code Cleanup & Configuration**
+
+- **Configuration Cleanup**: Removed unimplemented "Advanced Features" section (`EnableEnhancedBadgeData`, `EnableStoreIntegration`, etc.) from configuration and code.
+- **Token System Removal**: Removed unused "Token Management" system and dead code (`SteamTokenService.cs`).
+- **INI Reorganization**: Reordered configuration sections to prioritize `[Steam Settings]` and `[Display Settings]` for better user experience.
+- **Logging Unification**: Unified logging configuration by merging `[Debug Settings]` and `[Enhanced Logging]` into a single `[Logging Settings]` section.
+
+---
+
 ## [1.3.3] - 2025-11-20
 
 ### ✨ **New Features**

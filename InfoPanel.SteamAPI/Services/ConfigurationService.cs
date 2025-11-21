@@ -16,7 +16,6 @@ namespace InfoPanel.SteamAPI.Services
         public const string MONITORING_SETTINGS_SECTION = "Monitoring Settings";
         public const string DISPLAY_SETTINGS_SECTION = "Display Settings";
         public const string STEAM_SETTINGS_SECTION = "Steam Settings";
-        public const string ADVANCED_FEATURES_SECTION = "Advanced Features";
         public const string FRIENDS_ACTIVITY_SECTION = "Friends Activity Settings";
         public const string ENHANCED_LOGGING_SECTION = "Logging Settings";
         #endregion
@@ -43,7 +42,6 @@ namespace InfoPanel.SteamAPI.Services
         public const int DEFAULT_MAX_RECENT_GAMES = 5;
         public const int DEFAULT_MAX_FRIENDS_DISPLAY = 0; // 0 = unlimited
         public const int DEFAULT_MAX_FRIEND_NAME_LENGTH = 20;
-        public const int DEFAULT_MAX_MONITORED_ACHIEVEMENT_GAMES = 5;
         #endregion
 
         #region Default Values
@@ -276,12 +274,6 @@ namespace InfoPanel.SteamAPI.Services
                 _config[ConfigurationConstants.MONITORING_SETTINGS_SECTION]["EnableAutoReconnect"] = "true";
                 _config[ConfigurationConstants.MONITORING_SETTINGS_SECTION]["ConnectionTimeoutMs"] = ConfigurationConstants.DEFAULT_CONNECTION_TIMEOUT_MS.ToString();
 
-                // Advanced Features
-                _config[ConfigurationConstants.ADVANCED_FEATURES_SECTION]["EnableEnhancedBadgeData"] = "false";
-                _config[ConfigurationConstants.ADVANCED_FEATURES_SECTION]["EnableStoreIntegration"] = "false";
-                _config[ConfigurationConstants.ADVANCED_FEATURES_SECTION]["EnableExtendedAchievements"] = "false";
-                _config[ConfigurationConstants.ADVANCED_FEATURES_SECTION]["MaxMonitoredGamesForAchievements"] = ConfigurationConstants.DEFAULT_MAX_MONITORED_ACHIEVEMENT_GAMES.ToString();
-
                 // Logging Settings
                 _config[ConfigurationConstants.ENHANCED_LOGGING_SECTION]["Enabled"] = "false";
                 _config[ConfigurationConstants.ENHANCED_LOGGING_SECTION]["EnableDeltaLogging"] = "true";
@@ -324,7 +316,6 @@ namespace InfoPanel.SteamAPI.Services
                 ["Display Settings"] = new[] { "ShowStatusMessages", "ShowDetailedMetrics", "UseMetricSystem" },
                 ["Friends Activity Settings"] = new[] { "ShowAllFriends", "MaxFriendsToDisplay", "FriendsFilter", "FriendsSortBy", "SortDescending", "FriendsTableColumns", "LastSeenFormat", "HiddenStatuses", "FriendNameDisplay", "MaxFriendNameLength" },
                 ["Monitoring Settings"] = new[] { "MonitoringIntervalMs", "EnableAutoReconnect", "ConnectionTimeoutMs" },
-                ["Advanced Features"] = new[] { "EnableEnhancedBadgeData", "EnableStoreIntegration", "EnableExtendedAchievements", "MaxMonitoredGamesForAchievements" },
                 ["Logging Settings"] = new[] { "Enabled", "EnableDeltaLogging", "EnableStructuredLogging", "FlushIntervalMs", "MinimumLevel", "EnablePerformanceLogging", "EnableOperationPairing", "LogRotationSizeMB", "MaxArchivedLogs", "EnableSensitiveDataRedaction" }
             };
 
@@ -696,34 +687,6 @@ namespace InfoPanel.SteamAPI.Services
         /// </summary>
         public string DateFormat =>
             GetSetting(ConfigurationConstants.DISPLAY_SETTINGS_SECTION, "DateFormat", ConfigurationConstants.DEFAULT_DATE_FORMAT);
-
-        #endregion
-
-        #region Advanced Features Properties
-
-        /// <summary>
-        /// Gets whether enhanced badge data collection is enabled
-        /// </summary>
-        public bool EnableEnhancedBadgeData =>
-            GetBoolSetting("Advanced Features", "EnableEnhancedBadgeData", false);
-
-        /// <summary>
-        /// Gets whether store integration is enabled
-        /// </summary>
-        public bool EnableStoreIntegration =>
-            GetBoolSetting("Advanced Features", "EnableStoreIntegration", false);
-
-        /// <summary>
-        /// Gets whether extended achievement tracking is enabled
-        /// </summary>
-        public bool EnableExtendedAchievements =>
-            GetBoolSetting("Advanced Features", "EnableExtendedAchievements", false);
-
-        /// <summary>
-        /// Gets the maximum number of games to monitor for achievements
-        /// </summary>
-        public int MaxMonitoredGamesForAchievements =>
-            GetIntSetting("Advanced Features", "MaxMonitoredGamesForAchievements", 5);
 
         #endregion
 
