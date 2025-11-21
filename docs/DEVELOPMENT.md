@@ -54,16 +54,19 @@ InfoPanel.SteamAPI.cs    # Main plugin class
 ### Build Commands
 
 **Debug Build:**
+
 ```powershell
 dotnet build -c Debug
 ```
 
 **Release Build:**
+
 ```powershell
 dotnet build -c Release
 ```
 
 **Clean Build:**
+
 ```powershell
 dotnet clean
 dotnet build -c Release
