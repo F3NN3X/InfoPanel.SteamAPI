@@ -11,7 +11,7 @@ Monitor your real-time gaming activity, session stats, friends, and library data
 
 - **⚡ Real-Time Monitoring**: Instant game state detection (1s updates) and live profile status.
 - **⏱️ Session Tracking**: Reliable tracking of gaming sessions, duration, and history.
-- **👥 Social Integration**: Monitor friends online, see what they're playing, and track community badges.
+- **👥 Social Integration**: Monitor friends online, see what they're playing.
 - **🏆 Achievements & Stats**: Track achievement progress, game completion, and library statistics.
 - **📰 Game News**: Get the latest updates and news for your currently played and monitored games.
 - **📊 Interactive Tables**:
