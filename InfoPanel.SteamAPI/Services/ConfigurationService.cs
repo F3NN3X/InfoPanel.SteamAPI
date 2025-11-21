@@ -13,13 +13,12 @@ namespace InfoPanel.SteamAPI.Services
     public static class ConfigurationConstants
     {
         #region Section Names
-        public const string DEBUG_SETTINGS_SECTION = "Debug Settings";
         public const string MONITORING_SETTINGS_SECTION = "Monitoring Settings";
         public const string DISPLAY_SETTINGS_SECTION = "Display Settings";
         public const string STEAM_SETTINGS_SECTION = "Steam Settings";
         public const string ADVANCED_FEATURES_SECTION = "Advanced Features";
         public const string FRIENDS_ACTIVITY_SECTION = "Friends Activity Settings";
-        public const string ENHANCED_LOGGING_SECTION = "Enhanced Logging";
+        public const string ENHANCED_LOGGING_SECTION = "Logging Settings";
         #endregion
 
         #region Update Intervals (seconds)
@@ -187,7 +186,6 @@ namespace InfoPanel.SteamAPI.Services
                 _config = new IniData();
 
                 // Add minimal required sections to prevent crashes
-                _config[ConfigurationConstants.DEBUG_SETTINGS_SECTION]["EnableDebugLogging"] = ConfigurationConstants.DEFAULT_BOOL_VALUE.ToString().ToLower();
                 _config[ConfigurationConstants.STEAM_SETTINGS_SECTION]["ApiKey"] = ConfigurationConstants.API_KEY_PLACEHOLDER;
                 _config[ConfigurationConstants.STEAM_SETTINGS_SECTION]["SteamId64"] = ConfigurationConstants.STEAM_ID_PLACEHOLDER;
                 _config[ConfigurationConstants.STEAM_SETTINGS_SECTION]["UpdateIntervalSeconds"] = ConfigurationConstants.DEFAULT_UPDATE_INTERVAL.ToString();
@@ -229,7 +227,6 @@ namespace InfoPanel.SteamAPI.Services
                 _config = new IniData();
 
                 // Add minimal required sections to prevent crashes
-                _config[ConfigurationConstants.DEBUG_SETTINGS_SECTION]["EnableDebugLogging"] = ConfigurationConstants.DEFAULT_BOOL_VALUE.ToString().ToLower();
                 _config[ConfigurationConstants.STEAM_SETTINGS_SECTION]["ApiKey"] = ConfigurationConstants.API_KEY_PLACEHOLDER;
                 _config[ConfigurationConstants.STEAM_SETTINGS_SECTION]["SteamId64"] = ConfigurationConstants.STEAM_ID_PLACEHOLDER;
 
@@ -240,9 +237,6 @@ namespace InfoPanel.SteamAPI.Services
             try
             {
                 _config = new IniData();
-
-                // Debug Settings
-                _config[ConfigurationConstants.DEBUG_SETTINGS_SECTION]["EnableDebugLogging"] = ConfigurationConstants.DEFAULT_BOOL_VALUE.ToString().ToLower();
 
                 // Monitoring Settings
                 _config[ConfigurationConstants.MONITORING_SETTINGS_SECTION]["MonitoringIntervalMs"] = ConfigurationConstants.DEFAULT_MONITORING_INTERVAL_MS.ToString();
@@ -320,13 +314,12 @@ namespace InfoPanel.SteamAPI.Services
             // Check for missing keys across all sections
             var requiredKeys = new Dictionary<string, string[]>
             {
-                ["Debug Settings"] = new[] { "EnableDebugLogging" },
                 ["Monitoring Settings"] = new[] { "MonitoringIntervalMs", "EnableAutoReconnect", "ConnectionTimeoutMs" },
                 ["Display Settings"] = new[] { "ShowStatusMessages", "ShowDetailedMetrics", "UseMetricSystem" },
                 ["Steam Settings"] = new[] { "ApiKey", "SteamId64", "UpdateIntervalSeconds", "EnableProfileMonitoring", "EnableLibraryMonitoring", "EnableCurrentGameMonitoring", "EnableAchievementMonitoring", "MaxRecentGames" },
                 ["Advanced Features"] = new[] { "EnableEnhancedBadgeData", "EnableStoreIntegration", "EnableExtendedAchievements", "MaxMonitoredGamesForAchievements" },
                 ["Friends Activity Settings"] = new[] { "ShowAllFriends", "MaxFriendsToDisplay", "FriendsFilter", "FriendsSortBy", "SortDescending", "FriendsTableColumns", "LastSeenFormat", "HiddenStatuses", "FriendNameDisplay", "MaxFriendNameLength" },
-                ["Enhanced Logging"] = new[] { "Enabled", "EnableDeltaLogging", "EnableStructuredLogging", "FlushIntervalMs", "MinimumLevel", "EnablePerformanceLogging", "EnableOperationPairing", "LogRotationSizeMB", "MaxArchivedLogs", "EnableSensitiveDataRedaction" }
+                ["Logging Settings"] = new[] { "Enabled", "EnableDeltaLogging", "EnableStructuredLogging", "FlushIntervalMs", "MinimumLevel", "EnablePerformanceLogging", "EnableOperationPairing", "LogRotationSizeMB", "MaxArchivedLogs", "EnableSensitiveDataRedaction" }
             };
 
             foreach (var section in requiredKeys)
@@ -472,7 +465,7 @@ namespace InfoPanel.SteamAPI.Services
         /// Gets whether debug logging is enabled
         /// </summary>
         public bool IsDebugLoggingEnabled =>
-            GetBoolSetting("Debug Settings", "EnableDebugLogging", false);
+            GetBoolSetting(ConfigurationConstants.ENHANCED_LOGGING_SECTION, "Enabled", false);
 
         /// <summary>
         /// Gets the monitoring interval in milliseconds
@@ -820,61 +813,61 @@ namespace InfoPanel.SteamAPI.Services
         /// Gets whether enhanced logging is enabled
         /// </summary>
         public bool EnableEnhancedLogging =>
-            GetBoolSetting("Enhanced Logging", "Enabled", false);
+            GetBoolSetting(ConfigurationConstants.ENHANCED_LOGGING_SECTION, "Enabled", false);
 
         /// <summary>
         /// Gets whether delta logging is enabled (only logs changes)
         /// </summary>
         public bool EnableDeltaLogging =>
-            GetBoolSetting("Enhanced Logging", "EnableDeltaLogging", true);
+            GetBoolSetting(ConfigurationConstants.ENHANCED_LOGGING_SECTION, "EnableDeltaLogging", true);
 
         /// <summary>
         /// Gets whether structured logging is enabled (JSON format)
         /// </summary>
         public bool EnableStructuredLogging =>
-            GetBoolSetting("Enhanced Logging", "EnableStructuredLogging", true);
+            GetBoolSetting(ConfigurationConstants.ENHANCED_LOGGING_SECTION, "EnableStructuredLogging", true);
 
         /// <summary>
         /// Gets the log flush interval in milliseconds
         /// </summary>
         public int LogFlushInterval =>
-            GetIntSetting("Enhanced Logging", "FlushIntervalMs", 1000);
+            GetIntSetting(ConfigurationConstants.ENHANCED_LOGGING_SECTION, "FlushIntervalMs", 1000);
 
         /// <summary>
         /// Gets the minimum log level (Trace, Debug, Info, Warning, Error, Critical)
         /// </summary>
         public string MinimumLogLevel =>
-            GetSetting("Enhanced Logging", "MinimumLevel", "Info");
+            GetSetting(ConfigurationConstants.ENHANCED_LOGGING_SECTION, "MinimumLevel", "Info");
 
         /// <summary>
         /// Gets whether performance logging is enabled
         /// </summary>
         public bool EnablePerformanceLogging =>
-            GetBoolSetting("Enhanced Logging", "EnablePerformanceLogging", true);
+            GetBoolSetting(ConfigurationConstants.ENHANCED_LOGGING_SECTION, "EnablePerformanceLogging", true);
 
         /// <summary>
         /// Gets whether operation pairing is enabled (start/end correlation)
         /// </summary>
         public bool EnableOperationPairing =>
-            GetBoolSetting("Enhanced Logging", "EnableOperationPairing", true);
+            GetBoolSetting(ConfigurationConstants.ENHANCED_LOGGING_SECTION, "EnableOperationPairing", true);
 
         /// <summary>
         /// Gets the log rotation size in MB
         /// </summary>
         public int LogRotationSizeMB =>
-            GetIntSetting("Enhanced Logging", "LogRotationSizeMB", 5);
+            GetIntSetting(ConfigurationConstants.ENHANCED_LOGGING_SECTION, "LogRotationSizeMB", 5);
 
         /// <summary>
         /// Gets the maximum number of archived logs to keep
         /// </summary>
         public int MaxArchivedLogs =>
-            GetIntSetting("Enhanced Logging", "MaxArchivedLogs", 5);
+            GetIntSetting(ConfigurationConstants.ENHANCED_LOGGING_SECTION, "MaxArchivedLogs", 5);
 
         /// <summary>
         /// Gets whether sensitive data redaction is enabled
         /// </summary>
         public bool EnableSensitiveDataRedaction =>
-            GetBoolSetting("Enhanced Logging", "EnableSensitiveDataRedaction", true);
+            GetBoolSetting(ConfigurationConstants.ENHANCED_LOGGING_SECTION, "EnableSensitiveDataRedaction", true);
 
         #endregion
     }
