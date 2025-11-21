@@ -612,7 +612,7 @@ For issues, questions, or contributions:
 
 - Check debug logs first
 - Review InfoPanel documentation
-- Contact: F3NN3X (<https://myurl.com>)
+- Contact: F3NN3X (<https://github.com/F3NN3X/InfoPanel.SteamAPI>)
 
 ## Acknowledgments
 
