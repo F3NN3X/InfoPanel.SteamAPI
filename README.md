@@ -1,8 +1,8 @@
 # InfoPanel.SteamAPI
 
-**Version:** 1.2.1  
+**Version:** 1.3.4  
 **Author:** F3NN3X  
-**Website:** <https://myurl.com>
+**Website:** <https://github.com/F3NN3X/InfoPanel.SteamAPI>
 
 ## Description
 
