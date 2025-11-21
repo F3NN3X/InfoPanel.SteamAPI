@@ -55,7 +55,8 @@ jobs:
         
         if (Test-Path $sourcePath) {
             Write-Host "Zipping build output from: $sourcePath"
-            Compress-Archive -Path "$sourcePath\*" -DestinationPath $zipName
+            # Zip the folder itself (without \*) so the archive contains the 'InfoPanel.SteamAPI' subfolder
+            Compress-Archive -Path "$sourcePath" -DestinationPath $zipName
         } else {
             Write-Error "Build output directory not found at $sourcePath. Check if the .csproj Version matches the folder structure."
             exit 1
