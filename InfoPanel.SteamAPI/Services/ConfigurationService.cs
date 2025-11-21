@@ -17,7 +17,6 @@ namespace InfoPanel.SteamAPI.Services
         public const string MONITORING_SETTINGS_SECTION = "Monitoring Settings";
         public const string DISPLAY_SETTINGS_SECTION = "Display Settings";
         public const string STEAM_SETTINGS_SECTION = "Steam Settings";
-        public const string TOKEN_MANAGEMENT_SECTION = "Token Management";
         public const string ADVANCED_FEATURES_SECTION = "Advanced Features";
         public const string FRIENDS_ACTIVITY_SECTION = "Friends Activity Settings";
         public const string ENHANCED_LOGGING_SECTION = "Enhanced Logging";
@@ -46,7 +45,6 @@ namespace InfoPanel.SteamAPI.Services
         public const int DEFAULT_MAX_FRIENDS_DISPLAY = 0; // 0 = unlimited
         public const int DEFAULT_MAX_FRIEND_NAME_LENGTH = 20;
         public const int DEFAULT_MAX_MONITORED_ACHIEVEMENT_GAMES = 5;
-        public const int DEFAULT_TOKEN_REFRESH_HOURS = 12;
         #endregion
 
         #region Default Values
@@ -326,7 +324,6 @@ namespace InfoPanel.SteamAPI.Services
                 ["Monitoring Settings"] = new[] { "MonitoringIntervalMs", "EnableAutoReconnect", "ConnectionTimeoutMs" },
                 ["Display Settings"] = new[] { "ShowStatusMessages", "ShowDetailedMetrics", "UseMetricSystem" },
                 ["Steam Settings"] = new[] { "ApiKey", "SteamId64", "UpdateIntervalSeconds", "EnableProfileMonitoring", "EnableLibraryMonitoring", "EnableCurrentGameMonitoring", "EnableAchievementMonitoring", "MaxRecentGames" },
-                ["Token Management"] = new[] { "AutoRefreshTokens", "CommunityTokenEnabled", "StoreTokenEnabled", "TokenRefreshIntervalHours", "ManualTokenEntry" },
                 ["Advanced Features"] = new[] { "EnableEnhancedBadgeData", "EnableStoreIntegration", "EnableExtendedAchievements", "MaxMonitoredGamesForAchievements" },
                 ["Friends Activity Settings"] = new[] { "ShowAllFriends", "MaxFriendsToDisplay", "FriendsFilter", "FriendsSortBy", "SortDescending", "FriendsTableColumns", "LastSeenFormat", "HiddenStatuses", "FriendNameDisplay", "MaxFriendNameLength" },
                 ["Enhanced Logging"] = new[] { "Enabled", "EnableDeltaLogging", "EnableStructuredLogging", "FlushIntervalMs", "MinimumLevel", "EnablePerformanceLogging", "EnableOperationPairing", "LogRotationSizeMB", "MaxArchivedLogs", "EnableSensitiveDataRedaction" }
@@ -700,40 +697,6 @@ namespace InfoPanel.SteamAPI.Services
         /// </summary>
         public string DateFormat =>
             GetSetting(ConfigurationConstants.DISPLAY_SETTINGS_SECTION, "DateFormat", ConfigurationConstants.DEFAULT_DATE_FORMAT);
-
-        #endregion
-
-        #region Token Management Properties
-
-        /// <summary>
-        /// Gets whether automatic token refresh is enabled
-        /// </summary>
-        public bool AutoRefreshTokens =>
-            GetBoolSetting("Token Management", "AutoRefreshTokens", true);
-
-        /// <summary>
-        /// Gets whether community token features are enabled
-        /// </summary>
-        public bool CommunityTokenEnabled =>
-            GetBoolSetting("Token Management", "CommunityTokenEnabled", true);
-
-        /// <summary>
-        /// Gets whether store token features are enabled
-        /// </summary>
-        public bool StoreTokenEnabled =>
-            GetBoolSetting("Token Management", "StoreTokenEnabled", true);
-
-        /// <summary>
-        /// Gets the token refresh interval in hours
-        /// </summary>
-        public int TokenRefreshIntervalHours =>
-            GetIntSetting("Token Management", "TokenRefreshIntervalHours", 12);
-
-        /// <summary>
-        /// Gets whether manual token entry mode is enabled
-        /// </summary>
-        public bool ManualTokenEntry =>
-            GetBoolSetting("Token Management", "ManualTokenEntry", false);
 
         #endregion
 
