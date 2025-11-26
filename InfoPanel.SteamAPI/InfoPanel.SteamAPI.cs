@@ -258,6 +258,13 @@ namespace InfoPanel.SteamAPI
                 // Initialize Steam API service
                 var steamApiService = new SteamApiService(_configService.SteamApiKey, _configService.SteamId64, _loggingService, _enhancedLoggingService);
 
+                if (!steamApiService.IsConfigured)
+                {
+                    _statusSensor.Value = "Configuration Required";
+                    _detailsSensor.Value = "Please set API Key and SteamID in config";
+                    _loggingService.LogWarning("Plugin initialized in unconfigured state - API Key or SteamID missing");
+                }
+
                 // Initialize session tracking service (session file path is optional, uses default if not provided)
                 var sessionFilePath = _configFilePath?.Replace(".ini", "_session.json");
                 _sessionTrackingService = new SessionTrackingService(_loggingService, _enhancedLoggingService, sessionFilePath);

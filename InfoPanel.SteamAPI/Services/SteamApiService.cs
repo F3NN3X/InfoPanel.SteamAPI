@@ -64,19 +64,26 @@ namespace InfoPanel.SteamAPI.Services
         /// <param name="enhancedLogger">Optional enhanced logging service</param>
         public SteamApiService(string apiKey, string steamId64, FileLoggingService? logger = null, EnhancedLoggingService? enhancedLogger = null)
         {
-            if (string.IsNullOrWhiteSpace(apiKey) || apiKey.Contains("your-steam-api-key"))
-                throw new ArgumentException("Valid Steam Web API key is required", nameof(apiKey));
-
-            if (string.IsNullOrWhiteSpace(steamId64) || steamId64.Contains("your-steam-id"))
-                throw new ArgumentException("Valid Steam ID64 is required", nameof(steamId64));
-
-            if (!IsValidSteamId64(steamId64))
-                throw new ArgumentException($"Invalid SteamID64 format: {steamId64}. Must be 17 digits starting with 7656119", nameof(steamId64));
-
             _apiKey = apiKey;
             _steamId64 = steamId64;
             _logger = logger;
             _enhancedLogger = enhancedLogger;
+
+            // Validate configuration but don't throw - allow plugin to load in "unconfigured" state
+            bool isApiKeyValid = !string.IsNullOrWhiteSpace(apiKey) && !apiKey.Contains("your-steam-api-key");
+            bool isSteamIdValid = !string.IsNullOrWhiteSpace(steamId64) && !steamId64.Contains("your-steam-id") && IsValidSteamId64(steamId64);
+
+            IsConfigured = isApiKeyValid && isSteamIdValid;
+
+            if (!IsConfigured)
+            {
+                _enhancedLogger?.LogWarning("SteamApiService.Constructor", "SteamApiService initialized with invalid configuration", new
+                {
+                    ApiKeyValid = isApiKeyValid,
+                    SteamIdValid = isSteamIdValid,
+                    SteamId = steamId64
+                });
+            }
 
             _httpClient = new HttpClient();
             _httpClient.Timeout = TimeSpan.FromSeconds(30);
@@ -87,10 +94,16 @@ namespace InfoPanel.SteamAPI.Services
             {
                 SteamId = steamId64,
                 HasApiKey = !string.IsNullOrEmpty(apiKey),
+                IsConfigured = IsConfigured,
                 Timeout = "30s",
                 UserAgent = "InfoPanel-SteamAPI/1.0.0"
             });
         }
+
+        /// <summary>
+        /// Gets whether the service is properly configured with valid API key and Steam ID
+        /// </summary>
+        public bool IsConfigured { get; private set; }
 
         /// <summary>
         /// Checks if an image URL is valid using a HEAD request
@@ -164,6 +177,12 @@ namespace InfoPanel.SteamAPI.Services
         /// </summary>
         private async Task<string?> CallSteamApiAsync(string endpoint)
         {
+            if (!IsConfigured)
+            {
+                _enhancedLogger?.LogWarning("SteamApiService.CallSteamApiAsync", "API call skipped - service not configured");
+                return null;
+            }
+
             const int maxRetries = 3;
             const int baseDelayMs = 1000;
             var stopwatch = System.Diagnostics.Stopwatch.StartNew();

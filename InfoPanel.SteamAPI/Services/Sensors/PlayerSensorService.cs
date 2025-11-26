@@ -345,15 +345,15 @@ namespace InfoPanel.SteamAPI.Services.Sensors
                 var currentBanner = playerData.CurrentGameBannerUrl ?? "-";
                 var currentLogo = playerData.CurrentGameLogoUrl ?? "-";
                 var currentIcon = playerData.CurrentGameIconUrl ?? "-";
-                
+
                 _currentGameBannerUrlSensor.Value = currentBanner;
                 _currentGameLogoUrlSensor.Value = currentLogo;
                 _currentGameIconUrlSensor.Value = currentIcon;
-                
+
                 // Clear last played sensors when playing
                 _lastPlayedGameLogoUrlSensor.Value = "-";
                 _lastPlayedGameIconUrlSensor.Value = "-";
-                
+
                 _gameStatusTextSensor.Value = _configService.CurrentlyPlayingText;
 
                 _enhancedLogger?.LogDebug($"{DOMAIN_NAME}.UpdateImageUrlSensors", "Currently playing - showing current game", new
@@ -372,17 +372,17 @@ namespace InfoPanel.SteamAPI.Services.Sensors
                 var lastPlayedBannerUrl = sessionCache.LastPlayedGameBannerUrl ?? "-";
                 var lastPlayedLogoUrl = sessionCache.LastPlayedGameLogoUrl ?? "-";
                 var lastPlayedIconUrl = sessionCache.LastPlayedGameIconUrl ?? "-";
-                
+
                 _currentGameBannerUrlSensor.Value = lastPlayedBannerUrl;
-                
+
                 // Clear current game sensors
                 _currentGameLogoUrlSensor.Value = "-";
                 _currentGameIconUrlSensor.Value = "-";
-                
+
                 // Set last played sensors
                 _lastPlayedGameLogoUrlSensor.Value = lastPlayedLogoUrl;
                 _lastPlayedGameIconUrlSensor.Value = lastPlayedIconUrl;
-                
+
                 _gameStatusTextSensor.Value = _configService.LastPlayedGameText;
 
                 _enhancedLogger?.LogInfo($"{DOMAIN_NAME}.UpdateImageUrlSensors", "Not playing - showing last played game", new
