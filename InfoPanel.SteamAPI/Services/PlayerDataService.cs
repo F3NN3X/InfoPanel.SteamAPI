@@ -660,37 +660,38 @@ namespace InfoPanel.SteamAPI.Services
         {
             try
             {
-                // Construct the URL for the game logo
-                var logoUrl = $"https://steamcdn-a.akamaihd.net/steam/apps/{appId}/logo.png";
-
-                // Verify the logo URL is valid
-                bool isValid = await _steamApiService.CheckImageUrlAsync(logoUrl);
-
-                if (isValid)
+                // 1. Try shared.akamai.steamstatic.com (same as banner)
+                var logoUrl = $"https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/{appId}/logo.png";
+                if (await _steamApiService.CheckImageUrlAsync(logoUrl))
                 {
-                    _enhancedLogger?.LogDebug("PlayerDataService.GetGameLogoUrlAsync", "Game logo URL verified", new
-                    {
-                        AppId = appId,
-                        LogoUrl = logoUrl
-                    });
+                    _enhancedLogger?.LogDebug("PlayerDataService.GetGameLogoUrlAsync", "Game logo URL verified (Akamai)", new { AppId = appId, LogoUrl = logoUrl });
                     return logoUrl;
                 }
-                else
+
+                // 2. Fallback to Cloudflare CDN
+                logoUrl = $"https://cdn.cloudflare.steampowered.com/steam/apps/{appId}/logo.png";
+                if (await _steamApiService.CheckImageUrlAsync(logoUrl))
                 {
-                    _enhancedLogger?.LogWarning("PlayerDataService.GetGameLogoUrlAsync", "Game logo URL is not valid", new
-                    {
-                        AppId = appId,
-                        LogoUrl = logoUrl
-                    });
-                    return null;
+                    _enhancedLogger?.LogDebug("PlayerDataService.GetGameLogoUrlAsync", "Game logo URL verified (Cloudflare)", new { AppId = appId, LogoUrl = logoUrl });
+                    return logoUrl;
                 }
+
+                // 3. Try to get from Owned Games (hash based)
+                var ownedGames = await _steamApiService.GetOwnedGamesAsync();
+                var game = ownedGames?.Response?.Games?.FirstOrDefault(g => g.AppId == appId);
+                if (game != null && !string.IsNullOrEmpty(game.ImgLogoUrl))
+                {
+                    logoUrl = SteamApiService.GetGameLogoUrl(appId, game.ImgLogoUrl);
+                    _enhancedLogger?.LogDebug("PlayerDataService.GetGameLogoUrlAsync", "Game logo URL from hash", new { AppId = appId, LogoUrl = logoUrl });
+                    return logoUrl;
+                }
+
+                _enhancedLogger?.LogWarning("PlayerDataService.GetGameLogoUrlAsync", "Game logo URL not found", new { AppId = appId });
+                return null;
             }
             catch (Exception ex)
             {
-                _enhancedLogger?.LogError("PlayerDataService.GetGameLogoUrlAsync", "Error fetching game logo URL", ex, new
-                {
-                    AppId = appId
-                });
+                _enhancedLogger?.LogError("PlayerDataService.GetGameLogoUrlAsync", "Error fetching game logo URL", ex, new { AppId = appId });
                 return null;
             }
         }
@@ -702,37 +703,32 @@ namespace InfoPanel.SteamAPI.Services
         {
             try
             {
-                // Construct the URL for the game icon
-                var iconUrl = $"https://steamcdn-a.akamaihd.net/steam/apps/{appId}/icon.png";
-
-                // Verify the icon URL is valid
-                bool isValid = await _steamApiService.CheckImageUrlAsync(iconUrl);
-
-                if (isValid)
+                // 1. Try to get from Owned Games (best quality/correct icon)
+                var ownedGames = await _steamApiService.GetOwnedGamesAsync();
+                var game = ownedGames?.Response?.Games?.FirstOrDefault(g => g.AppId == appId);
+                
+                if (game != null && !string.IsNullOrEmpty(game.ImgIconUrl))
                 {
-                    _enhancedLogger?.LogDebug("PlayerDataService.GetGameIconUrlAsync", "Game icon URL verified", new
-                    {
-                        AppId = appId,
-                        IconUrl = iconUrl
-                    });
+                    var iconUrl = SteamApiService.GetGameIconUrl(appId, game.ImgIconUrl);
+                    _enhancedLogger?.LogDebug("PlayerDataService.GetGameIconUrlAsync", "Game icon URL from hash", new { AppId = appId, IconUrl = iconUrl });
                     return iconUrl;
                 }
-                else
+
+                // 2. Fallback to community icon (sometimes works without hash?) - No, usually needs hash.
+                // Try small capsule as fallback for icon
+                var capsuleUrl = $"https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/{appId}/capsule_184x69.jpg";
+                if (await _steamApiService.CheckImageUrlAsync(capsuleUrl))
                 {
-                    _enhancedLogger?.LogWarning("PlayerDataService.GetGameIconUrlAsync", "Game icon URL is not valid", new
-                    {
-                        AppId = appId,
-                        IconUrl = iconUrl
-                    });
-                    return null;
+                    _enhancedLogger?.LogDebug("PlayerDataService.GetGameIconUrlAsync", "Using small capsule as icon fallback", new { AppId = appId, IconUrl = capsuleUrl });
+                    return capsuleUrl;
                 }
+
+                _enhancedLogger?.LogWarning("PlayerDataService.GetGameIconUrlAsync", "Game icon URL not found", new { AppId = appId });
+                return null;
             }
             catch (Exception ex)
             {
-                _enhancedLogger?.LogError("PlayerDataService.GetGameIconUrlAsync", "Error fetching game icon URL", ex, new
-                {
-                    AppId = appId
-                });
+                _enhancedLogger?.LogError("PlayerDataService.GetGameIconUrlAsync", "Error fetching game icon URL", ex, new { AppId = appId });
                 return null;
             }
         }
