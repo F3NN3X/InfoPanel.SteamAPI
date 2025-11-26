@@ -135,6 +135,9 @@ namespace InfoPanel.SteamAPI.Models
         [JsonPropertyName("img_logo_url")]
         public string ImgLogoUrl { get; set; } = string.Empty;
         
+        [JsonPropertyName("client_icon")]
+        public string? ClientIcon { get; set; }
+
         [JsonPropertyName("playtime_windows_forever")]
         public int PlaytimeWindowsForever { get; set; }
         

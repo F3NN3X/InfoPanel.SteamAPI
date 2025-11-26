@@ -705,10 +705,19 @@ namespace InfoPanel.SteamAPI.Services
         {
             try
             {
-                // 1. Try to get from Owned Games (best quality/correct icon - community icon)
+                // 1. Try to get from Owned Games (best quality/correct icon - client icon)
                 var ownedGames = await _steamApiService.GetOwnedGamesAsync();
                 var game = ownedGames?.Response?.Games?.FirstOrDefault(g => g.AppId == appId);
 
+                // Try client_icon first (high quality .ico)
+                if (game != null && !string.IsNullOrEmpty(game.ClientIcon))
+                {
+                    var iconUrl = SteamApiService.GetGameClientIconUrl(appId, game.ClientIcon);
+                    _enhancedLogger?.LogDebug("PlayerDataService.GetGameIconUrlAsync", "Game icon URL from hash (client icon)", new { AppId = appId, IconUrl = iconUrl });
+                    return iconUrl;
+                }
+
+                // 2. Fallback to community icon (img_icon_url)
                 if (game != null && !string.IsNullOrEmpty(game.ImgIconUrl))
                 {
                     var iconUrl = SteamApiService.GetGameIconUrl(appId, game.ImgIconUrl);
@@ -716,8 +725,7 @@ namespace InfoPanel.SteamAPI.Services
                     return iconUrl;
                 }
 
-                // 2. Fallback to community icon (sometimes works without hash?) - No, usually needs hash.
-                // Try small capsule as fallback for icon
+                // 3. Fallback to small capsule
                 var capsuleUrl = $"https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/{appId}/capsule_184x69.jpg";
                 if (await _steamApiService.CheckImageUrlAsync(capsuleUrl))
                 {

@@ -905,6 +905,17 @@ namespace InfoPanel.SteamAPI.Services
         }
 
         /// <summary>
+        /// Gets a formatted Steam client icon URL for a game (.ico)
+        /// </summary>
+        public static string GetGameClientIconUrl(int appId, string clientIconHash)
+        {
+            if (string.IsNullOrEmpty(clientIconHash))
+                return string.Empty;
+
+            return $"https://media.steampowered.com/steamcommunity/public/images/apps/{appId}/{clientIconHash}.ico";
+        }
+
+        /// <summary>
         /// Converts Unix timestamp to DateTimeOffset
         /// </summary>
         public static DateTimeOffset FromUnixTimestamp(long unixTimestamp)
