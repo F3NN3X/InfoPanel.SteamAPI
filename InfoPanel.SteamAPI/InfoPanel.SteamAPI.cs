@@ -85,6 +85,10 @@ namespace InfoPanel.SteamAPI
         // User Profile and Game Images
         private readonly PluginText _profileImageUrlSensor = new("profile_image_url", "Profile Image URL", "-");
         private readonly PluginText _currentGameBannerUrlSensor = new("current_game_banner_url", "Current Game Banner URL", "-");
+        private readonly PluginText _currentGameLogoUrlSensor = new("current_game_logo_url", "Current Game Logo URL", "-");
+        private readonly PluginText _currentGameIconUrlSensor = new("current_game_icon_url", "Current Game Icon URL", "-");
+        private readonly PluginText _lastPlayedGameLogoUrlSensor = new("last_played_game_logo_url", "Last Played Game Logo URL", "-");
+        private readonly PluginText _lastPlayedGameIconUrlSensor = new("last_played_game_icon_url", "Last Played Game Icon URL", "-");
         private readonly PluginText _gameStatusTextSensor = new("game-status-text", "Game Status", "Not Playing");
 
         // Current Game and Session Tracking
@@ -311,6 +315,10 @@ namespace InfoPanel.SteamAPI
                     _averageSessionTimeSensor,
                     _profileImageUrlSensor,
                     _currentGameBannerUrlSensor,
+                    _currentGameLogoUrlSensor,
+                    _currentGameIconUrlSensor,
+                    _lastPlayedGameLogoUrlSensor,
+                    _lastPlayedGameIconUrlSensor,
                     _gameStatusTextSensor,
                     _enhancedLoggingService);
 
@@ -388,7 +396,10 @@ namespace InfoPanel.SteamAPI
                 profileContainer.Entries.Add(_steamLevelSensor);
                 profileContainer.Entries.Add(_profileImageUrlSensor);
                 profileContainer.Entries.Add(_currentGameBannerUrlSensor);
-                profileContainer.Entries.Add(_gameStatusTextSensor);
+                profileContainer.Entries.Add(_currentGameLogoUrlSensor);
+                profileContainer.Entries.Add(_currentGameIconUrlSensor);
+                profileContainer.Entries.Add(_lastPlayedGameLogoUrlSensor);
+                profileContainer.Entries.Add(_lastPlayedGameIconUrlSensor);
                 profileContainer.Entries.Add(_statusSensor);
                 profileContainer.Entries.Add(_detailsSensor);
                 _loggingService.LogInfo($"Created User Profile & Status container with {profileContainer.Entries.Count} sensors");

@@ -60,6 +60,16 @@ namespace InfoPanel.SteamAPI.Models
         /// </summary>
         public string? LastPlayedGameBannerUrl { get; set; }
 
+        /// <summary>
+        /// Logo URL for the last played game
+        /// </summary>
+        public string? LastPlayedGameLogoUrl { get; set; }
+
+        /// <summary>
+        /// Icon URL for the last played game
+        /// </summary>
+        public string? LastPlayedGameIconUrl { get; set; }
+
         #endregion
 
         #region Metadata
@@ -112,6 +122,8 @@ namespace InfoPanel.SteamAPI.Models
                     LastPlayedGameName = this.LastPlayedGameName,
                     LastPlayedGameAppId = this.LastPlayedGameAppId,
                     LastPlayedGameBannerUrl = this.LastPlayedGameBannerUrl,
+                    LastPlayedGameLogoUrl = this.LastPlayedGameLogoUrl,
+                    LastPlayedGameIconUrl = this.LastPlayedGameIconUrl,
                     LastUpdated = this.LastUpdated
                 };
             }
@@ -134,6 +146,8 @@ namespace InfoPanel.SteamAPI.Models
                 LastPlayedGameName = playerData.LastPlayedGameName;
                 LastPlayedGameAppId = playerData.LastPlayedGameAppId;
                 LastPlayedGameBannerUrl = playerData.LastPlayedGameBannerUrl;
+                LastPlayedGameLogoUrl = playerData.LastPlayedGameLogoUrl;
+                LastPlayedGameIconUrl = playerData.LastPlayedGameIconUrl;
                 LastUpdated = DateTime.Now;
 
                 // Debug logging to trace value propagation

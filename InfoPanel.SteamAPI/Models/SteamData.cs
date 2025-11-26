@@ -136,6 +136,16 @@ namespace InfoPanel.SteamAPI.Models
         /// </summary>
         public string? CurrentGameServerIp { get; set; }
         
+        /// <summary>
+        /// Logo URL of the currently playing game
+        /// </summary>
+        public string? CurrentGameLogoUrl { get; set; }
+        
+        /// <summary>
+        /// Icon URL of the currently playing game
+        /// </summary>
+        public string? CurrentGameIconUrl { get; set; }
+        
         #endregion
 
         #region Last Played Game Properties
@@ -156,6 +166,16 @@ namespace InfoPanel.SteamAPI.Models
         /// Displayed when no game is currently active to show recent gaming activity
         /// </summary>
         public string? LastPlayedGameBannerUrl { get; set; }
+        
+        /// <summary>
+        /// Logo URL of the last played game
+        /// </summary>
+        public string? LastPlayedGameLogoUrl { get; set; }
+        
+        /// <summary>
+        /// Icon URL of the last played game
+        /// </summary>
+        public string? LastPlayedGameIconUrl { get; set; }
         
         /// <summary>
         /// Timestamp when the last game session ended

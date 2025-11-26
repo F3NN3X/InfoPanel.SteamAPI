@@ -270,6 +270,31 @@ namespace InfoPanel.SteamAPI.Services
                                 });
                                 playerData.CurrentGameTotalPlaytimeHours = 0;
                             }
+
+                            // Get current game logo and icon URLs
+                            try
+                            {
+                                playerData.CurrentGameLogoUrl = await GetGameLogoUrlAsync(gameId);
+                                playerData.CurrentGameIconUrl = await GetGameIconUrlAsync(gameId);
+
+                                _enhancedLogger?.LogDebug("PLAYER", "Game logo and icon URLs fetched", new
+                                {
+                                    GameName = playerData.CurrentGameName,
+                                    AppId = gameId,
+                                    LogoUrl = playerData.CurrentGameLogoUrl,
+                                    IconUrl = playerData.CurrentGameIconUrl
+                                });
+                            }
+                            catch (Exception logoIconEx)
+                            {
+                                _enhancedLogger?.LogWarning("PLAYER", "Failed to fetch game logo or icon", new
+                                {
+                                    AppId = gameId,
+                                    ErrorMessage = logoIconEx.Message
+                                });
+                                playerData.CurrentGameLogoUrl = null;
+                                playerData.CurrentGameIconUrl = null;
+                            }
                         }
                         else
                         {
@@ -298,6 +323,8 @@ namespace InfoPanel.SteamAPI.Services
                         playerData.CurrentGameServerIp = null;
                         playerData.CurrentGameExtraInfo = null;
                         playerData.CurrentGameBannerUrl = null;
+                        playerData.CurrentGameLogoUrl = null;
+                        playerData.CurrentGameIconUrl = null;
                         playerData.CurrentGameTotalPlaytimeHours = 0;
 
                         _enhancedLogger?.LogInfo("PLAYER", "Steam API reports no game - clearing game state", new
@@ -626,6 +653,90 @@ namespace InfoPanel.SteamAPI.Services
             }
         }
 
+        /// <summary>
+        /// Gets the game logo URL from Steam API
+        /// </summary>
+        private async Task<string?> GetGameLogoUrlAsync(int appId)
+        {
+            try
+            {
+                // Construct the URL for the game logo
+                var logoUrl = $"https://steamcdn-a.akamaihd.net/steam/apps/{appId}/logo.png";
+
+                // Verify the logo URL is valid
+                bool isValid = await _steamApiService.CheckImageUrlAsync(logoUrl);
+
+                if (isValid)
+                {
+                    _enhancedLogger?.LogDebug("PlayerDataService.GetGameLogoUrlAsync", "Game logo URL verified", new
+                    {
+                        AppId = appId,
+                        LogoUrl = logoUrl
+                    });
+                    return logoUrl;
+                }
+                else
+                {
+                    _enhancedLogger?.LogWarning("PlayerDataService.GetGameLogoUrlAsync", "Game logo URL is not valid", new
+                    {
+                        AppId = appId,
+                        LogoUrl = logoUrl
+                    });
+                    return null;
+                }
+            }
+            catch (Exception ex)
+            {
+                _enhancedLogger?.LogError("PlayerDataService.GetGameLogoUrlAsync", "Error fetching game logo URL", ex, new
+                {
+                    AppId = appId
+                });
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Gets the game icon URL from Steam API
+        /// </summary>
+        private async Task<string?> GetGameIconUrlAsync(int appId)
+        {
+            try
+            {
+                // Construct the URL for the game icon
+                var iconUrl = $"https://steamcdn-a.akamaihd.net/steam/apps/{appId}/icon.png";
+
+                // Verify the icon URL is valid
+                bool isValid = await _steamApiService.CheckImageUrlAsync(iconUrl);
+
+                if (isValid)
+                {
+                    _enhancedLogger?.LogDebug("PlayerDataService.GetGameIconUrlAsync", "Game icon URL verified", new
+                    {
+                        AppId = appId,
+                        IconUrl = iconUrl
+                    });
+                    return iconUrl;
+                }
+                else
+                {
+                    _enhancedLogger?.LogWarning("PlayerDataService.GetGameIconUrlAsync", "Game icon URL is not valid", new
+                    {
+                        AppId = appId,
+                        IconUrl = iconUrl
+                    });
+                    return null;
+                }
+            }
+            catch (Exception ex)
+            {
+                _enhancedLogger?.LogError("PlayerDataService.GetGameIconUrlAsync", "Error fetching game icon URL", ex, new
+                {
+                    AppId = appId
+                });
+                return null;
+            }
+        }
+
         #endregion
     }
 
@@ -663,6 +774,8 @@ namespace InfoPanel.SteamAPI.Services
         public string? CurrentGameExtraInfo { get; set; }
         public string? CurrentGameServerIp { get; set; }
         public string? CurrentGameBannerUrl { get; set; }
+        public string? CurrentGameLogoUrl { get; set; }
+        public string? CurrentGameIconUrl { get; set; }
         public double CurrentGameTotalPlaytimeHours { get; set; }  // Total playtime for current game from Steam API
 
         #endregion
@@ -685,6 +798,8 @@ namespace InfoPanel.SteamAPI.Services
         public string? LastPlayedGameName { get; set; }
         public int LastPlayedGameAppId { get; set; }
         public string? LastPlayedGameBannerUrl { get; set; }
+        public string? LastPlayedGameLogoUrl { get; set; }
+        public string? LastPlayedGameIconUrl { get; set; }
         public DateTime? LastPlayedGameTimestamp { get; set; }
         public double LastPlayedGamePlaytimeHours { get; set; }
 

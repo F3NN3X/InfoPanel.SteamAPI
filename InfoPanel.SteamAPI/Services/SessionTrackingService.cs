@@ -15,6 +15,8 @@ namespace InfoPanel.SteamAPI.Services
         public string GameName { get; set; } = "";
         public int AppId { get; set; }
         public string? BannerUrl { get; set; }  // Store banner URL with session
+        public string? LogoUrl { get; set; }    // Store logo URL with session
+        public string? IconUrl { get; set; }    // Store icon URL with session
         public DateTime StartTime { get; set; }
         public DateTime? EndTime { get; set; }
         public int DurationMinutes => EndTime.HasValue
@@ -49,6 +51,8 @@ namespace InfoPanel.SteamAPI.Services
         public string? LastPlayedGameName { get; set; }
         public int LastPlayedGameAppId { get; set; }
         public string? LastPlayedGameBannerUrl { get; set; }
+        public string? LastPlayedGameLogoUrl { get; set; }
+        public string? LastPlayedGameIconUrl { get; set; }
         public DateTime? LastPlayedTimestamp { get; set; }
     }
 
@@ -70,6 +74,8 @@ namespace InfoPanel.SteamAPI.Services
         private string? _lastKnownGameName;
         private int _lastKnownAppId;
         private string? _lastKnownBannerUrl;  // Track banner URL for current session
+        private string? _lastKnownLogoUrl;    // Track logo URL
+        private string? _lastKnownIconUrl;    // Track icon URL
         private bool _wasInGameLastCheck;
 
         // Session stability tracking to prevent rapid cycling
@@ -78,6 +84,8 @@ namespace InfoPanel.SteamAPI.Services
         private string? _pendingGameName;
         private int _pendingGameAppId;
         private string? _pendingBannerUrl;  // Track pending banner URL
+        private string? _pendingLogoUrl;    // Track pending logo URL
+        private string? _pendingIconUrl;    // Track pending icon URL
 
         // Constants for session stability
         private const int MIN_SESSION_DURATION_SECONDS = 30; // Minimum 30 seconds before ending session
@@ -141,6 +149,16 @@ namespace InfoPanel.SteamAPI.Services
         public string? CurrentSessionBannerUrl => _lastKnownBannerUrl;
 
         /// <summary>
+        /// Gets the logo URL for the current active session
+        /// </summary>
+        public string? CurrentSessionLogoUrl => _lastKnownLogoUrl;
+
+        /// <summary>
+        /// Gets the icon URL for the current active session
+        /// </summary>
+        public string? CurrentSessionIconUrl => _lastKnownIconUrl;
+
+        /// <summary>
         /// Gets the game name for the current active session
         /// </summary>
         public string? CurrentSessionGameName => _lastKnownGameName;
@@ -154,11 +172,13 @@ namespace InfoPanel.SteamAPI.Services
         /// Gets the last played game information from session history
         /// Returns null if no game has been played yet
         /// </summary>
-        public (string? gameName, int appId, string? bannerUrl, DateTime? timestamp) GetLastPlayedGame()
+        public (string? gameName, int appId, string? bannerUrl, string? logoUrl, string? iconUrl, DateTime? timestamp) GetLastPlayedGame()
         {
             return (_sessionHistory.LastPlayedGameName,
                     _sessionHistory.LastPlayedGameAppId,
                     _sessionHistory.LastPlayedGameBannerUrl,
+                    _sessionHistory.LastPlayedGameLogoUrl,
+                    _sessionHistory.LastPlayedGameIconUrl,
                     _sessionHistory.LastPlayedTimestamp);
         }
 
@@ -181,6 +201,8 @@ namespace InfoPanel.SteamAPI.Services
                     var currentGameName = steamData.CurrentGameName;
                     var currentAppId = steamData.CurrentGameAppId;
                     var currentBannerUrl = steamData.CurrentGameBannerUrl;
+                    var currentLogoUrl = steamData.CurrentGameLogoUrl;
+                    var currentIconUrl = steamData.CurrentGameIconUrl;
                     var now = DateTime.Now;
 
                     _enhancedLogger?.LogInfo("SessionTrackingService.UpdateSessionTracking", "Update session state", new
@@ -189,6 +211,8 @@ namespace InfoPanel.SteamAPI.Services
                         GameName = currentGameName ?? "None",
                         AppId = currentAppId,
                         BannerUrl = currentBannerUrl,
+                        LogoUrl = currentLogoUrl,
+                        IconUrl = currentIconUrl,
                         WasInGameLastCheck = _wasInGameLastCheck,
                         PendingGameStart = _pendingGameStart,
                         HasActiveSession = _sessionHistory.CurrentSession?.IsActive == true,
@@ -219,13 +243,15 @@ namespace InfoPanel.SteamAPI.Services
                                         NewBanner = currentBannerUrl
                                     });
                                     // End old session with OLD game's banner (still in CurrentSession)
-                                    EndCurrentSession(_sessionHistory.CurrentSession.BannerUrl);
+                                    EndCurrentSession(_sessionHistory.CurrentSession.BannerUrl, _sessionHistory.CurrentSession.LogoUrl, _sessionHistory.CurrentSession.IconUrl);
                                     // Start new session with NEW game's banner
-                                    StartNewSession(currentGameName, currentAppId, currentBannerUrl);
+                                    StartNewSession(currentGameName, currentAppId, currentBannerUrl, currentLogoUrl, currentIconUrl);
                                     _wasInGameLastCheck = true; // Maintain in-game state
                                     _lastKnownGameName = currentGameName;
                                     _lastKnownAppId = currentAppId;
                                     _lastKnownBannerUrl = currentBannerUrl;
+                                    _lastKnownLogoUrl = currentLogoUrl;
+                                    _lastKnownIconUrl = currentIconUrl;
                                     return; // Exit early - don't update banner below
                                 }
                                 else
@@ -264,6 +290,8 @@ namespace InfoPanel.SteamAPI.Services
                         _pendingGameName = currentGameName;
                         _pendingGameAppId = currentAppId;
                         _pendingBannerUrl = currentBannerUrl;
+                        _pendingLogoUrl = currentLogoUrl;
+                        _pendingIconUrl = currentIconUrl;
                         _lastStateChangeTime = now;
                         _enhancedLogger?.LogInfo("SessionTrackingService.UpdateSessionTracking", "Game detected, pending start - waiting for stability", new
                         {
@@ -300,7 +328,7 @@ namespace InfoPanel.SteamAPI.Services
                                     BannerUrl = _sessionHistory.CurrentSession.BannerUrl?.Substring(0, Math.Min(50, _sessionHistory.CurrentSession.BannerUrl.Length)) + "..."
                                 });
                                 // Use banner from session (persisted), not from steamData (likely empty when quitting)
-                                EndCurrentSession(_sessionHistory.CurrentSession.BannerUrl);
+                                EndCurrentSession(_sessionHistory.CurrentSession.BannerUrl, _sessionHistory.CurrentSession.LogoUrl, _sessionHistory.CurrentSession.IconUrl);
                                 _wasInGameLastCheck = false; // Only update state when actually ending session
                             }
                             else
@@ -342,7 +370,7 @@ namespace InfoPanel.SteamAPI.Services
                                     WasInGameLastCheck = _wasInGameLastCheck
                                 });
                                 // Use banner from session (persisted), not from steamData (likely empty when quitting)
-                                EndCurrentSession(_sessionHistory.CurrentSession.BannerUrl);
+                                EndCurrentSession(_sessionHistory.CurrentSession.BannerUrl, _sessionHistory.CurrentSession.LogoUrl, _sessionHistory.CurrentSession.IconUrl);
                             }
                             else
                             {
@@ -373,12 +401,14 @@ namespace InfoPanel.SteamAPI.Services
                                 GameName = _pendingGameName,
                                 DelaySeconds = STATE_CHANGE_DEBOUNCE_SECONDS
                             });
-                            StartNewSession(_pendingGameName, _pendingGameAppId, _pendingBannerUrl);
+                            StartNewSession(_pendingGameName, _pendingGameAppId, _pendingBannerUrl, _pendingLogoUrl, _pendingIconUrl);
                             _pendingGameStart = false;
                             _wasInGameLastCheck = true; // Now update state since session is actually starting
                             _lastKnownGameName = _pendingGameName;
                             _lastKnownAppId = _pendingGameAppId;
                             _lastKnownBannerUrl = _pendingBannerUrl;
+                            _lastKnownLogoUrl = _pendingLogoUrl;
+                            _lastKnownIconUrl = _pendingIconUrl;
                         }
                     }
                     else if (!isCurrentlyInGame && _pendingGameStart)
@@ -530,7 +560,7 @@ namespace InfoPanel.SteamAPI.Services
         /// <summary>
         /// Starts a new gaming session
         /// </summary>
-        private void StartNewSession(string? gameName, int appId, string? bannerUrl = null)
+        private void StartNewSession(string? gameName, int appId, string? bannerUrl = null, string? logoUrl = null, string? iconUrl = null)
         {
             if (string.IsNullOrEmpty(gameName) || appId <= 0)
                 return;
@@ -540,6 +570,8 @@ namespace InfoPanel.SteamAPI.Services
                 GameName = gameName,
                 AppId = appId,
                 BannerUrl = bannerUrl,
+                LogoUrl = logoUrl,
+                IconUrl = iconUrl,
                 StartTime = DateTime.Now
             };
 
@@ -547,12 +579,16 @@ namespace InfoPanel.SteamAPI.Services
 
             // Store banner URL for persistence
             _lastKnownBannerUrl = bannerUrl;
+            _lastKnownLogoUrl = logoUrl;
+            _lastKnownIconUrl = iconUrl;
 
             _enhancedLogger?.LogDebug("SessionTrackingService.StartNewSession", "Started new session", new
             {
                 GameName = gameName,
                 AppId = appId,
                 BannerUrl = bannerUrl,
+                LogoUrl = logoUrl,
+                IconUrl = iconUrl,
                 StartTime = newSession.StartTime.ToString("HH:mm:ss")
             });
 
@@ -563,7 +599,7 @@ namespace InfoPanel.SteamAPI.Services
         /// <summary>
         /// Ends the current gaming session and stores it as the last played game
         /// </summary>
-        private void EndCurrentSession(string? bannerUrl = null)
+        private void EndCurrentSession(string? bannerUrl = null, string? logoUrl = null, string? iconUrl = null)
         {
             if (_sessionHistory.CurrentSession?.IsActive == true)
             {
@@ -574,6 +610,8 @@ namespace InfoPanel.SteamAPI.Services
                 _sessionHistory.LastPlayedGameName = _sessionHistory.CurrentSession.GameName;
                 _sessionHistory.LastPlayedGameAppId = _sessionHistory.CurrentSession.AppId;
                 _sessionHistory.LastPlayedGameBannerUrl = bannerUrl;
+                _sessionHistory.LastPlayedGameLogoUrl = logoUrl;
+                _sessionHistory.LastPlayedGameIconUrl = iconUrl;
                 _sessionHistory.LastPlayedTimestamp = DateTime.Now;
 
                 // Add to session history
@@ -617,6 +655,8 @@ namespace InfoPanel.SteamAPI.Services
             steamData.LastPlayedGameName = _sessionHistory.LastPlayedGameName;
             steamData.LastPlayedGameAppId = _sessionHistory.LastPlayedGameAppId;
             steamData.LastPlayedGameBannerUrl = _sessionHistory.LastPlayedGameBannerUrl;
+            steamData.LastPlayedGameLogoUrl = _sessionHistory.LastPlayedGameLogoUrl;
+            steamData.LastPlayedGameIconUrl = _sessionHistory.LastPlayedGameIconUrl;
             steamData.LastPlayedTimestamp = _sessionHistory.LastPlayedTimestamp;
 
             // Update recent sessions and average
@@ -671,7 +711,7 @@ namespace InfoPanel.SteamAPI.Services
                             });
 
                             // End the session properly using EndCurrentSession to set LastPlayedGame
-                            EndCurrentSession(incompleteSession.BannerUrl);
+                            EndCurrentSession(incompleteSession.BannerUrl, incompleteSession.LogoUrl, incompleteSession.IconUrl);
                         }
                     }
                     else
