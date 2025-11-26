@@ -912,7 +912,7 @@ namespace InfoPanel.SteamAPI.Services
             if (string.IsNullOrEmpty(clientIconHash))
                 return string.Empty;
 
-            return $"https://media.steampowered.com/steamcommunity/public/images/apps/{appId}/{clientIconHash}.ico";
+            return $"https://shared.fastly.steamstatic.com/community_assets/images/apps/{appId}/{clientIconHash}.ico";
         }
 
         /// <summary>
