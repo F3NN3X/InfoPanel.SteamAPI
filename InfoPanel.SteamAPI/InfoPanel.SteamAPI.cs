@@ -401,6 +401,7 @@ namespace InfoPanel.SteamAPI
                 profileContainer.Entries.Add(_currentGameBannerUrlSensor);
                 profileContainer.Entries.Add(_gameLogoUrlSensor);
                 profileContainer.Entries.Add(_gameIconUrlSensor);
+                profileContainer.Entries.Add(_gameStatusTextSensor);
                 profileContainer.Entries.Add(_statusSensor);
                 profileContainer.Entries.Add(_detailsSensor);
                 _loggingService.LogInfo($"Created User Profile & Status container with {profileContainer.Entries.Count} sensors");
