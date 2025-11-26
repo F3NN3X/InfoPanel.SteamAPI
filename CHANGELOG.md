@@ -2,6 +2,15 @@
 
 All notable changes to InfoPanel Steam API Plugin will be documented in this file.
 
+## [1.3.5] - 2025-11-26
+
+### 🧹 **Code Cleanup & Reversion**
+
+- **Reverted SteamDB Scraping**: Removed the experimental SteamDB scraping logic for retrieving client icons. The plugin now relies solely on the official Steam Web API for `client_icon` hashes, falling back to the community icon if unavailable. This ensures compliance with Steam's terms of service and avoids potential IP bans from scraping.
+- **Standardized Icon Retrieval**: Ensured `GetGameIconUrlAsync` uses the correct Fastly CDN URL structure for client icons when the hash is provided by the API.
+
+---
+
 ## [1.3.4] - 2025-11-21
 
 ### 🧹 **Code Cleanup & Configuration**
