@@ -33,12 +33,6 @@ namespace InfoPanel.SteamAPI.Services
         private DateTime _ownedGamesCacheTime = DateTime.MinValue;
         private readonly TimeSpan _ownedGamesCacheDuration = TimeSpan.FromMinutes(10);
 
-        // Client Icon Cache
-        private readonly System.Collections.Concurrent.ConcurrentDictionary<int, string> _clientIconCache = new();
-        private DateTime _lastScrapeTime = DateTime.MinValue;
-        private readonly object _scrapeLock = new object();
-        private const int SCRAPE_DELAY_MS = 2000; // 2 seconds between scrapes
-
         private SteamLevelResponse? _cachedSteamLevel;
         private DateTime _steamLevelCacheTime = DateTime.MinValue;
         private readonly TimeSpan _steamLevelCacheDuration = TimeSpan.FromMinutes(15);
@@ -958,121 +952,6 @@ namespace InfoPanel.SteamAPI.Services
 
         #endregion
 
-        #region Client Icon Resolution
 
-        /// <summary>
-        /// Resolves the client icon hash, potentially scraping SteamDB if not found in API
-        /// </summary>
-        public async Task<string?> ResolveClientIconAsync(int appId)
-        {
-            // Check cache first
-            if (_clientIconCache.TryGetValue(appId, out var cachedHash))
-            {
-                return cachedHash;
-            }
-
-            // Check if we have it in cached OwnedGames (unlikely but possible)
-            if (_cachedOwnedGames?.Response?.Games != null)
-            {
-                var game = _cachedOwnedGames.Response.Games.FirstOrDefault(g => g.AppId == appId);
-                if (game != null && !string.IsNullOrEmpty(game.ClientIcon))
-                {
-                    _clientIconCache[appId] = game.ClientIcon;
-                    return game.ClientIcon;
-                }
-            }
-
-            // Scrape SteamDB as last resort
-            try
-            {
-                var hash = await ScrapeSteamDbForClientIconHash(appId);
-                if (!string.IsNullOrEmpty(hash))
-                {
-                    _clientIconCache[appId] = hash;
-                    return hash;
-                }
-            }
-            catch (Exception ex)
-            {
-                _enhancedLogger?.LogWarning("SteamApiService.ResolveClientIconAsync", "Failed to scrape SteamDB", new { AppId = appId, Error = ex.Message });
-            }
-
-            return null;
-        }
-
-        /// <summary>
-        /// Scrapes SteamDB for the client icon hash
-        /// Note: This is unofficial and relies on SteamDB's HTML structure
-        /// </summary>
-        private async Task<string?> ScrapeSteamDbForClientIconHash(int appId)
-        {
-            // Enforce rate limiting for scraping
-            TimeSpan delay;
-            lock (_scrapeLock)
-            {
-                var timeSinceLastScrape = DateTime.Now - _lastScrapeTime;
-                var waitTime = SCRAPE_DELAY_MS - (int)timeSinceLastScrape.TotalMilliseconds;
-                
-                if (waitTime > 0)
-                {
-                    _lastScrapeTime = DateTime.Now.AddMilliseconds(waitTime);
-                    delay = TimeSpan.FromMilliseconds(waitTime);
-                }
-                else
-                {
-                    _lastScrapeTime = DateTime.Now;
-                    delay = TimeSpan.Zero;
-                }
-            }
-
-            if (delay > TimeSpan.Zero)
-            {
-                await Task.Delay(delay);
-            }
-
-            try
-            {
-                var url = $"https://steamdb.info/app/{appId}/info/";
-                _enhancedLogger?.LogDebug("SteamApiService.ScrapeSteamDb", "Scraping SteamDB for client icon", new { Url = url });
-
-                using var request = new HttpRequestMessage(HttpMethod.Get, url);
-                // Use a browser-like User-Agent to avoid immediate blocking
-                request.Headers.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36");
-                
-                using var response = await _httpClient.SendAsync(request);
-                if (!response.IsSuccessStatusCode)
-                {
-                    _enhancedLogger?.LogWarning("SteamApiService.ScrapeSteamDb", "SteamDB request failed", new { StatusCode = response.StatusCode });
-                    return null;
-                }
-
-                var html = await response.Content.ReadAsStringAsync();
-                
-                // Look for clienticon hash pattern
-                // Usually in a table cell or data attribute
-                // Pattern: clienticon string followed by 40-char hex
-                
-                // Regex to find the hash associated with clienticon
-                // This is a heuristic and might need adjustment if SteamDB changes
-                var match = System.Text.RegularExpressions.Regex.Match(html, @"clienticon.*?([0-9a-f]{40})", System.Text.RegularExpressions.RegexOptions.IgnoreCase | System.Text.RegularExpressions.RegexOptions.Singleline);
-                
-                if (match.Success)
-                {
-                    var hash = match.Groups[1].Value;
-                    _enhancedLogger?.LogInfo("SteamApiService.ScrapeSteamDb", "Found client icon hash", new { AppId = appId, Hash = hash });
-                    return hash;
-                }
-
-                _enhancedLogger?.LogWarning("SteamApiService.ScrapeSteamDb", "Client icon hash not found in HTML", new { AppId = appId });
-                return null;
-            }
-            catch (Exception ex)
-            {
-                _enhancedLogger?.LogError("SteamApiService.ScrapeSteamDb", "Error scraping SteamDB", ex, new { AppId = appId });
-                return null;
-            }
-        }
-
-        #endregion
     }
 }
