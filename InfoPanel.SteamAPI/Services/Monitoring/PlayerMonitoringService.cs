@@ -275,6 +275,8 @@ namespace InfoPanel.SteamAPI.Services.Monitoring
                     CurrentGameName = playerData.CurrentGameName,
                     CurrentGameAppId = playerData.CurrentGameAppId,
                     CurrentGameBannerUrl = playerData.CurrentGameBannerUrl,
+                    CurrentGameLogoUrl = playerData.CurrentGameLogoUrl,
+                    CurrentGameIconUrl = playerData.CurrentGameIconUrl,
                     PlayerName = playerData.PlayerName,
                     Status = $"Player cycle {_cycleCount}"
                 });

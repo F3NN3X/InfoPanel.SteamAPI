@@ -42,10 +42,8 @@ namespace InfoPanel.SteamAPI.Services.Sensors
         // Image URL sensors
         private readonly PluginText _profileImageUrlSensor;
         private readonly PluginText _currentGameBannerUrlSensor;
-        private readonly PluginText _currentGameLogoUrlSensor;
-        private readonly PluginText _currentGameIconUrlSensor;
-        private readonly PluginText _lastPlayedGameLogoUrlSensor;
-        private readonly PluginText _lastPlayedGameIconUrlSensor;
+        private readonly PluginText _gameLogoUrlSensor;
+        private readonly PluginText _gameIconUrlSensor;
         private readonly PluginText _gameStatusTextSensor;
 
         private bool _disposed = false;
@@ -67,10 +65,8 @@ namespace InfoPanel.SteamAPI.Services.Sensors
             PluginText averageSessionTimeSensor,
             PluginText profileImageUrlSensor,
             PluginText currentGameBannerUrlSensor,
-            PluginText currentGameLogoUrlSensor,
-            PluginText currentGameIconUrlSensor,
-            PluginText lastPlayedGameLogoUrlSensor,
-            PluginText lastPlayedGameIconUrlSensor,
+            PluginText gameLogoUrlSensor,
+            PluginText gameIconUrlSensor,
             PluginText gameStatusTextSensor,
             EnhancedLoggingService? enhancedLogger = null)
         {
@@ -87,10 +83,8 @@ namespace InfoPanel.SteamAPI.Services.Sensors
             _averageSessionTimeSensor = averageSessionTimeSensor ?? throw new ArgumentNullException(nameof(averageSessionTimeSensor));
             _profileImageUrlSensor = profileImageUrlSensor ?? throw new ArgumentNullException(nameof(profileImageUrlSensor));
             _currentGameBannerUrlSensor = currentGameBannerUrlSensor ?? throw new ArgumentNullException(nameof(currentGameBannerUrlSensor));
-            _currentGameLogoUrlSensor = currentGameLogoUrlSensor ?? throw new ArgumentNullException(nameof(currentGameLogoUrlSensor));
-            _currentGameIconUrlSensor = currentGameIconUrlSensor ?? throw new ArgumentNullException(nameof(currentGameIconUrlSensor));
-            _lastPlayedGameLogoUrlSensor = lastPlayedGameLogoUrlSensor ?? throw new ArgumentNullException(nameof(lastPlayedGameLogoUrlSensor));
-            _lastPlayedGameIconUrlSensor = lastPlayedGameIconUrlSensor ?? throw new ArgumentNullException(nameof(lastPlayedGameIconUrlSensor));
+            _gameLogoUrlSensor = gameLogoUrlSensor ?? throw new ArgumentNullException(nameof(gameLogoUrlSensor));
+            _gameIconUrlSensor = gameIconUrlSensor ?? throw new ArgumentNullException(nameof(gameIconUrlSensor));
             _gameStatusTextSensor = gameStatusTextSensor ?? throw new ArgumentNullException(nameof(gameStatusTextSensor));
             _enhancedLogger = enhancedLogger;
 
@@ -347,12 +341,8 @@ namespace InfoPanel.SteamAPI.Services.Sensors
                 var currentIcon = playerData.CurrentGameIconUrl ?? "-";
 
                 _currentGameBannerUrlSensor.Value = currentBanner;
-                _currentGameLogoUrlSensor.Value = currentLogo;
-                _currentGameIconUrlSensor.Value = currentIcon;
-
-                // Clear last played sensors when playing
-                _lastPlayedGameLogoUrlSensor.Value = "-";
-                _lastPlayedGameIconUrlSensor.Value = "-";
+                _gameLogoUrlSensor.Value = currentLogo;
+                _gameIconUrlSensor.Value = currentIcon;
 
                 _gameStatusTextSensor.Value = _configService.CurrentlyPlayingText;
 
@@ -374,14 +364,8 @@ namespace InfoPanel.SteamAPI.Services.Sensors
                 var lastPlayedIconUrl = sessionCache.LastPlayedGameIconUrl ?? "-";
 
                 _currentGameBannerUrlSensor.Value = lastPlayedBannerUrl;
-
-                // Clear current game sensors
-                _currentGameLogoUrlSensor.Value = "-";
-                _currentGameIconUrlSensor.Value = "-";
-
-                // Set last played sensors
-                _lastPlayedGameLogoUrlSensor.Value = lastPlayedLogoUrl;
-                _lastPlayedGameIconUrlSensor.Value = lastPlayedIconUrl;
+                _gameLogoUrlSensor.Value = lastPlayedLogoUrl;
+                _gameIconUrlSensor.Value = lastPlayedIconUrl;
 
                 _gameStatusTextSensor.Value = _configService.LastPlayedGameText;
 
@@ -447,10 +431,8 @@ namespace InfoPanel.SteamAPI.Services.Sensors
                 _averageSessionTimeSensor.Value = "Error";
                 _profileImageUrlSensor.Value = "-";
                 _currentGameBannerUrlSensor.Value = "-";
-                _currentGameLogoUrlSensor.Value = "-";
-                _currentGameIconUrlSensor.Value = "-";
-                _lastPlayedGameLogoUrlSensor.Value = "-";
-                _lastPlayedGameIconUrlSensor.Value = "-";
+                _gameLogoUrlSensor.Value = "-";
+                _gameIconUrlSensor.Value = "-";
                 _gameStatusTextSensor.Value = "Error";
 
                 _enhancedLogger?.LogError($"{DOMAIN_NAME}.SetErrorState", "Player sensors set to error state", null, new

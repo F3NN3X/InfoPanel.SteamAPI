@@ -352,6 +352,8 @@ namespace InfoPanel.SteamAPI.Services
                                 playerData.LastPlayedGameName = lastPlayed.gameName;
                                 playerData.LastPlayedGameAppId = lastPlayed.appId;
                                 playerData.LastPlayedGameBannerUrl = lastPlayed.bannerUrl;
+                                playerData.LastPlayedGameLogoUrl = lastPlayed.logoUrl;
+                                playerData.LastPlayedGameIconUrl = lastPlayed.iconUrl;
                                 playerData.LastPlayedGameTimestamp = lastPlayed.timestamp;
 
                                 // Fetch playtime for last played game
@@ -706,7 +708,7 @@ namespace InfoPanel.SteamAPI.Services
                 // 1. Try to get from Owned Games (best quality/correct icon)
                 var ownedGames = await _steamApiService.GetOwnedGamesAsync();
                 var game = ownedGames?.Response?.Games?.FirstOrDefault(g => g.AppId == appId);
-                
+
                 if (game != null && !string.IsNullOrEmpty(game.ImgIconUrl))
                 {
                     var iconUrl = SteamApiService.GetGameIconUrl(appId, game.ImgIconUrl);

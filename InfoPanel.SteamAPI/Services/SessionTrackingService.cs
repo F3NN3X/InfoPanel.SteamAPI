@@ -282,6 +282,30 @@ namespace InfoPanel.SteamAPI.Services
                         }
                     }
 
+                    // Update logo URL if we have one for the current session
+                    if (!string.IsNullOrEmpty(currentLogoUrl) && isCurrentlyInGame)
+                    {
+                        _lastKnownLogoUrl = currentLogoUrl;
+
+                        // Update current session logo if session is active
+                        if (_sessionHistory.CurrentSession?.IsActive == true)
+                        {
+                            _sessionHistory.CurrentSession.LogoUrl = currentLogoUrl;
+                        }
+                    }
+
+                    // Update icon URL if we have one for the current session
+                    if (!string.IsNullOrEmpty(currentIconUrl) && isCurrentlyInGame)
+                    {
+                        _lastKnownIconUrl = currentIconUrl;
+
+                        // Update current session icon if session is active
+                        if (_sessionHistory.CurrentSession?.IsActive == true)
+                        {
+                            _sessionHistory.CurrentSession.IconUrl = currentIconUrl;
+                        }
+                    }
+
                     // Handle state changes with debouncing to prevent rapid cycling
                     if (isCurrentlyInGame && !_wasInGameLastCheck && !_pendingGameStart)
                     {
