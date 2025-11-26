@@ -710,9 +710,18 @@ namespace InfoPanel.SteamAPI.Services
                 var game = ownedGames?.Response?.Games?.FirstOrDefault(g => g.AppId == appId);
 
                 // Try client_icon first (high quality .ico)
-                if (game != null && !string.IsNullOrEmpty(game.ClientIcon))
+                // First check if we have it directly
+                string? clientIconHash = game?.ClientIcon;
+
+                // If not, try to resolve it (check cache or scrape)
+                if (string.IsNullOrEmpty(clientIconHash))
                 {
-                    var iconUrl = SteamApiService.GetGameClientIconUrl(appId, game.ClientIcon);
+                    clientIconHash = await _steamApiService.ResolveClientIconAsync(appId);
+                }
+
+                if (!string.IsNullOrEmpty(clientIconHash))
+                {
+                    var iconUrl = SteamApiService.GetGameClientIconUrl(appId, clientIconHash);
                     _enhancedLogger?.LogDebug("PlayerDataService.GetGameIconUrlAsync", "Game icon URL from hash (client icon)", new { AppId = appId, IconUrl = iconUrl });
                     return iconUrl;
                 }
