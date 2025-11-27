@@ -2,6 +2,23 @@
 
 All notable changes to InfoPanel Steam API Plugin will be documented in this file.
 
+## [1.3.6] - 2025-11-27
+
+### ✨ **New Features**
+
+- **SteamGridDB Integration**: Added full support for fetching high-quality game assets (Grids, Heroes, Logos, Icons) from SteamGridDB.
+- **Smart Image Processing**: Implemented a "Canvas" system for game logos that centers resized images on a transparent background (default 1852x440) to prevent UI distortion/stretching.
+- **Local Image Server**: Added a built-in local HTTP server to serve processed/cached images via `http://localhost:39482/...` URLs, bypassing UI limitations with local file paths.
+- **Grid URL Sensor**: Added a new "Game Grid URL" sensor to the User Profile container.
+- **Persistent "Last Played" Visuals**: The "Last Played" game now correctly persists its Grid and Logo images across plugin restarts using the local server.
+
+### 🔧 **Configuration**
+
+- **Local Server Port**: Added `[Local Server Settings]` section to `InfoPanel.SteamAPI.dll.ini` to allow configuring the local HTTP server port (default: 39482).
+- **SteamGridDB Settings**: Added comprehensive configuration for SteamGridDB API key, preferred styles, dimensions, and content filters.
+
+---
+
 ## [1.3.5] - 2025-11-26
 
 ### 🧹 **Code Cleanup & Reversion**

@@ -39,9 +39,22 @@ namespace InfoPanel.SteamAPI.Services
         private readonly EnhancedLoggingService? _enhancedLogger;
         private readonly SteamApiService _steamApiService;
         private readonly SessionTrackingService? _sessionTracker;
+        private readonly SteamGridDbService? _steamGridDbService;
+        private readonly ImageProcessingService? _imageProcessingService;
+        private readonly LocalImageServer? _localImageServer;
 
         // Cache for game banner URLs to avoid repeated HEAD requests
         private readonly System.Collections.Concurrent.ConcurrentDictionary<int, string> _bannerUrlCache = new();
+
+        // Cache for SteamGridDB images to avoid repeated API calls
+        private class SteamGridDbCacheItem
+        {
+            public string? GridUrl;
+            public string? HeroUrl;
+            public string? LogoUrl;
+            public string? IconUrl;
+        }
+        private readonly System.Collections.Concurrent.ConcurrentDictionary<int, SteamGridDbCacheItem> _steamGridDbCache = new();
 
         #endregion
 
@@ -50,12 +63,18 @@ namespace InfoPanel.SteamAPI.Services
         public PlayerDataService(
             ConfigurationService configService,
             SteamApiService steamApiService,
+            SteamGridDbService? steamGridDbService = null,
+            ImageProcessingService? imageProcessingService = null,
+            LocalImageServer? localImageServer = null,
             SessionTrackingService? sessionTracker = null,
             FileLoggingService? logger = null,
             EnhancedLoggingService? enhancedLogger = null)
         {
             _configService = configService ?? throw new ArgumentNullException(nameof(configService));
             _steamApiService = steamApiService ?? throw new ArgumentNullException(nameof(steamApiService));
+            _steamGridDbService = steamGridDbService;
+            _imageProcessingService = imageProcessingService;
+            _localImageServer = localImageServer;
             _sessionTracker = sessionTracker;
             _logger = logger;
             _enhancedLogger = enhancedLogger;
@@ -208,46 +227,55 @@ namespace InfoPanel.SteamAPI.Services
                                 Console.WriteLine($"[PlayerDataService] GAME APP ID SET! CurrentGameAppId={playerData.CurrentGameAppId}");
                             }
 
-                            // Get game banner URL
-                            try
-                            {
-                                playerData.CurrentGameBannerUrl = await GetGameBannerUrlAsync(gameId);
+                            // Get SteamGridDB images
+                            var steamGridDbImages = await GetSteamGridDbImagesAsync(gameId);
+                            playerData.SteamGridDbGridUrl = steamGridDbImages.GridUrl;
+                            playerData.SteamGridDbHeroUrl = steamGridDbImages.HeroUrl;
+                            playerData.SteamGridDbLogoUrl = steamGridDbImages.LogoUrl;
+                            playerData.SteamGridDbIconUrl = steamGridDbImages.IconUrl;
 
-                                // Enhanced logging for banner with delta detection
-                                if (_enhancedLogger != null)
-                                {
-                                    _enhancedLogger.LogDebug("PLAYER", "Game banner updated", new
-                                    {
-                                        GameName = playerData.CurrentGameName,
-                                        AppId = gameId,
-                                        BannerUrl = playerData.CurrentGameBannerUrl,
-                                        HasBanner = !string.IsNullOrEmpty(playerData.CurrentGameBannerUrl)
-                                    });
-                                }
-                                else
-                                {
-                                    _enhancedLogger?.LogDebug("PlayerDataService", "Game banner URL set", new
-                                    {
-                                        BannerUrl = playerData.CurrentGameBannerUrl
-                                    });
-                                }
-                            }
-                            catch (Exception bannerEx)
+                            // Set Game Grid (Grid > CDN)
+                            if (!string.IsNullOrEmpty(playerData.SteamGridDbGridUrl))
                             {
-                                if (_enhancedLogger != null)
-                                {
-                                    _enhancedLogger.LogWarning("PLAYER", "Failed to fetch game banner", new { AppId = gameId }, bannerEx);
-                                }
-                                else
-                                {
-                                    _enhancedLogger?.LogWarning("PlayerDataService", "Failed to fetch game banner", new
-                                    {
-                                        AppId = gameId,
-                                        ErrorMessage = bannerEx.Message
-                                    });
-                                }
-                                playerData.CurrentGameBannerUrl = null;
+                                playerData.CurrentGameGridUrl = playerData.SteamGridDbGridUrl;
                             }
+                            else
+                            {
+                                playerData.CurrentGameGridUrl = $"https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/{gameId}/library_600x900_2x.jpg";
+                            }
+
+                            // Set Game Banner (Hero > Grid > CDN)
+                            if (!string.IsNullOrEmpty(playerData.SteamGridDbHeroUrl))
+                            {
+                                playerData.CurrentGameBannerUrl = playerData.SteamGridDbHeroUrl;
+                            }
+                            else
+                            {
+                                // Fallback to CDN
+                                playerData.CurrentGameBannerUrl = await GetGameBannerUrlAsync(gameId);
+                            }
+
+                            // Set Game Logo (Logo > CDN)
+                            if (!string.IsNullOrEmpty(playerData.SteamGridDbLogoUrl))
+                            {
+                                playerData.CurrentGameLogoUrl = playerData.SteamGridDbLogoUrl;
+                            }
+                            else
+                            {
+                                playerData.CurrentGameLogoUrl = $"https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/{gameId}/logo.png";
+                            }
+
+                            // Set Game Icon (Icon > CDN)
+                            if (!string.IsNullOrEmpty(playerData.SteamGridDbIconUrl))
+                            {
+                                playerData.CurrentGameIconUrl = playerData.SteamGridDbIconUrl;
+                            }
+                            else
+                            {
+                                // No reliable CDN fallback for icon without hash, so leave null or handle elsewhere
+                                playerData.CurrentGameIconUrl = null;
+                            }
+
 
                             // Get current game total playtime from owned games
                             try
@@ -274,8 +302,16 @@ namespace InfoPanel.SteamAPI.Services
                             // Get current game logo and icon URLs
                             try
                             {
-                                playerData.CurrentGameLogoUrl = await GetGameLogoUrlAsync(gameId);
-                                playerData.CurrentGameIconUrl = await GetGameIconUrlAsync(gameId);
+                                // Only fetch if not already set by SteamGridDB logic above
+                                if (string.IsNullOrEmpty(playerData.CurrentGameLogoUrl))
+                                {
+                                    playerData.CurrentGameLogoUrl = await GetGameLogoUrlAsync(gameId);
+                                }
+
+                                if (string.IsNullOrEmpty(playerData.CurrentGameIconUrl))
+                                {
+                                    playerData.CurrentGameIconUrl = await GetGameIconUrlAsync(gameId);
+                                }
 
                                 _enhancedLogger?.LogDebug("PLAYER", "Game logo and icon URLs fetched", new
                                 {
@@ -325,6 +361,7 @@ namespace InfoPanel.SteamAPI.Services
                         playerData.CurrentGameBannerUrl = null;
                         playerData.CurrentGameLogoUrl = null;
                         playerData.CurrentGameIconUrl = null;
+                        playerData.CurrentGameGridUrl = null;
                         playerData.CurrentGameTotalPlaytimeHours = 0;
 
                         _enhancedLogger?.LogInfo("PLAYER", "Steam API reports no game - clearing game state", new
@@ -354,6 +391,7 @@ namespace InfoPanel.SteamAPI.Services
                                 playerData.LastPlayedGameBannerUrl = lastPlayed.bannerUrl;
                                 playerData.LastPlayedGameLogoUrl = lastPlayed.logoUrl;
                                 playerData.LastPlayedGameIconUrl = lastPlayed.iconUrl;
+                                playerData.LastPlayedGameGridUrl = lastPlayed.gridUrl;
                                 playerData.LastPlayedGameTimestamp = lastPlayed.timestamp;
 
                                 // Fetch playtime for last played game
@@ -543,11 +581,6 @@ namespace InfoPanel.SteamAPI.Services
                 // Check cache first
                 if (_bannerUrlCache.TryGetValue(appId, out var cachedUrl))
                 {
-                    _enhancedLogger?.LogDebug("PlayerDataService.GetGameBannerUrlAsync", "Cache hit for game banner URL", new
-                    {
-                        AppId = appId,
-                        BannerUrl = cachedUrl
-                    });
                     return cachedUrl;
                 }
 
@@ -555,34 +588,16 @@ namespace InfoPanel.SteamAPI.Services
                 // Primary CDN: CloudFlare
                 var libraryHeroUrl = $"https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/{appId}/library_hero.jpg";
 
-                _enhancedLogger?.LogDebug("PlayerDataService.GetGameBannerUrlAsync", "Using library_hero image from CDN", new
-                {
-                    AppId = appId,
-                    LibraryHeroUrl = libraryHeroUrl,
-                    ImageSize = "3840x1240"
-                });
-
                 // Verify the image exists using the shared service
                 bool isValid = await _steamApiService.CheckImageUrlAsync(libraryHeroUrl);
 
                 if (isValid)
                 {
-                    _enhancedLogger?.LogDebug("PlayerDataService.GetGameBannerUrlAsync", "Library hero image verified", new
-                    {
-                        AppId = appId
-                    });
                     // Cache the URL
                     _bannerUrlCache[appId] = libraryHeroUrl;
                     return libraryHeroUrl;
                 }
 
-                _enhancedLogger?.LogDebug("PlayerDataService.GetGameBannerUrlAsync", "Using library_hero URL (verification skipped)", new
-                {
-                    AppId = appId,
-                    Note = "CDN image URL returned without verification"
-                });
-
-                // Return the URL even if HEAD request failed - Steam CDN is highly reliable
                 return libraryHeroUrl;
             }
             catch (Exception ex)
@@ -660,42 +675,17 @@ namespace InfoPanel.SteamAPI.Services
         /// </summary>
         private async Task<string?> GetGameLogoUrlAsync(int appId)
         {
-            try
+            if (_steamGridDbService != null && _steamGridDbService.IsAvailable)
             {
-                // 1. Try shared.akamai.steamstatic.com (library_logo.png)
-                var logoUrl = $"https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/{appId}/library_logo.png";
-                if (await _steamApiService.CheckImageUrlAsync(logoUrl))
+                var logoUrl = await _steamGridDbService.GetLogoUrlAsync(appId);
+                if (!string.IsNullOrEmpty(logoUrl))
                 {
-                    _enhancedLogger?.LogDebug("PlayerDataService.GetGameLogoUrlAsync", "Game logo URL verified (Akamai library_logo)", new { AppId = appId, LogoUrl = logoUrl });
                     return logoUrl;
                 }
-
-                // 2. Fallback to standard logo.png
-                logoUrl = $"https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/{appId}/logo.png";
-                if (await _steamApiService.CheckImageUrlAsync(logoUrl))
-                {
-                    _enhancedLogger?.LogDebug("PlayerDataService.GetGameLogoUrlAsync", "Game logo URL verified (Akamai logo.png)", new { AppId = appId, LogoUrl = logoUrl });
-                    return logoUrl;
-                }
-
-                // 3. Try to get from Owned Games (hash based)
-                var ownedGames = await _steamApiService.GetOwnedGamesAsync();
-                var game = ownedGames?.Response?.Games?.FirstOrDefault(g => g.AppId == appId);
-                if (game != null && !string.IsNullOrEmpty(game.ImgLogoUrl))
-                {
-                    logoUrl = SteamApiService.GetGameLogoUrl(appId, game.ImgLogoUrl);
-                    _enhancedLogger?.LogDebug("PlayerDataService.GetGameLogoUrlAsync", "Game logo URL from hash", new { AppId = appId, LogoUrl = logoUrl });
-                    return logoUrl;
-                }
-
-                _enhancedLogger?.LogWarning("PlayerDataService.GetGameLogoUrlAsync", "Game logo URL not found", new { AppId = appId });
-                return null;
             }
-            catch (Exception ex)
-            {
-                _enhancedLogger?.LogError("PlayerDataService.GetGameLogoUrlAsync", "Error fetching game logo URL", ex, new { AppId = appId });
-                return null;
-            }
+
+            // Fallback to Steam CDN for logo
+            return $"https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/{appId}/logo.png";
         }
 
         /// <summary>
@@ -703,44 +693,102 @@ namespace InfoPanel.SteamAPI.Services
         /// </summary>
         private async Task<string?> GetGameIconUrlAsync(int appId)
         {
-            try
+            if (_steamGridDbService != null && _steamGridDbService.IsAvailable)
             {
-                // 1. Try to get from Owned Games (best quality/correct icon - client icon)
-                var ownedGames = await _steamApiService.GetOwnedGamesAsync();
-                var game = ownedGames?.Response?.Games?.FirstOrDefault(g => g.AppId == appId);
-
-                // Try client_icon first (high quality .ico)
-                if (game != null && !string.IsNullOrEmpty(game.ClientIcon))
+                var iconUrl = await _steamGridDbService.GetIconUrlAsync(appId);
+                if (!string.IsNullOrEmpty(iconUrl))
                 {
-                    var iconUrl = SteamApiService.GetGameClientIconUrl(appId, game.ClientIcon);
-                    _enhancedLogger?.LogDebug("PlayerDataService.GetGameIconUrlAsync", "Game icon URL from hash (client icon)", new { AppId = appId, IconUrl = iconUrl });
                     return iconUrl;
                 }
-
-                // 2. Fallback to community icon (img_icon_url)
-                if (game != null && !string.IsNullOrEmpty(game.ImgIconUrl))
-                {
-                    var iconUrl = SteamApiService.GetGameIconUrl(appId, game.ImgIconUrl);
-                    _enhancedLogger?.LogDebug("PlayerDataService.GetGameIconUrlAsync", "Game icon URL from hash (community icon)", new { AppId = appId, IconUrl = iconUrl });
-                    return iconUrl;
-                }
-
-                // 3. Fallback to small capsule
-                var capsuleUrl = $"https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/{appId}/capsule_184x69.jpg";
-                if (await _steamApiService.CheckImageUrlAsync(capsuleUrl))
-                {
-                    _enhancedLogger?.LogDebug("PlayerDataService.GetGameIconUrlAsync", "Using small capsule as icon fallback", new { AppId = appId, IconUrl = capsuleUrl });
-                    return capsuleUrl;
-                }
-
-                _enhancedLogger?.LogWarning("PlayerDataService.GetGameIconUrlAsync", "Game icon URL not found", new { AppId = appId });
-                return null;
             }
-            catch (Exception ex)
+
+            return null;
+        }
+
+        /// <summary>
+        /// Fetches and caches SteamGridDB images (grid, hero, logo, icon) for a given appId
+        /// </summary>
+        private async Task<SteamGridDbCacheItem> GetSteamGridDbImagesAsync(int appId)
+        {
+            // Check cache first
+            if (_steamGridDbCache.TryGetValue(appId, out var cachedItem))
             {
-                _enhancedLogger?.LogError("PlayerDataService.GetGameIconUrlAsync", "Error fetching game icon URL", ex, new { AppId = appId });
-                return null;
+                return cachedItem;
             }
+
+            var item = new SteamGridDbCacheItem();
+
+            if (_steamGridDbService != null && _steamGridDbService.IsAvailable)
+            {
+                try
+                {
+                    // Fetch in parallel for better performance
+                    var gridTask = _steamGridDbService.GetGridUrlAsync(appId);
+                    var heroTask = _steamGridDbService.GetHeroUrlAsync(appId);
+                    var logoTask = _steamGridDbService.GetLogoUrlAsync(appId);
+                    var iconTask = _steamGridDbService.GetIconUrlAsync(appId);
+
+                    await Task.WhenAll(gridTask, heroTask, logoTask, iconTask);
+
+                    item.GridUrl = gridTask.Result;
+                    item.HeroUrl = heroTask.Result;
+
+                    // Process Logo if available and ImageProcessingService is enabled
+                    var rawLogoUrl = logoTask.Result;
+                    if (!string.IsNullOrEmpty(rawLogoUrl) && _imageProcessingService != null)
+                    {
+                        // Include dimensions in filename to handle config changes and invalidate old cache
+                        var fileName = $"{appId}_{_configService.SteamGridDbMaxLogoWidth}x{_configService.SteamGridDbMaxLogoHeight}.png";
+                        var cachePath = System.IO.Path.Combine(
+                            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                            "InfoPanel", "cache", "steam", "logos", fileName);
+
+                        var processedPath = await _imageProcessingService.ProcessAndSaveImageAsync(
+                            rawLogoUrl,
+                            cachePath,
+                            _configService.SteamGridDbMaxLogoWidth,
+                            _configService.SteamGridDbMaxLogoHeight);
+
+                        if (processedPath != null && _localImageServer != null)
+                        {
+                            // Use local HTTP server URL
+                            item.LogoUrl = _localImageServer.GetUrlForFilePath(processedPath);
+                        }
+                        else if (processedPath != null)
+                        {
+                            // Fallback to file URI if server not available
+                            item.LogoUrl = new Uri(processedPath).AbsoluteUri;
+                        }
+                        else
+                        {
+                            item.LogoUrl = rawLogoUrl;
+                        }
+                    }
+                    else
+                    {
+                        item.LogoUrl = rawLogoUrl;
+                    }
+
+                    item.IconUrl = iconTask.Result;
+
+                    _enhancedLogger?.LogDebug("PlayerDataService", "Fetched SteamGridDB images", new
+                    {
+                        AppId = appId,
+                        HasGrid = !string.IsNullOrEmpty(item.GridUrl),
+                        HasHero = !string.IsNullOrEmpty(item.HeroUrl),
+                        HasLogo = !string.IsNullOrEmpty(item.LogoUrl),
+                        HasIcon = !string.IsNullOrEmpty(item.IconUrl)
+                    });
+                }
+                catch (Exception ex)
+                {
+                    _enhancedLogger?.LogWarning("PlayerDataService", "Failed to fetch SteamGridDB images", new { AppId = appId }, ex);
+                }
+            }
+
+            // Cache the result (even if empty, to avoid retrying immediately)
+            _steamGridDbCache[appId] = item;
+            return item;
         }
 
         #endregion
@@ -782,6 +830,7 @@ namespace InfoPanel.SteamAPI.Services
         public string? CurrentGameBannerUrl { get; set; }
         public string? CurrentGameLogoUrl { get; set; }
         public string? CurrentGameIconUrl { get; set; }
+        public string? CurrentGameGridUrl { get; set; } // Added CurrentGameGridUrl property
         public double CurrentGameTotalPlaytimeHours { get; set; }  // Total playtime for current game from Steam API
 
         #endregion
@@ -806,8 +855,18 @@ namespace InfoPanel.SteamAPI.Services
         public string? LastPlayedGameBannerUrl { get; set; }
         public string? LastPlayedGameLogoUrl { get; set; }
         public string? LastPlayedGameIconUrl { get; set; }
+        public string? LastPlayedGameGridUrl { get; set; }
         public DateTime? LastPlayedGameTimestamp { get; set; }
         public double LastPlayedGamePlaytimeHours { get; set; }
+
+        #endregion
+
+        #region SteamGridDB Properties
+
+        public string? SteamGridDbGridUrl { get; set; }
+        public string? SteamGridDbHeroUrl { get; set; }
+        public string? SteamGridDbLogoUrl { get; set; }
+        public string? SteamGridDbIconUrl { get; set; }
 
         #endregion
 

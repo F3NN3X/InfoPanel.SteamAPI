@@ -43,6 +43,7 @@ namespace InfoPanel.SteamAPI.Services.Sensors
         private readonly PluginText _profileImageUrlSensor;
         private readonly PluginText _currentGameBannerUrlSensor;
         private readonly PluginText _gameLogoUrlSensor;
+        private readonly PluginText _gameGridUrlSensor;
         private readonly PluginText _gameIconUrlSensor;
         private readonly PluginText _gameStatusTextSensor;
 
@@ -66,6 +67,7 @@ namespace InfoPanel.SteamAPI.Services.Sensors
             PluginText profileImageUrlSensor,
             PluginText currentGameBannerUrlSensor,
             PluginText gameLogoUrlSensor,
+            PluginText gameGridUrlSensor,
             PluginText gameIconUrlSensor,
             PluginText gameStatusTextSensor,
             EnhancedLoggingService? enhancedLogger = null)
@@ -84,6 +86,7 @@ namespace InfoPanel.SteamAPI.Services.Sensors
             _profileImageUrlSensor = profileImageUrlSensor ?? throw new ArgumentNullException(nameof(profileImageUrlSensor));
             _currentGameBannerUrlSensor = currentGameBannerUrlSensor ?? throw new ArgumentNullException(nameof(currentGameBannerUrlSensor));
             _gameLogoUrlSensor = gameLogoUrlSensor ?? throw new ArgumentNullException(nameof(gameLogoUrlSensor));
+            _gameGridUrlSensor = gameGridUrlSensor ?? throw new ArgumentNullException(nameof(gameGridUrlSensor));
             _gameIconUrlSensor = gameIconUrlSensor ?? throw new ArgumentNullException(nameof(gameIconUrlSensor));
             _gameStatusTextSensor = gameStatusTextSensor ?? throw new ArgumentNullException(nameof(gameStatusTextSensor));
             _enhancedLogger = enhancedLogger;
@@ -339,9 +342,11 @@ namespace InfoPanel.SteamAPI.Services.Sensors
                 var currentBanner = playerData.CurrentGameBannerUrl ?? "-";
                 var currentLogo = playerData.CurrentGameLogoUrl ?? "-";
                 var currentIcon = playerData.CurrentGameIconUrl ?? "-";
+                var currentGrid = playerData.CurrentGameGridUrl ?? "-";
 
                 _currentGameBannerUrlSensor.Value = currentBanner;
                 _gameLogoUrlSensor.Value = currentLogo;
+                _gameGridUrlSensor.Value = currentGrid;
                 _gameIconUrlSensor.Value = currentIcon;
 
                 _gameStatusTextSensor.Value = _configService.CurrentlyPlayingText;
@@ -353,6 +358,7 @@ namespace InfoPanel.SteamAPI.Services.Sensors
                     BannerUrl = currentBanner,
                     LogoUrl = currentLogo,
                     IconUrl = currentIcon,
+                    GridUrl = currentGrid,
                     StatusText = _configService.CurrentlyPlayingText
                 });
             }
@@ -362,9 +368,11 @@ namespace InfoPanel.SteamAPI.Services.Sensors
                 var lastPlayedBannerUrl = sessionCache.LastPlayedGameBannerUrl ?? "-";
                 var lastPlayedLogoUrl = sessionCache.LastPlayedGameLogoUrl ?? "-";
                 var lastPlayedIconUrl = sessionCache.LastPlayedGameIconUrl ?? "-";
+                var lastPlayedGridUrl = sessionCache.LastPlayedGameGridUrl ?? "-";
 
                 _currentGameBannerUrlSensor.Value = lastPlayedBannerUrl;
                 _gameLogoUrlSensor.Value = lastPlayedLogoUrl;
+                _gameGridUrlSensor.Value = lastPlayedGridUrl;
                 _gameIconUrlSensor.Value = lastPlayedIconUrl;
 
                 _gameStatusTextSensor.Value = _configService.LastPlayedGameText;
@@ -375,6 +383,7 @@ namespace InfoPanel.SteamAPI.Services.Sensors
                     LastPlayedBannerUrl = lastPlayedBannerUrl,
                     LastPlayedLogoUrl = lastPlayedLogoUrl,
                     LastPlayedIconUrl = lastPlayedIconUrl,
+                    LastPlayedGridUrl = lastPlayedGridUrl,
                     StatusText = _configService.LastPlayedGameText
                 });
             }

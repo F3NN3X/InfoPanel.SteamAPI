@@ -1,6 +1,6 @@
 # InfoPanel.SteamAPI
 
-![Version](https://img.shields.io/badge/version-1.3.5-blue.svg)
+![Version](https://img.shields.io/badge/version-1.3.6-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
 ![Platform](https://img.shields.io/badge/platform-InfoPanel-orange.svg)
 
@@ -46,6 +46,44 @@ SteamId64=YOUR_64BIT_STEAM_ID
 ### Optional Settings
 
 You can customize update intervals, display text, and privacy settings in the config file. Use the **"Open Config"** button in InfoPanel to edit easily.
+
+## 🖼️ SteamGridDB Integration
+
+This plugin integrates with SteamGridDB to fetch high-quality assets for your games. It features a **Smart Fallback System** that ensures you always get an image: if your preferred styles (e.g., "Official") aren't found, it automatically retries with relaxed constraints to find *any* valid image before falling back to standard Steam assets.
+
+### Supported Asset Types & Dimensions
+
+The plugin automatically selects the best available image using a sophisticated prioritization logic:
+
+- **Grids (Box Art)**: Prefers **600x900** (Vertical Poster) > **920x430** (Horizontal Capsule).
+- **Heroes (Backgrounds)**: Prefers **1920x620** (Standard) > 4K (to save bandwidth).
+- **Logos**: Prioritizes **Official logos > 200px** width.
+  - *Fallback logic*: Any > 200px -> Any Official -> Wide Aspect Ratio (>1.3) -> Largest available.
+  - **Auto-Resizing**: Logos are automatically resized to fit within **300x100** (configurable) to ensure they fit your dashboard perfectly.
+  - **Smart Canvas**: Resized logos are centered on a transparent canvas (default 1852x440) to prevent UI distortion.
+- **Icons**: Prefers high-resolution square icons (**1024x1024** > **512x512**).
+
+### Configuration
+
+You can customize the asset fetching behavior in `InfoPanel.SteamAPI.dll.ini`:
+
+```ini
+[SteamGridDB Settings]
+ApiKey=YOUR_API_KEY
+Enabled=true
+PreferredStyles=Alternate,Blurred
+PreferredMimeTypes=Png,Webp
+PreferredTypes=Static
+IncludeNSFW=false
+MinimumScore=5
+MaxLogoWidth=300
+MaxLogoHeight=100
+
+[Local Server Settings]
+# Port for the local HTTP server used to serve cached images
+# Default: 39482 (Fixed port to ensure session persistence)
+Port=39482
+```
 
 ## 📊 Data Containers
 

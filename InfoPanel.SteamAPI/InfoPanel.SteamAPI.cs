@@ -1,4 +1,4 @@
-// InfoPanel.SteamAPI v1.3.5 - Steam API Plugin for InfoPanel
+// InfoPanel.SteamAPI v1.3.6 - Steam API Plugin for InfoPanel
 using InfoPanel.Plugins;
 using InfoPanel.SteamAPI.Services;
 using InfoPanel.SteamAPI.Models;
@@ -86,6 +86,7 @@ namespace InfoPanel.SteamAPI
         private readonly PluginText _profileImageUrlSensor = new("profile_image_url", "Profile Image URL", "-");
         private readonly PluginText _currentGameBannerUrlSensor = new("current_game_banner_url", "Current Game Banner URL", "-");
         private readonly PluginText _gameLogoUrlSensor = new("game_logo_url", "Game Logo URL", "-");
+        private readonly PluginText _gameGridUrlSensor = new("game_grid_url", "Game Grid URL", "-");
         private readonly PluginText _gameIconUrlSensor = new("game_icon_url", "Game Icon URL", "-");
         private readonly PluginText _gameStatusTextSensor = new("game-status-text", "Game Status", "Not Playing");
 
@@ -154,6 +155,9 @@ namespace InfoPanel.SteamAPI
         private LibraryDataService? _libraryDataService;
         private AchievementsDataService? _achievementsDataService;
         private NewsDataService? _newsDataService;
+        private SteamGridDbService? _steamGridDbService;
+        private ImageProcessingService? _imageProcessingService;
+        private LocalImageServer? _localImageServer;
 
         private CancellationTokenSource? _cancellationTokenSource;
 
@@ -267,8 +271,23 @@ namespace InfoPanel.SteamAPI
                 var sessionFilePath = _configFilePath?.Replace(".ini", "_session.json");
                 _sessionTrackingService = new SessionTrackingService(_loggingService, _enhancedLoggingService, sessionFilePath);
 
+                // Initialize SteamGridDB service
+                _steamGridDbService = new SteamGridDbService(_configService, _enhancedLoggingService);
+
+                // Initialize Image Processing service
+                _imageProcessingService = new ImageProcessingService(_enhancedLoggingService);
+
+                // Initialize Local Image Server
+                var cacheRoot = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "InfoPanel", "cache");
+                // Use configured port or default fixed port to ensure persisted URLs in session.json remain valid across restarts
+                int serverPort = _configService.LocalServerPort;
+                if (serverPort <= 0) serverPort = 39482; // Fallback safety
+
+                _localImageServer = new LocalImageServer(cacheRoot, serverPort, _enhancedLoggingService);
+                _localImageServer.Start();
+
                 // Initialize data collection services
-                _playerDataService = new PlayerDataService(_configService, steamApiService, _sessionTrackingService, _loggingService, _enhancedLoggingService);
+                _playerDataService = new PlayerDataService(_configService, steamApiService, _steamGridDbService, _imageProcessingService, _localImageServer, _sessionTrackingService, _loggingService, _enhancedLoggingService);
                 _socialDataService = new SocialDataService(_configService, steamApiService, _loggingService, _enhancedLoggingService);
                 _libraryDataService = new LibraryDataService(_configService, steamApiService, _sessionTrackingService, _loggingService, _enhancedLoggingService);
                 _achievementsDataService = new AchievementsDataService(_configService, steamApiService, _enhancedLoggingService);
@@ -321,6 +340,7 @@ namespace InfoPanel.SteamAPI
                     _profileImageUrlSensor,
                     _currentGameBannerUrlSensor,
                     _gameLogoUrlSensor,
+                    _gameGridUrlSensor,
                     _gameIconUrlSensor,
                     _gameStatusTextSensor,
                     _enhancedLoggingService);
@@ -400,6 +420,7 @@ namespace InfoPanel.SteamAPI
                 profileContainer.Entries.Add(_profileImageUrlSensor);
                 profileContainer.Entries.Add(_currentGameBannerUrlSensor);
                 profileContainer.Entries.Add(_gameLogoUrlSensor);
+                profileContainer.Entries.Add(_gameGridUrlSensor);
                 profileContainer.Entries.Add(_gameIconUrlSensor);
                 profileContainer.Entries.Add(_gameStatusTextSensor);
                 profileContainer.Entries.Add(_statusSensor);
@@ -537,8 +558,8 @@ namespace InfoPanel.SteamAPI
 
                 // Dispose shared services
                 _apiSemaphore?.Dispose();
-                _cancellationTokenSource?.Dispose();
-
+                _steamGridDbService?.Dispose();
+                _localImageServer?.Stop();
                 Console.WriteLine($"[{SteamAPIConstants.PLUGIN_NAME}] Plugin closed successfully - all domain services disposed");
             }
             catch (Exception ex)
@@ -665,6 +686,8 @@ namespace InfoPanel.SteamAPI
 
                 // Dispose shared services
                 _apiSemaphore?.Dispose();
+                _steamGridDbService?.Dispose();
+                _localImageServer?.Stop();
 
                 _loggingService?.LogInfo("SteamAPI plugin disposed successfully - all domain services cleaned up");
                 _enhancedLoggingService?.Dispose(); // Dispose enhanced logging service

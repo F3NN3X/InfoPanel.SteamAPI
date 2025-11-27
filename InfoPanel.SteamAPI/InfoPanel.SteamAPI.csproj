@@ -10,9 +10,9 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     
     <!-- Version Management -->
-    <Version>1.3.5</Version>
-    <AssemblyVersion>1.3.5.0</AssemblyVersion>
-    <FileVersion>1.3.5.0</FileVersion>
+    <Version>1.3.6</Version>
+    <AssemblyVersion>1.3.6.0</AssemblyVersion>
+    <FileVersion>1.3.6.0</FileVersion>
     
     <!-- Assembly Metadata -->
     <AssemblyTitle>InfoPanel.SteamAPI</AssemblyTitle>
@@ -63,6 +63,7 @@
 
   <ItemGroup>
     <!-- Common InfoPanel Plugin Dependencies -->
+    <PackageReference Include="craftersmine.SteamGridDB.Net" Version="1.1.7" />
     <PackageReference Include="ini-parser-netstandard" Version="2.5.2" />
     <PackageReference Include="System.Management" Version="9.0.0" />
     <PackageReference Include="Vanara.PInvoke.User32" Version="4.0.5" />
@@ -143,17 +144,10 @@
     </ItemGroup>
     
     <!-- Move dependencies to root level -->
-    <Copy SourceFiles="@(SubdirDLLs)" 
-          DestinationFolder="$(OutputPath)" 
-          SkipUnchangedFiles="true" 
-          OverwriteReadOnlyFiles="true" />
+    <Copy SourceFiles="@(SubdirDLLs)" DestinationFolder="$(OutputPath)" SkipUnchangedFiles="true" OverwriteReadOnlyFiles="true" />
     
     <!-- Copy PDBs for debug builds only -->
-    <Copy SourceFiles="@(SubdirPDBs)" 
-          DestinationFolder="$(OutputPath)" 
-          SkipUnchangedFiles="true" 
-          OverwriteReadOnlyFiles="true" 
-          Condition="'$(Configuration)'=='Debug'" />
+    <Copy SourceFiles="@(SubdirPDBs)" DestinationFolder="$(OutputPath)" SkipUnchangedFiles="true" OverwriteReadOnlyFiles="true" Condition="'$(Configuration)'=='Debug'" />
     
     <!-- Clean up unnecessary files and directories -->
     <Delete Files="@(UnnecessaryFiles)" ContinueOnError="true" />
@@ -187,19 +181,16 @@
     </ItemGroup>
     
     <!-- Copy files to temp directory -->
-    <Copy SourceFiles="@(PluginFiles)" 
-          DestinationFiles="@(PluginFiles->'$(TempZipDir)\InfoPanel.SteamAPI\%(RecursiveDir)%(Filename)%(Extension)')" />
+    <Copy SourceFiles="@(PluginFiles)" DestinationFiles="@(PluginFiles->'$(TempZipDir)\InfoPanel.SteamAPI\%(RecursiveDir)%(Filename)%(Extension)')" />
     
     <!-- Create the ZIP archive -->
-    <ZipDirectory SourceDirectory="$(TempZipDir)" 
-                  DestinationFile="$(ArchivePath)" 
-                  Overwrite="true" />
+    <ZipDirectory SourceDirectory="$(TempZipDir)" DestinationFile="$(ArchivePath)" Overwrite="true" />
     
     <!-- Clean up temp directory -->
     <RemoveDir Directories="$(TempZipDir)" />
     
     <Message Text="✅ Archive created: $(ArchivePath)" Importance="high" />
-    <Message Text="📊 Archive contains $(PluginFiles->Count()) files" Importance="high" />
+    <Message Text="📊 Archive contains $(PluginFiles-&gt;Count()) files" Importance="high" />
   </Target>
 
   <!-- Post-Build: Build Summary -->
@@ -220,9 +211,7 @@
     <Message Text="$(BuildSummaryText)" Importance="high" />
     
     <!-- Release-specific summary -->
-    <Message Text="🎉 Release archive: $(BaseOutputPath)InfoPanel.SteamAPI-v$(Version).zip" 
-             Importance="high" 
-             Condition="'$(Configuration)'=='Release'" />
+    <Message Text="🎉 Release archive: $(BaseOutputPath)InfoPanel.SteamAPI-v$(Version).zip" Importance="high" Condition="'$(Configuration)'=='Release'" />
   </Target>
 
   <!-- Custom Target: Version Management Helper -->

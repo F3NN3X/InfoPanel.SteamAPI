@@ -146,6 +146,11 @@ namespace InfoPanel.SteamAPI.Models
         /// </summary>
         public string? CurrentGameIconUrl { get; set; }
 
+        /// <summary>
+        /// Grid URL of the currently playing game
+        /// </summary>
+        public string? CurrentGameGridUrl { get; set; }
+
         #endregion
 
         #region Last Played Game Properties
@@ -176,6 +181,11 @@ namespace InfoPanel.SteamAPI.Models
         /// Icon URL of the last played game
         /// </summary>
         public string? LastPlayedGameIconUrl { get; set; }
+
+        /// <summary>
+        /// Grid URL of the last played game
+        /// </summary>
+        public string? LastPlayedGameGridUrl { get; set; }
 
         /// <summary>
         /// Timestamp when the last game session ended

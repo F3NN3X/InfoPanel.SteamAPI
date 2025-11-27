@@ -17,7 +17,9 @@ namespace InfoPanel.SteamAPI.Services
         public const string DISPLAY_SETTINGS_SECTION = "Display Settings";
         public const string STEAM_SETTINGS_SECTION = "Steam Settings";
         public const string FRIENDS_ACTIVITY_SECTION = "Friends Activity Settings";
+        public const string STEAMGRIDDB_SETTINGS_SECTION = "SteamGridDB Settings";
         public const string ENHANCED_LOGGING_SECTION = "Logging Settings";
+        public const string LOCAL_SERVER_SETTINGS_SECTION = "Local Server Settings";
         #endregion
 
         #region Update Intervals (seconds)
@@ -42,6 +44,10 @@ namespace InfoPanel.SteamAPI.Services
         public const int DEFAULT_MAX_RECENT_GAMES = 5;
         public const int DEFAULT_MAX_FRIENDS_DISPLAY = 0; // 0 = unlimited
         public const int DEFAULT_MAX_FRIEND_NAME_LENGTH = 20;
+        #endregion
+
+        #region Local Server Settings
+        public const int DEFAULT_LOCAL_SERVER_PORT = 39482;
         #endregion
 
         #region Default Values
@@ -269,6 +275,17 @@ namespace InfoPanel.SteamAPI.Services
                 _config[ConfigurationConstants.FRIENDS_ACTIVITY_SECTION]["FriendNameDisplay"] = ConfigurationConstants.DEFAULT_FRIEND_NAME_DISPLAY;
                 _config[ConfigurationConstants.FRIENDS_ACTIVITY_SECTION]["MaxFriendNameLength"] = ConfigurationConstants.DEFAULT_MAX_FRIEND_NAME_LENGTH.ToString();
 
+                // SteamGridDB Settings
+                _config[ConfigurationConstants.STEAMGRIDDB_SETTINGS_SECTION]["ApiKey"] = "";
+                _config[ConfigurationConstants.STEAMGRIDDB_SETTINGS_SECTION]["Enabled"] = "false";
+                _config[ConfigurationConstants.STEAMGRIDDB_SETTINGS_SECTION]["PreferredStyles"] = "Alternate,Blurred";
+                _config[ConfigurationConstants.STEAMGRIDDB_SETTINGS_SECTION]["PreferredMimeTypes"] = "Png,Webp";
+                _config[ConfigurationConstants.STEAMGRIDDB_SETTINGS_SECTION]["PreferredTypes"] = "Static";
+                _config[ConfigurationConstants.STEAMGRIDDB_SETTINGS_SECTION]["IncludeNSFW"] = "false";
+                _config[ConfigurationConstants.STEAMGRIDDB_SETTINGS_SECTION]["IncludeHumor"] = "false";
+                _config[ConfigurationConstants.STEAMGRIDDB_SETTINGS_SECTION]["IncludeEpilepsy"] = "false";
+                _config[ConfigurationConstants.STEAMGRIDDB_SETTINGS_SECTION]["MinimumScore"] = "5";
+
                 // Monitoring Settings
                 _config[ConfigurationConstants.MONITORING_SETTINGS_SECTION]["MonitoringIntervalMs"] = ConfigurationConstants.DEFAULT_MONITORING_INTERVAL_MS.ToString();
                 _config[ConfigurationConstants.MONITORING_SETTINGS_SECTION]["EnableAutoReconnect"] = "true";
@@ -285,6 +302,9 @@ namespace InfoPanel.SteamAPI.Services
                 _config[ConfigurationConstants.ENHANCED_LOGGING_SECTION]["LogRotationSizeMB"] = "5";
                 _config[ConfigurationConstants.ENHANCED_LOGGING_SECTION]["MaxArchivedLogs"] = "5";
                 _config[ConfigurationConstants.ENHANCED_LOGGING_SECTION]["EnableSensitiveDataRedaction"] = "true";
+
+                // Local Server Settings
+                _config[ConfigurationConstants.LOCAL_SERVER_SETTINGS_SECTION]["Port"] = ConfigurationConstants.DEFAULT_LOCAL_SERVER_PORT.ToString();
 
                 // Only write to file if the file doesn't exist (new installation)
                 _parser.WriteFile(_configFilePath, _config);
@@ -315,8 +335,10 @@ namespace InfoPanel.SteamAPI.Services
                 ["Steam Settings"] = new[] { "ApiKey", "SteamId64", "UpdateIntervalSeconds", "EnableProfileMonitoring", "EnableLibraryMonitoring", "EnableCurrentGameMonitoring", "EnableAchievementMonitoring", "MaxRecentGames" },
                 ["Display Settings"] = new[] { "ShowStatusMessages", "ShowDetailedMetrics", "UseMetricSystem" },
                 ["Friends Activity Settings"] = new[] { "ShowAllFriends", "MaxFriendsToDisplay", "FriendsFilter", "FriendsSortBy", "SortDescending", "FriendsTableColumns", "LastSeenFormat", "HiddenStatuses", "FriendNameDisplay", "MaxFriendNameLength" },
+                ["SteamGridDB Settings"] = new[] { "ApiKey", "Enabled", "PreferredStyles", "PreferredMimeTypes", "PreferredTypes", "IncludeNSFW", "IncludeHumor", "IncludeEpilepsy", "MinimumScore" },
                 ["Monitoring Settings"] = new[] { "MonitoringIntervalMs", "EnableAutoReconnect", "ConnectionTimeoutMs" },
-                ["Logging Settings"] = new[] { "Enabled", "EnableDeltaLogging", "EnableStructuredLogging", "FlushIntervalMs", "MinimumLevel", "EnablePerformanceLogging", "EnableOperationPairing", "LogRotationSizeMB", "MaxArchivedLogs", "EnableSensitiveDataRedaction" }
+                ["Logging Settings"] = new[] { "Enabled", "EnableDeltaLogging", "EnableStructuredLogging", "FlushIntervalMs", "MinimumLevel", "EnablePerformanceLogging", "EnableOperationPairing", "LogRotationSizeMB", "MaxArchivedLogs", "EnableSensitiveDataRedaction" },
+                ["Local Server Settings"] = new[] { "Port" }
             };
 
             foreach (var section in requiredKeys)
@@ -664,6 +686,16 @@ namespace InfoPanel.SteamAPI.Services
 
         #endregion
 
+        #region Local Server Settings Properties
+
+        /// <summary>
+        /// Gets the port for the local image server
+        /// </summary>
+        public int LocalServerPort =>
+            GetIntSetting(ConfigurationConstants.LOCAL_SERVER_SETTINGS_SECTION, "Port", ConfigurationConstants.DEFAULT_LOCAL_SERVER_PORT);
+
+        #endregion
+
         #region Display Customization Properties
 
         /// <summary>
@@ -837,6 +869,76 @@ namespace InfoPanel.SteamAPI.Services
         /// </summary>
         public bool EnableSensitiveDataRedaction =>
             GetBoolSetting(ConfigurationConstants.ENHANCED_LOGGING_SECTION, "EnableSensitiveDataRedaction", true);
+
+        #endregion
+
+        #region SteamGridDB Settings Properties
+
+        /// <summary>
+        /// Gets the SteamGridDB API Key
+        /// </summary>
+        public string SteamGridDbApiKey =>
+            GetSetting(ConfigurationConstants.STEAMGRIDDB_SETTINGS_SECTION, "ApiKey", "");
+
+        /// <summary>
+        /// Gets whether SteamGridDB integration is enabled
+        /// </summary>
+        public bool EnableSteamGridDb =>
+            GetBoolSetting(ConfigurationConstants.STEAMGRIDDB_SETTINGS_SECTION, "Enabled", false);
+
+        /// <summary>
+        /// Gets the preferred image styles (comma-separated)
+        /// </summary>
+        public string SteamGridDbPreferredStyles =>
+            GetSetting(ConfigurationConstants.STEAMGRIDDB_SETTINGS_SECTION, "PreferredStyles", "Alternate,Blurred");
+
+        /// <summary>
+        /// Gets the preferred mime types (comma-separated)
+        /// </summary>
+        public string SteamGridDbPreferredMimeTypes =>
+            GetSetting(ConfigurationConstants.STEAMGRIDDB_SETTINGS_SECTION, "PreferredMimeTypes", "Png,Webp");
+
+        /// <summary>
+        /// Gets the preferred image types (Static, Animated, Any)
+        /// </summary>
+        public string SteamGridDbPreferredTypes =>
+            GetSetting(ConfigurationConstants.STEAMGRIDDB_SETTINGS_SECTION, "PreferredTypes", "Static");
+
+        /// <summary>
+        /// Gets whether to include NSFW content
+        /// </summary>
+        public bool SteamGridDbIncludeNSFW =>
+            GetBoolSetting(ConfigurationConstants.STEAMGRIDDB_SETTINGS_SECTION, "IncludeNSFW", false);
+
+        /// <summary>
+        /// Gets whether to include humorous content
+        /// </summary>
+        public bool SteamGridDbIncludeHumor =>
+            GetBoolSetting(ConfigurationConstants.STEAMGRIDDB_SETTINGS_SECTION, "IncludeHumor", false);
+
+        /// <summary>
+        /// Gets whether to include epilepsy-inducing content
+        /// </summary>
+        public bool SteamGridDbIncludeEpilepsy =>
+            GetBoolSetting(ConfigurationConstants.STEAMGRIDDB_SETTINGS_SECTION, "IncludeEpilepsy", false);
+
+        /// <summary>
+        /// Gets the minimum score for images
+        /// </summary>
+        public int SteamGridDbMinimumScore =>
+            GetIntSetting(ConfigurationConstants.STEAMGRIDDB_SETTINGS_SECTION, "MinimumScore", 5);
+
+        /// <summary>
+        /// Gets the maximum width for resized logos
+        /// </summary>
+        public int SteamGridDbMaxLogoWidth =>
+            GetIntSetting(ConfigurationConstants.STEAMGRIDDB_SETTINGS_SECTION, "MaxLogoWidth", 300);
+
+        /// <summary>
+        /// Gets the maximum height for resized logos
+        /// </summary>
+        public int SteamGridDbMaxLogoHeight =>
+            GetIntSetting(ConfigurationConstants.STEAMGRIDDB_SETTINGS_SECTION, "MaxLogoHeight", 100);
 
         #endregion
     }
