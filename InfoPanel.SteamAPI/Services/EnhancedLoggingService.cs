@@ -26,14 +26,14 @@ namespace InfoPanel.SteamAPI.Services
             _configService = configService;
             _logQueue = new ConcurrentQueue<LogEntry>();
             _lastLoggedStates = new Dictionary<string, LogState>();
-            
+
             // Archive previous session's log file BEFORE starting new logging
             ArchivePreviousSessionLog();
-            
+
             // Initialize flush timer based on configuration
             var flushInterval = _configService?.LogFlushInterval ?? 1000;
             _flushTimer = new Timer(FlushLogs, null, flushInterval, flushInterval);
-            
+
             // Log service initialization
             LogInfo("EnhancedLoggingService", "Enhanced logging service initialized", new
             {
@@ -51,7 +51,7 @@ namespace InfoPanel.SteamAPI.Services
         public void LogInfo(string source, string message, object? data = null)
         {
             if (GetMinimumLogLevel() > LogLevel.Info) return;
-            
+
             var logEntry = new LogEntry
             {
                 Timestamp = DateTime.UtcNow,
@@ -77,7 +77,7 @@ namespace InfoPanel.SteamAPI.Services
         public void LogDebug(string source, string message, object? data = null)
         {
             if (GetMinimumLogLevel() > LogLevel.Debug) return;
-            
+
             // Special handling for high-frequency debug sources
             if (IsHighFrequencySource(source) && ShouldUseDeltaLogging())
             {
@@ -134,7 +134,7 @@ namespace InfoPanel.SteamAPI.Services
             };
 
             _logQueue.Enqueue(logEntry);
-            
+
             // Force immediate flush for errors following InfoPanel error handling patterns
             FlushLogs(null);
         }
@@ -145,9 +145,9 @@ namespace InfoPanel.SteamAPI.Services
         public string? LogOperationStart(string source, string operation, object? parameters = null)
         {
             if (!(_configService?.EnableOperationPairing ?? true)) return null;
-            
+
             var correlationId = Guid.NewGuid().ToString("N")[..8];
-            
+
             LogInfo(source, $"OPERATION_START: {operation}", new
             {
                 CorrelationId = correlationId,
@@ -162,14 +162,14 @@ namespace InfoPanel.SteamAPI.Services
         /// <summary>
         /// Log operation end with timing information - InfoPanel performance pattern
         /// </summary>
-        public void LogOperationEnd(string source, string operation, string? correlationId, 
+        public void LogOperationEnd(string source, string operation, string? correlationId,
             TimeSpan duration, bool success = true, object? result = null)
         {
             if (!(_configService?.EnableOperationPairing ?? true) || string.IsNullOrEmpty(correlationId)) return;
-            
+
             var level = success ? LogLevel.Info : LogLevel.Warning;
             var enablePerfLogging = _configService?.EnablePerformanceLogging ?? true;
-            
+
             var logEntry = new LogEntry
             {
                 Timestamp = DateTime.UtcNow,
@@ -193,13 +193,13 @@ namespace InfoPanel.SteamAPI.Services
         private void LogDebugWithDelta(string source, string message, object? data)
         {
             var stateKey = $"{source}_{message.GetHashCode()}";
-            
+
             // Check if data has changed since last log
             if (HasDataChanged(stateKey, data))
             {
                 // Log the change with comparison
                 var previousState = _lastLoggedStates.ContainsKey(stateKey) ? _lastLoggedStates[stateKey] : null;
-                
+
                 var logEntry = new LogEntry
                 {
                     Timestamp = DateTime.UtcNow,
@@ -228,18 +228,18 @@ namespace InfoPanel.SteamAPI.Services
         private bool ShouldSkipDeltaLog(string source, object? data)
         {
             if (!ShouldUseDeltaLogging()) return false;
-            
+
             return !HasDataChanged(source, data);
         }
 
         private bool HasDataChanged(string stateKey, object? data)
         {
             if (!_lastLoggedStates.ContainsKey(stateKey)) return true;
-            
+
             var lastState = _lastLoggedStates[stateKey];
             var currentJson = JsonSerializer.Serialize(RedactSensitiveData(data) ?? new { });
             var lastJson = JsonSerializer.Serialize(lastState.Data ?? new { });
-            
+
             return currentJson != lastJson;
         }
 
@@ -247,12 +247,12 @@ namespace InfoPanel.SteamAPI.Services
         {
             // Simple change detection for InfoPanel debugging
             if (previous == null) return new { Type = "Initial", Description = "First time logging this data" };
-            
+
             try
             {
                 var prevJson = JsonSerializer.Serialize(previous);
                 var currJson = JsonSerializer.Serialize(RedactSensitiveData(current));
-                
+
                 return new
                 {
                     Type = "Modified",
@@ -276,14 +276,14 @@ namespace InfoPanel.SteamAPI.Services
                 // Clear half of the dictionary to make room (simple eviction)
                 // In a real LRU we would remove oldest, but this is sufficient for leak prevention
                 _lastLoggedStates.Clear();
-                
+
                 // Log this event directly to queue to avoid recursion
-                _logQueue.Enqueue(new LogEntry 
-                { 
-                    Timestamp = DateTime.UtcNow, 
-                    Level = LogLevel.Warning, 
-                    Source = "EnhancedLoggingService", 
-                    Message = "Log state dictionary cleared (size limit reached)" 
+                _logQueue.Enqueue(new LogEntry
+                {
+                    Timestamp = DateTime.UtcNow,
+                    Level = LogLevel.Warning,
+                    Source = "EnhancedLoggingService",
+                    Message = "Log state dictionary cleared (size limit reached)"
                 });
             }
 
@@ -305,8 +305,8 @@ namespace InfoPanel.SteamAPI.Services
         {
             var statusKey = $"{stateKey}_status";
             var now = DateTime.UtcNow;
-            
-            if (!_lastLoggedStates.ContainsKey(statusKey) || 
+
+            if (!_lastLoggedStates.ContainsKey(statusKey) ||
                 _lastLoggedStates[statusKey].LastLogged < now.AddMinutes(-5))
             {
                 var logEntry = new LogEntry
@@ -315,9 +315,9 @@ namespace InfoPanel.SteamAPI.Services
                     Level = LogLevel.Debug,
                     Source = source,
                     Message = $"STATUS: {message} (stable)",
-                    Data = new 
-                    { 
-                        Status = "NoChange", 
+                    Data = new
+                    {
+                        Status = "NoChange",
                         StableSince = _lastLoggedStates.ContainsKey(stateKey) ? _lastLoggedStates[stateKey].LastLogged : now,
                         LastData = RedactSensitiveData(data)
                     }
@@ -343,12 +343,12 @@ namespace InfoPanel.SteamAPI.Services
             try
             {
                 var json = JsonSerializer.Serialize(data);
-                
+
                 // Redact common sensitive patterns following InfoPanel security practices
                 json = System.Text.RegularExpressions.Regex.Replace(json, @"""[Aa]pi[Kk]ey""\s*:\s*""[^""]+""", @"""apiKey"":""[REDACTED]""");
                 json = System.Text.RegularExpressions.Regex.Replace(json, @"""[Tt]oken""\s*:\s*""[^""]+""", @"""token"":""[REDACTED]""");
                 json = System.Text.RegularExpressions.Regex.Replace(json, @"""[Pp]assword""\s*:\s*""[^""]+""", @"""password"":""[REDACTED]""");
-                
+
                 return JsonSerializer.Deserialize<object>(json);
             }
             catch
@@ -362,7 +362,7 @@ namespace InfoPanel.SteamAPI.Services
             if (_logQueue.IsEmpty) return;
 
             var entriesToFlush = new List<LogEntry>();
-            
+
             // Dequeue all pending entries
             while (_logQueue.TryDequeue(out var entry))
             {
@@ -376,13 +376,13 @@ namespace InfoPanel.SteamAPI.Services
                 lock (_fileLock)
                 {
                     using var writer = new StreamWriter(_logFilePath, true, System.Text.Encoding.UTF8);
-                    
+
                     foreach (var entry in entriesToFlush)
                     {
-                        var logLine = (_configService?.EnableStructuredLogging ?? true) ? 
-                            FormatStructuredLog(entry) : 
+                        var logLine = (_configService?.EnableStructuredLogging ?? true) ?
+                            FormatStructuredLog(entry) :
                             FormatTraditionalLog(entry);
-                            
+
                         writer.WriteLine(logLine);
                     }
                 }
@@ -410,8 +410,8 @@ namespace InfoPanel.SteamAPI.Services
                 stackTrace = entry.StackTrace
             };
 
-            return JsonSerializer.Serialize(logObject, new JsonSerializerOptions 
-            { 
+            return JsonSerializer.Serialize(logObject, new JsonSerializerOptions
+            {
                 WriteIndented = false,
                 PropertyNamingPolicy = JsonNamingPolicy.CamelCase
             });
@@ -422,7 +422,7 @@ namespace InfoPanel.SteamAPI.Services
             var level = entry.Level.ToString().ToUpper().PadRight(7);
             var dataStr = entry.Data != null ? $" | Data: {JsonSerializer.Serialize(entry.Data)}" : "";
             var exceptionStr = !string.IsNullOrEmpty(entry.Exception) ? $" | Exception: {entry.Exception}" : "";
-            
+
             return $"[{entry.Timestamp:yyyy-MM-dd HH:mm:ss.fff}] [{level}] [{entry.Source}] {entry.Message}{dataStr}{exceptionStr}";
         }
 
@@ -432,19 +432,19 @@ namespace InfoPanel.SteamAPI.Services
             {
                 var fileInfo = new FileInfo(_logFilePath);
                 var maxSizeMB = _configService?.LogRotationSizeMB ?? 5;
-                
+
                 if (fileInfo.Exists && fileInfo.Length > maxSizeMB * 1024 * 1024)
                 {
                     // Rotate log files following InfoPanel patterns
                     var directory = Path.GetDirectoryName(_logFilePath);
                     var fileNameWithoutExt = Path.GetFileNameWithoutExtension(_logFilePath);
                     var extension = Path.GetExtension(_logFilePath);
-                    
+
                     var timestamp = DateTime.Now.ToString("yyyyMMdd-HHmmss");
                     var archivedPath = Path.Combine(directory, $"{fileNameWithoutExt}-{timestamp}{extension}");
-                    
+
                     File.Move(_logFilePath, archivedPath);
-                    
+
                     // Clean up old archived files
                     CleanupArchivedLogs(directory, fileNameWithoutExt, extension);
                 }
@@ -475,7 +475,7 @@ namespace InfoPanel.SteamAPI.Services
                 // Ignore cleanup errors following InfoPanel patterns
             }
         }
-        
+
         /// <summary>
         /// Archives the previous session's log file on plugin startup, ensuring fresh logs each session
         /// </summary>
@@ -488,18 +488,18 @@ namespace InfoPanel.SteamAPI.Services
                     var directory = Path.GetDirectoryName(_logFilePath) ?? "";
                     var fileNameWithoutExt = Path.GetFileNameWithoutExtension(_logFilePath);
                     var extension = Path.GetExtension(_logFilePath);
-                    
+
                     // Create archive filename with timestamp
                     var timestamp = DateTime.Now.ToString("yyyyMMdd-HHmmss");
                     var archivedPath = Path.Combine(directory, $"debug-{timestamp}{extension}");
-                    
+
                     Console.WriteLine($"[EnhancedLoggingService] Archiving previous session log: {_logFilePath} -> {archivedPath}");
-                    
+
                     // Move previous session's log file to archived name
                     File.Move(_logFilePath, archivedPath);
-                    
+
                     Console.WriteLine($"[EnhancedLoggingService] Previous session log archived successfully");
-                    
+
                     // Clean up old archived debug files
                     CleanupDebugArchives(directory, extension);
                 }
@@ -518,16 +518,16 @@ namespace InfoPanel.SteamAPI.Services
         public void Dispose()
         {
             if (_disposed) return;
-            
+
             try
             {
                 LogInfo("EnhancedLoggingService", "Shutting down enhanced logging service");
                 _flushTimer?.Dispose();
                 FlushLogs(null); // Final flush
-                
+
                 // Small delay to ensure file handles are fully released
                 System.Threading.Thread.Sleep(100);
-                
+
                 // Archive the log file with timestamp
                 ArchiveLogFileOnClose();
             }
@@ -540,7 +540,7 @@ namespace InfoPanel.SteamAPI.Services
                 _disposed = true;
             }
         }
-        
+
         /// <summary>
         /// Archives the current log file with a timestamp and deletes the original,
         /// ensuring a fresh start for the next plugin run. Also archives any rotated files.
@@ -550,7 +550,7 @@ namespace InfoPanel.SteamAPI.Services
             try
             {
                 Console.WriteLine($"[EnhancedLoggingService] Attempting to archive log file: {_logFilePath}");
-                
+
                 lock (_fileLock)
                 {
                     if (File.Exists(_logFilePath))
@@ -558,21 +558,21 @@ namespace InfoPanel.SteamAPI.Services
                         var directory = Path.GetDirectoryName(_logFilePath);
                         var fileNameWithoutExt = Path.GetFileNameWithoutExtension(_logFilePath);
                         var extension = Path.GetExtension(_logFilePath);
-                        
+
                         // Create archive filename with timestamp
                         var timestamp = DateTime.Now.ToString("yyyyMMdd-HHmmss");
                         var archivedPath = Path.Combine(directory ?? "", $"debug-{timestamp}{extension}");
-                        
+
                         Console.WriteLine($"[EnhancedLoggingService] Moving {_logFilePath} to {archivedPath}");
-                        
+
                         // Move current log file to archived name
                         File.Move(_logFilePath, archivedPath);
-                        
+
                         Console.WriteLine($"[EnhancedLoggingService] Successfully archived log file");
-                        
+
                         // Also rename any rotated files from this session (with matching timestamp pattern)
                         ArchiveRotatedFiles(directory, fileNameWithoutExt, extension, timestamp);
-                        
+
                         // Clean up old archived debug files
                         CleanupDebugArchives(directory, extension);
                     }
@@ -589,7 +589,7 @@ namespace InfoPanel.SteamAPI.Services
                 Console.WriteLine($"[EnhancedLoggingService] Stack trace: {ex.StackTrace}");
             }
         }
-        
+
         /// <summary>
         /// Archives any rotated log files from the current session
         /// </summary>
@@ -600,22 +600,22 @@ namespace InfoPanel.SteamAPI.Services
                 // Find rotated files (e.g., InfoPanel.SteamAPI.dll_enhanced-20250111-184523.json)
                 var rotatedPattern = $"{baseFileName}-*{extension}";
                 var rotatedFiles = Directory.GetFiles(directory, rotatedPattern);
-                
+
                 foreach (var rotatedFile in rotatedFiles)
                 {
                     var rotatedFileName = Path.GetFileNameWithoutExtension(rotatedFile);
-                    
+
                     // Skip if already renamed to debug-* format
                     if (rotatedFileName.StartsWith("debug-"))
                         continue;
-                    
+
                     // Extract the rotation timestamp from the filename
                     var parts = rotatedFileName.Split('-');
                     if (parts.Length >= 2)
                     {
                         var rotationTimestamp = string.Join("-", parts.Skip(parts.Length - 2));
                         var newRotatedPath = Path.Combine(directory, $"debug-{rotationTimestamp}{extension}");
-                        
+
                         // Only move if the destination doesn't exist
                         if (!File.Exists(newRotatedPath))
                         {
@@ -629,7 +629,7 @@ namespace InfoPanel.SteamAPI.Services
                 // Ignore errors renaming rotated files
             }
         }
-        
+
         /// <summary>
         /// Cleans up old debug archive files, keeping only the most recent ones
         /// </summary>

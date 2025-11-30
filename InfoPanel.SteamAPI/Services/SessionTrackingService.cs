@@ -682,7 +682,7 @@ namespace InfoPanel.SteamAPI.Services
                     // Remove oldest sessions, keeping the most recent ones
                     var sessionsToRemove = _sessionHistory.Sessions.Count - MAX_SESSION_HISTORY;
                     _sessionHistory.Sessions.RemoveRange(0, sessionsToRemove);
-                    
+
                     _enhancedLogger?.LogDebug("SessionTrackingService.EndCurrentSession", "Pruned session history", new
                     {
                         RemovedCount = sessionsToRemove,
