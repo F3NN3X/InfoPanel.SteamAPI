@@ -2,6 +2,17 @@
 
 All notable changes to InfoPanel Steam API Plugin will be documented in this file.
 
+## [1.3.8] - 2025-11-30
+
+### 🐛 **Bug Fixes & Optimizations**
+
+- **Memory Leak Prevention**: Implemented strict size limits and eviction policies for all internal caches to prevent unbounded memory growth over long sessions.
+  - **Session History**: Limited to last 100 sessions (was unlimited).
+  - **Image Caches**: Added 100-item limit to Banner and SteamGridDB caches with auto-clear.
+  - **Logging State**: Added 500-item limit to delta logging state dictionary to prevent memory creep in high-activity scenarios.
+
+---
+
 ## [1.3.7] - 2025-11-30
 
 ### 🐛 **Bug Fixes**

@@ -1,4 +1,4 @@
-// InfoPanel.SteamAPI v1.3.7 - Steam API Plugin for InfoPanel
+// InfoPanel.SteamAPI v1.3.8 - Steam API Plugin for InfoPanel
 using InfoPanel.Plugins;
 using InfoPanel.SteamAPI.Services;
 using InfoPanel.SteamAPI.Models;

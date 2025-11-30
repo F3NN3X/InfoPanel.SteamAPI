@@ -44,7 +44,9 @@ namespace InfoPanel.SteamAPI.Services
         private readonly LocalImageServer? _localImageServer;
 
         // Cache for game banner URLs to avoid repeated HEAD requests
+        // Using ConcurrentDictionary for thread safety, but we need to manage size manually
         private readonly System.Collections.Concurrent.ConcurrentDictionary<int, string> _bannerUrlCache = new();
+        private const int MAX_CACHE_SIZE = 100;
 
         // Cache for SteamGridDB images to avoid repeated API calls
         private class SteamGridDbCacheItem
@@ -584,6 +586,13 @@ namespace InfoPanel.SteamAPI.Services
                     return cachedUrl;
                 }
 
+                // Simple cache eviction if it gets too large
+                if (_bannerUrlCache.Count > MAX_CACHE_SIZE)
+                {
+                    _bannerUrlCache.Clear();
+                    _enhancedLogger?.LogDebug("PlayerDataService", "Banner URL cache cleared (size limit reached)");
+                }
+
                 // Use CDN pattern for library_hero image (3840x1240 - high quality)
                 // Primary CDN: CloudFlare
                 var libraryHeroUrl = $"https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/{appId}/library_hero.jpg";
@@ -714,6 +723,13 @@ namespace InfoPanel.SteamAPI.Services
             if (_steamGridDbCache.TryGetValue(appId, out var cachedItem))
             {
                 return cachedItem;
+            }
+
+            // Simple cache eviction if it gets too large
+            if (_steamGridDbCache.Count > MAX_CACHE_SIZE)
+            {
+                _steamGridDbCache.Clear();
+                _enhancedLogger?.LogDebug("PlayerDataService", "SteamGridDB cache cleared (size limit reached)");
             }
 
             var item = new SteamGridDbCacheItem();

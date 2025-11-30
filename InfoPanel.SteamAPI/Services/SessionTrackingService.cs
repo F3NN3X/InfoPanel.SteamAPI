@@ -94,6 +94,7 @@ namespace InfoPanel.SteamAPI.Services
         // Constants for session stability
         private const int MIN_SESSION_DURATION_SECONDS = 30; // Minimum 30 seconds before ending session
         private const int STATE_CHANGE_DEBOUNCE_SECONDS = 10; // Wait 10 seconds before starting new session
+        private const int MAX_SESSION_HISTORY = 100; // Keep last 100 sessions to prevent memory growth
 
         #endregion
 
@@ -674,6 +675,20 @@ namespace InfoPanel.SteamAPI.Services
 
                 // Add to session history
                 _sessionHistory.Sessions.Add(_sessionHistory.CurrentSession);
+
+                // Prune old sessions if history gets too large
+                if (_sessionHistory.Sessions.Count > MAX_SESSION_HISTORY)
+                {
+                    // Remove oldest sessions, keeping the most recent ones
+                    var sessionsToRemove = _sessionHistory.Sessions.Count - MAX_SESSION_HISTORY;
+                    _sessionHistory.Sessions.RemoveRange(0, sessionsToRemove);
+                    
+                    _enhancedLogger?.LogDebug("SessionTrackingService.EndCurrentSession", "Pruned session history", new
+                    {
+                        RemovedCount = sessionsToRemove,
+                        RemainingCount = _sessionHistory.Sessions.Count
+                    });
+                }
 
                 _enhancedLogger?.LogInfo("SessionTrackingService.EndCurrentSession", "Ended session and saved as last played", new
                 {

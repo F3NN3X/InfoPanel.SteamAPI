@@ -17,6 +17,7 @@ namespace InfoPanel.SteamAPI.Services
         private readonly Timer _flushTimer;
         private readonly object _fileLock = new object();
         private readonly Dictionary<string, LogState> _lastLoggedStates;
+        private const int MAX_LOG_STATES = 500;
         private bool _disposed = false;
 
         public EnhancedLoggingService(string logFilePath, ConfigurationService? configService)
@@ -269,6 +270,23 @@ namespace InfoPanel.SteamAPI.Services
 
         private void UpdateLastLoggedState(string stateKey, object? data)
         {
+            // Prevent unbounded growth of state dictionary
+            if (_lastLoggedStates.Count > MAX_LOG_STATES && !_lastLoggedStates.ContainsKey(stateKey))
+            {
+                // Clear half of the dictionary to make room (simple eviction)
+                // In a real LRU we would remove oldest, but this is sufficient for leak prevention
+                _lastLoggedStates.Clear();
+                
+                // Log this event directly to queue to avoid recursion
+                _logQueue.Enqueue(new LogEntry 
+                { 
+                    Timestamp = DateTime.UtcNow, 
+                    Level = LogLevel.Warning, 
+                    Source = "EnhancedLoggingService", 
+                    Message = "Log state dictionary cleared (size limit reached)" 
+                });
+            }
+
             _lastLoggedStates[stateKey] = new LogState
             {
                 Data = RedactSensitiveData(data),
