@@ -2,6 +2,16 @@
 
 All notable changes to InfoPanel Steam API Plugin will be documented in this file.
 
+## [1.3.7] - 2025-11-30
+
+### 🐛 **Bug Fixes**
+
+- **Critical Memory Leak Fix**: Resolved a severe memory leak in the Local Image Server and Image Processing Service that caused memory usage to spike to several GBs.
+  - Optimized `LocalImageServer` to stream files directly to the response instead of loading them into memory.
+  - Refactored `ImageProcessingService` to save resized images directly to disk, eliminating unnecessary intermediate byte array allocations.
+
+---
+
 ## [1.3.6] - 2025-11-27
 
 ### ✨ **New Features**

@@ -151,8 +151,6 @@ namespace InfoPanel.SteamAPI.Services
 
                 if (File.Exists(filePath))
                 {
-                    var bytes = await File.ReadAllBytesAsync(filePath);
-
                     // Determine content type based on extension
                     string ext = Path.GetExtension(filePath).ToLowerInvariant();
                     context.Response.ContentType = ext switch
@@ -164,8 +162,16 @@ namespace InfoPanel.SteamAPI.Services
                         _ => "application/octet-stream"
                     };
 
-                    context.Response.ContentLength64 = bytes.Length;
-                    await context.Response.OutputStream.WriteAsync(bytes, 0, bytes.Length);
+                    // Open file with FileShare.Read to allow concurrent reads and writes
+                    using (var fs = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                    {
+                        context.Response.ContentLength64 = fs.Length;
+
+                        // Stream directly to response output stream to avoid loading entire file into memory
+                        // This significantly reduces memory usage for large files or frequent requests
+                        await fs.CopyToAsync(context.Response.OutputStream);
+                    }
+
                     context.Response.StatusCode = 200;
                 }
                 else
